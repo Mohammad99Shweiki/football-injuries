@@ -14,3 +14,7 @@ data/
 manifest.csv
 *.part
 .DS_Store
+
+# Dashboard build output and dependencies
+dashboard/node_modules/
+dashboard/dist/

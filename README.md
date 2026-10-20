@@ -16,9 +16,11 @@ uv sync                  # Python 3.13 + dependencies (transfermarkt-api pinned 
 ## Usage
 
 ```sh
-uv run python run_all.py                     # full run: 3 collectors in parallel -> retry pass -> parse -> validate
-uv run python run_all.py --dry-run           # report what would be fetched; uses the disk cache only
-uv run python run_all.py --limit 2           # first N league-seasons only
+(cd dashboard && npm install && npm run build)   # once: build the dashboard (needs Node.js)
+uv run python run_all.py                     # dashboard at http://127.0.0.1:8765; start runs from there
+uv run python run_all.py --start             # dashboard + start a full run right away
+uv run python run_all.py --headless          # no dashboard: collect -> retry -> parse -> validate in the terminal
+uv run python run_all.py --headless --dry-run --limit 2   # what would be fetched for 2 league-seasons
 
 # Individual steps
 uv run python -m collect.football_data [--leagues E0 --seasons 2016-2018]
@@ -30,6 +32,37 @@ uv run python validate.py [--fix]            # --fix deletes suspicious raw file
 
 `--leagues` accepts any source's ID (`EPL`, `E0`, `GB1`, ...); `--seasons` takes start years (`2016`, `2014-2016`).
 Re-running is cheap: every stored response is reused, and only missing ones are fetched.
+
+## Dashboard
+
+React + Vite (TypeScript) in `dashboard/`, built from the design handoff in `ui-handoff/` (`HANDOFF.md`, `tokens.css`).
+`serve.py` (standard library, bound to 127.0.0.1 only) serves `dashboard/dist` plus the API:
+
+| Route | What |
+|---|---|
+| `GET /api/status` | live run status, polled every second (also written to `data/status.json`) |
+| `GET /api/validation` | validation report JSON (same checks as `validate.py`) |
+| `POST /api/control` | `start`, `smoke_test`, `pause`, `resume`, `requeue` |
+
+- **Run console** (`/`): controls, collectors, Transfermarkt steps, rate limiter, coverage board, match log, smoke-test findings.
+- **Validation report** (`/validation`).
+- **Mascot QA sheet** (`/?debug=mascot`).
+
+Differences from the handoff, agreed during the build:
+- T5 is shown as built from T4, with no requests of its own.
+- `--limit` counts league-seasons.
+- A Start run button sits in the Pause slot when no run is active.
+- Live totals replace the fixed estimates.
+- Extras: an ETA, the progress % in the browser tab title, a fixtures check in Team sheets, an FD/Understat toggle on the Results sheet, and hover details on the coverage magnets and tempo bars.
+
+Development: run `uv run python run_all.py` and `npm run dev` in `dashboard/`; Vite proxies `/api` to the server.
+
+Screenshot checks against fake data use your installed Chrome through playwright-core:
+```sh
+npm run build && npx vite preview --port 4173 &
+node scripts/screens.mjs <outDir>
+```
+The script covers widths 375/768/1280/1440 and all 7 Chalky states.
 
 ## Layout
 

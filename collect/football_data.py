@@ -11,6 +11,7 @@ from collect.common import (
     FileFetcher,
     Manifest,
     RateLimiter,
+    RunContext,
     Selection,
     add_selection_args,
     log,
@@ -37,27 +38,36 @@ def check_csv(body: bytes) -> str | None:
 
 class FootballDataCollector(Collector):
     name = "football_data"
-
-    def __init__(self, manifest: Manifest) -> None:
-        self.manifest = manifest
+    key = "fd"
 
     async def run(self, selection: Selection) -> None:
         pairs = selection.pairs()
         log(self.name, f"{len(pairs)} files")
+        reporter = self.ctx.reporter
+        reporter.source_started(self.key, total=len(pairs), estimate=False, rate="1 / 2 s")
         # The site answered 429 when hit quickly: one request every 2 s.
-        limiter = RateLimiter(rate=0.5, concurrency=1)
+        limiter = RateLimiter(rate=0.5, concurrency=1, gate=self.ctx.gate)
         async with httpx.AsyncClient(follow_redirects=True, timeout=30, headers={"User-Agent": USER_AGENT}) as client:
-            fetcher = FileFetcher(self.name, client, limiter, self.manifest)
+            fetcher = FileFetcher(self, client, limiter)
             for league, season in pairs:
                 url = URL.format(season_code=fd_season_code(season), div=league.fd_div)
-                await fetcher.fetch(url, raw_path(league, season), check_csv, dry_run=selection.dry_run)
+                reporter.coverage(self.key, league, season, "running")
+                saved = await fetcher.fetch(url, raw_path(league, season), check_csv, dry_run=selection.dry_run)
+                self._report(league, season, saved, selection.dry_run)
+        reporter.source_finished(self.key, note="Bytes saved as received. Documented quirk: Serie A shots include blocked shots from 2018/19.")
         log(self.name, f"done: {fetcher.stats}")
+
+    def _report(self, league: League, season: int, saved: Path | None, dry_run: bool) -> None:
+        failed = saved is None and not dry_run
+        self.ctx.reporter.source_progress(self.key, failed=failed)
+        state = "done" if saved else "queued" if dry_run else "failed"
+        self.ctx.reporter.coverage(self.key, league, season, state)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     add_selection_args(parser)
-    asyncio.run(FootballDataCollector(Manifest()).run(Selection.from_args(parser.parse_args())))
+    asyncio.run(FootballDataCollector(RunContext(Manifest())).run(Selection.from_args(parser.parse_args())))
 
 
 if __name__ == "__main__":

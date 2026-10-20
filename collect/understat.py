@@ -17,6 +17,7 @@ from collect.common import (
     FileFetcher,
     Manifest,
     RateLimiter,
+    RunContext,
     Selection,
     add_selection_args,
     log,
@@ -47,28 +48,37 @@ def check_payload(body: bytes) -> str | None:
 
 class UnderstatCollector(Collector):
     name = "understat"
-
-    def __init__(self, manifest: Manifest) -> None:
-        self.manifest = manifest
+    key = "us"
 
     async def run(self, selection: Selection) -> None:
         pairs = selection.pairs()
         log(self.name, f"{len(pairs)} league-seasons")
-        limiter = RateLimiter(rate=1.0, concurrency=1)
+        reporter = self.ctx.reporter
+        reporter.source_started(self.key, total=len(pairs), estimate=False, rate="1 / s")
+        limiter = RateLimiter(rate=1.0, concurrency=1, gate=self.ctx.gate)
         headers = {"User-Agent": USER_AGENT, "X-Requested-With": "XMLHttpRequest"}
         async with httpx.AsyncClient(timeout=30, headers=headers) as client:
-            fetcher = FileFetcher(self.name, client, limiter, self.manifest)
+            fetcher = FileFetcher(self, client, limiter)
             for league, season in pairs:
                 url = URL.format(league=league.understat, season=season)
                 client.headers["Referer"] = PAGE_URL.format(league=league.understat, season=season)
-                await fetcher.fetch(url, raw_path(league, season), check_payload, dry_run=selection.dry_run)
+                reporter.coverage(self.key, league, season, "running")
+                saved = await fetcher.fetch(url, raw_path(league, season), check_payload, dry_run=selection.dry_run)
+                self._report(league, season, saved, selection.dry_run)
+        reporter.source_finished(self.key, note="Live layout: XHR endpoint getLeagueData, one request per league-season.")
         log(self.name, f"done: {fetcher.stats}")
+
+    def _report(self, league: League, season: int, saved: Path | None, dry_run: bool) -> None:
+        failed = saved is None and not dry_run
+        self.ctx.reporter.source_progress(self.key, failed=failed)
+        state = "done" if saved else "queued" if dry_run else "failed"
+        self.ctx.reporter.coverage(self.key, league, season, state)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     add_selection_args(parser)
-    asyncio.run(UnderstatCollector(Manifest()).run(Selection.from_args(parser.parse_args())))
+    asyncio.run(UnderstatCollector(RunContext(Manifest())).run(Selection.from_args(parser.parse_args())))
 
 
 if __name__ == "__main__":

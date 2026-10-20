@@ -3,8 +3,8 @@
 import argparse
 import asyncio
 import csv
-import os
 import random
+import threading
 import time
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable, Iterable, Sequence
@@ -17,6 +17,8 @@ from typing import Self
 import httpx
 
 from collect.config import LEAGUES, MANIFEST_PATH, ROOT, SEASONS, League, league_by_key
+from collect.fs import atomic_write, is_cached
+from collect.status import NullReporter, StatusReporter
 
 
 # --------------------------------------------------------------------------- selection / CLI
@@ -56,10 +58,45 @@ def add_selection_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--seasons", nargs="+", metavar="YEAR", help="season start years, e.g. 2016 or 2014-2016")
 
 
+class PauseGate:
+    """Pause switch shared by every rate limiter of a run; safe to flip from another thread."""
+
+    def __init__(self) -> None:
+        self._open = threading.Event()
+        self._open.set()
+
+    def pause(self) -> None:
+        self._open.clear()
+
+    def resume(self) -> None:
+        self._open.set()
+
+    @property
+    def is_paused(self) -> bool:
+        return not self._open.is_set()
+
+    async def wait(self) -> None:
+        while not self._open.is_set():
+            await asyncio.sleep(0.2)
+
+
+@dataclass
+class RunContext:
+    """What every collector needs besides its own source details: where to log, whom to tell, when to wait."""
+
+    manifest: "Manifest"
+    reporter: StatusReporter = field(default_factory=NullReporter)
+    gate: PauseGate = field(default_factory=PauseGate)
+
+
 class Collector(ABC):
     """One data source. Collectors are independent so they can run concurrently against their own hosts."""
 
     name: str
+    key: str  # short source id used by the dashboard: fd, us, tm
+
+    def __init__(self, ctx: RunContext) -> None:
+        self.ctx = ctx
 
     @abstractmethod
     async def run(self, selection: Selection) -> None: ...
@@ -134,9 +171,10 @@ class RateLimiter:
     Use as `async with limiter:` around each network request.
     """
 
-    def __init__(self, rate: float, concurrency: int) -> None:
+    def __init__(self, rate: float, concurrency: int, gate: PauseGate | None = None) -> None:
         self.rate = rate
         self.concurrency = concurrency
+        self.gate = gate or PauseGate()
         self._in_flight = 0
         self._capacity = asyncio.Condition()
         self._slot_lock = asyncio.Lock()
@@ -154,6 +192,7 @@ class RateLimiter:
         return time.monotonic() < self._paused_until
 
     async def __aenter__(self) -> Self:
+        await self.gate.wait()
         async with self._capacity:
             await self._capacity.wait_for(lambda: self._in_flight < self.concurrency)
             self._in_flight += 1
@@ -183,24 +222,47 @@ class AdaptiveThrottle:
     max_concurrency: int
     ramp_after: int = 500
     block_pause: float = 60.0
+    reporter: StatusReporter = field(default_factory=NullReporter)
     clean_streak: int = field(default=0, init=False)
+    phase: int = field(default=1, init=False)
+    start_concurrency: int = field(default=0, init=False)
+
+    def __post_init__(self) -> None:
+        self.start_concurrency = self.limiter.concurrency
+        self._report()
 
     def on_success(self) -> None:
         self.clean_streak += 1
-        if self.clean_streak >= self.ramp_after and self.limiter.concurrency < self.max_concurrency:
-            self.clean_streak = 0
+        if self.clean_streak % self.ramp_after == 0 and self.limiter.concurrency < self.max_concurrency:
             self.limiter.set_limits(
                 min(self.max_rate, self.limiter.rate * 2), min(self.max_concurrency, self.limiter.concurrency * 2)
             )
+            self.phase += 1
             log("throttle", f"ramp up -> {self.describe()}")
+        self._report()
 
-    def on_block(self, reason: str) -> None:
+    def on_block(self, reason: str, *, status: int | None = None, waf_action: str = "") -> None:
         self.clean_streak = 0
         if self.limiter.is_paused:
+            self._report()
             return
+        before = self.limiter.concurrency
         self.limiter.pause(self.block_pause)
         self.limiter.set_limits(max(0.5, self.limiter.rate / 2), self.limiter.concurrency // 2)
         log("throttle", f"blocked ({reason}); pausing {self.block_pause:.0f}s -> {self.describe()}")
+        self.reporter.backoff(
+            status=status,
+            waf_action=waf_action,
+            paused_s=self.block_pause,
+            concurrency_from=before,
+            concurrency_to=self.limiter.concurrency,
+        )
+        self._report()
+
+    def _report(self) -> None:
+        self.reporter.limiter(
+            concurrency=self.limiter.concurrency, rate=self.limiter.rate, phase=self.phase, clean_streak=self.clean_streak
+        )
 
     def describe(self) -> str:
         return f"{self.limiter.concurrency} concurrent, {self.limiter.rate:g} req/s"
@@ -224,42 +286,33 @@ class RetryPolicy:
 # --------------------------------------------------------------------------- disk + fetching
 
 
-def atomic_write(path: Path, data: bytes) -> None:
-    """Write via a temp file so an interrupted run never leaves a truncated cache entry."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".part")
-    tmp.write_bytes(data)
-    os.replace(tmp, path)
-
-
-def is_cached(path: Path) -> bool:
-    return path.exists() and path.stat().st_size > 0
-
-
 BodyCheck = Callable[[bytes], str | None]
 """Returns an error message when a 200 body is unusable (empty, HTML error page, ...), else None."""
 
 
 class FileFetcher:
-    """Downloads URLs to files, byte-for-byte, with disk cache, retries, throttling and manifest logging."""
+    """Downloads URLs to files, byte-for-byte, with disk cache, retries, throttling, manifest and status reporting."""
 
     def __init__(
         self,
-        source: str,
+        collector: Collector,
         client: httpx.AsyncClient,
         limiter: RateLimiter,
-        manifest: Manifest,
         retry: RetryPolicy = RetryPolicy(),
     ) -> None:
-        self.source, self.client, self.limiter, self.manifest, self.retry = source, client, limiter, manifest, retry
+        self.source, self.key = collector.name, collector.key
+        self.manifest, self.reporter = collector.ctx.manifest, collector.ctx.reporter
+        self.client, self.limiter, self.retry = client, limiter, retry
         self.stats = Counter()
 
     async def fetch(self, url: str, path: Path, check: BodyCheck, *, dry_run: bool = False) -> Path | None:
         if is_cached(path):
             self.stats.add("cached")
+            self.reporter.request(self.key, url, status=200, nbytes=path.stat().st_size, result="Replayed from disk")
             return path
         if dry_run:
             self.stats.add("would_fetch")
+            self.reporter.request(self.key, url, status=None, nbytes=0, result="Planned")
             log(self.source, f"would fetch {url}")
             return None
 
@@ -276,10 +329,12 @@ class FileFetcher:
                     if (error := check(response.content) or "") == "":
                         atomic_write(path, response.content)
                         self.manifest.log(self.source, url, path, FetchStatus.OK, status, len(response.content))
+                        self.reporter.request(self.key, url, status=status, nbytes=len(response.content), result="Fetched")
                         self.stats.add("fetched")
                         return path
                 elif status == 404:
                     self.manifest.log(self.source, url, None, FetchStatus.NOT_FOUND, status)
+                    self.reporter.request(self.key, url, status=status, nbytes=0, result="Not found")
                     self.stats.add("not_found")
                     return None
                 elif not self.retry.is_retryable(status):
@@ -288,9 +343,11 @@ class FileFetcher:
                 else:
                     error = f"HTTP {status}"
             if attempt < self.retry.max_attempts:
+                self.reporter.request(self.key, url, status=status, nbytes=0, result=f"{error} — retry {attempt}/{self.retry.max_attempts}")
                 await asyncio.sleep(self.retry.delay(attempt))
 
         self.manifest.log(self.source, url, None, FetchStatus.FAILED, status, error=error)
+        self.reporter.request(self.key, url, status=status, nbytes=0, result="Failed")
         self.stats.add("failed")
         log(self.source, f"FAILED {url}: {error}")
         return None

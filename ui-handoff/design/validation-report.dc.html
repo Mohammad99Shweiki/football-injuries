@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Validation report</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&amp;family=IBM+Plex+Mono:wght@400;500;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0D1311}
+a{color:#E9D98B}a:hover{color:#F5EBB8}
+button{font-family:inherit;cursor:pointer}
+.panel{transition:transform .25s ease,border-color .25s ease}
+.panel:hover{transform:translateY(-2px);border-color:rgba(233,217,139,0.32) !important}
+.mag{transition:transform .15s ease,filter .15s ease}
+.mag:hover{transform:translateY(-2px) scale(1.12);filter:brightness(1.12)}
+.pitch{transition:opacity .4s ease}
+header:hover .pitch{opacity:0.5 !important}
+.play{stroke-dasharray:240;stroke-dashoffset:0}
+header:hover .play{animation:chalkdraw 1.1s ease-out}
+@keyframes chalkdraw{from{stroke-dashoffset:240}to{stroke-dashoffset:0}}
+.print{transform:rotate(var(--r)) scale(var(--s));transition:transform .3s ease,box-shadow .3s ease,opacity .35s ease}
+.print:hover{transform:rotate(0deg) scale(calc(var(--s) * 1.1));box-shadow:0 18px 30px rgba(0,0,0,0.6);z-index:2;opacity:1 !important}
+.bar{transition:filter .2s ease}
+.bar:hover{filter:brightness(1.25)}
+@media (prefers-reduced-motion: reduce){.panel,.mag,.pitch,.print{transition:none}.panel:hover,.mag:hover{transform:none}.print:hover{transform:rotate(var(--r)) scale(var(--s))}header:hover .play{animation:none}}
+</style>
+</helmet>
+<div onMouseMove="{{onMove}}" onMouseLeave="{{onLeave}}" style="position: relative; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #E4E7DE; background-color: #0D1311; background-image: radial-gradient(rgba(228,231,222,0.07) 1px, transparent 1.2px); background-size: 22px 22px; min-height: 100vh; overflow: hidden">
+
+<svg aria-hidden="true" width="0" height="0" style="position: absolute">
+<defs>
+<filter id="chalk" x="-5%" y="-5%" width="110%" height="110%">
+<feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"></feTurbulence>
+<feDisplacementMap in="SourceGraphic" in2="n" scale="2.4"></feDisplacementMap>
+</filter>
+<filter id="grain">
+<feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"></feTurbulence>
+<feColorMatrix type="saturate" values="0"></feColorMatrix>
+</filter>
+</defs>
+</svg>
+<svg aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.07; pointer-events: none; mix-blend-mode: screen"><rect width="100%" height="100%" filter="url(#grain)"></rect></svg>
+<div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; transition: opacity .35s ease; opacity: {{spotOn}}; background: radial-gradient(460px circle at {{mx}}px {{my}}px, rgba(233,217,139,0.07), transparent 65%)"></div>
+<div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; transition: opacity .35s ease; opacity: {{spotOn}}; background-image: radial-gradient(rgba(233,217,139,0.6) 1.2px, transparent 1.7px); background-size: 22px 22px; -webkit-mask-image: radial-gradient(240px circle at {{mx}}px {{my}}px, #000 0%, rgba(0,0,0,0.35) 45%, transparent 100%); mask-image: radial-gradient(240px circle at {{mx}}px {{my}}px, #000 0%, rgba(0,0,0,0.35) 45%, transparent 100%)"></div>
+
+<div role="group" aria-label="Notable injuries from the 2014/15–2025/26 seasons" style="position: absolute; inset: 0; overflow: hidden">
+<sc-for list="{{moments}}" as="p" hint-placeholder-count="14">
+<figure class="print" style="--r: {{p.rot}}; --s: {{p.scale}}; opacity: {{p.op}}; position: absolute; left: {{p.left}}; top: {{p.top}}; margin: 0; width: 176px; padding: 8px 8px 10px; background: #F1ECDF; border-radius: 2px; box-shadow: 0 8px 18px rgba(0,0,0,0.55)">
+<span aria-hidden="true" style="position: absolute; top: -10px; left: 50%; width: 64px; height: 20px; margin-left: -32px; background: rgba(233,217,139,0.45); transform: rotate({{p.tape}})"></span>
+<div style="position: relative; height: 136px; overflow: hidden; background: #2A2620">
+<img src="{{p.img}}" alt="Photo of {{p.player}}" loading="lazy" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 16%; filter: sepia(0.3) saturate(1.25) contrast(1.08) brightness(1.05)">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: radial-gradient(circle at {{p.flash}} 18%, rgba(255,244,214,0.38), transparent 46%)"></div>
+<div aria-hidden="true" style="position: absolute; inset: 0; box-shadow: inset 0 0 28px rgba(40,20,0,0.65); background: linear-gradient(180deg, rgba(255,170,80,0.10), rgba(120,40,0,0.12))"></div>
+<svg aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.35; mix-blend-mode: overlay"><rect width="100%" height="100%" filter="url(#grain)"></rect></svg>
+<span style="position: absolute; right: 7px; bottom: 5px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #FF9A4A; text-shadow: 0 0 4px rgba(255,120,30,0.9)">{{p.stamp}}</span>
+<span aria-hidden="true" style="position: absolute; left: 6px; top: 6px; width: 34px; height: 24px; box-sizing: border-box; padding: 2px 3px; border-radius: 3px; background: rgba(241,236,223,0.92); box-shadow: 0 1px 3px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center"><img src="{{p.logo}}" alt="" style="max-width: 100%; max-height: 100%; object-fit: contain"></span>
+<span style="position: absolute; right: 6px; top: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; background: rgba(176,40,30,0.88); color: #FFF4EC">{{p.area}}</span>
+<sc-if value="{{p.recur}}" hint-placeholder-val="{{false}}">
+<span style="position: absolute; left: -6px; bottom: 22px; transform: rotate(-8deg); font-family: 'Caveat', cursive; font-size: 18px; font-weight: 700; padding: 0 8px; background: #E9D98B; color: #2A2214; box-shadow: 0 2px 3px rgba(0,0,0,0.4)">again!</span>
+</sc-if>
+</div>
+<figcaption style="display: flex; flex-direction: column; gap: 1px; padding-top: 7px; color: #2A2620">
+<span style="font-family: 'Caveat', cursive; font-size: 19px; font-weight: 700; line-height: 1.05">{{p.player}} — {{p.what}}</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #4E473D">{{p.match}} · {{p.date}}</span>
+<a href="{{p.page}}" title="Photo: {{p.artist}}, {{p.license}}, via Wikimedia Commons" style="margin-top: 2px; font-size: 9px; color: #6B6255; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Photo: {{p.artist}} · {{p.license}}</a>
+</figcaption>
+</figure>
+</sc-for>
+</div>
+
+<header style="position: relative; border-bottom: 1px solid rgba(228,231,222,0.14); background: rgba(5,8,7,0.55)">
+<svg class="pitch" aria-hidden="true" viewBox="0 0 520 140" preserveAspectRatio="xMaxYMid meet" style="position: absolute; right: 24px; top: 0; height: 100%; width: 520px; opacity: 0.22">
+<g fill="none" stroke="#E4E7DE" stroke-width="1.6" filter="url(#chalk)">
+<rect x="10" y="12" width="500" height="116"></rect>
+<line x1="260" y1="12" x2="260" y2="128"></line>
+<circle cx="260" cy="70" r="26"></circle>
+<rect x="10" y="38" width="62" height="64"></rect>
+<rect x="448" y="38" width="62" height="64"></rect>
+<path class="play" d="M300 96 C 340 40, 400 40, 440 66"></path>
+<path class="play" d="M430 58 L 441 67 L 428 71"></path>
+<path d="M120 40 l10 10 M130 40 l-10 10"></path>
+<path d="M160 92 l10 10 M170 92 l-10 10"></path>
+<circle cx="330" cy="46" r="6"></circle>
+</g>
+</svg>
+<div style="position: relative; max-width: 1360px; margin: 0 auto; padding: 22px 32px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: #97A29A">Validation report · printed after each run · sheet 02</div>
+<h1 style="margin: 0; font-size: 22px; font-weight: 600">Run finished in 1 h 46 min — 2 checks need attention</h1>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+<span style="font-family: 'Caveat', cursive; font-size: 20px; color: #E9D98B">post-match analysis</span>
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid rgba(228,231,222,0.3); color: #E4E7DE; text-decoration: none; font-size: 14px; font-weight: 600"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg>Back to run console</a>
+<button type="button" style="display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid #45B87F; background: #45B87F; color: #06110B; font-size: 14px; font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 3px 8px rgba(0,0,0,0.4)"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"></path><path d="M20 4v7h-7"></path></svg>Retry failed (3)</button>
+</div>
+</div>
+</header>
+
+<div style="position: relative; max-width: 1360px; margin: 0 auto; padding: 28px 32px 72px; display: flex; flex-direction: column; gap: 28px">
+
+<section aria-label="Summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px">
+<sc-for list="{{summary}}" as="m" hint-placeholder-count="4">
+<div class="panel" style="position: relative; background: rgba(19,26,23,0.78); border: 1px solid rgba(228,231,222,0.12); border-radius: 12px; padding: 22px 18px 18px; display: flex; flex-direction: column; gap: 8px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 28px rgba(0,0,0,0.35)">
+<span aria-hidden="true" style="position: absolute; top: -9px; left: 22px; width: 18px; height: 18px; border-radius: 50%; background: {{m.magnet}}; box-shadow: 0 3px 4px rgba(0,0,0,0.6), inset 0 -2px 0 rgba(0,0,0,0.25)"></span>
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px">
+<span style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #97A29A"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E9D98B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{m.icon}}"></path></svg>{{m.label}}</span>
+<span style="font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: {{m.bg}}; color: {{m.fg}}">{{m.state}}</span>
+</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 600">{{m.value}}</div>
+<div style="font-size: 13px; color: #97A29A">{{m.sub}}</div>
+</div>
+</sc-for>
+</section>
+
+<section aria-label="League matches per season" class="panel" style="background: rgba(19,26,23,0.78); border: 1px solid rgba(228,231,222,0.12); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 28px rgba(0,0,0,0.35)">
+<div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 8px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; align-items: center; gap: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #97A29A; text-transform: uppercase; letter-spacing: 0.1em"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E9D98B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 9h18M9 4v16"></path></svg><span>01 — Results sheet</span></div>
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">League matches per season</h2>
+<div style="font-size: 13px; color: #97A29A">Found in fd_matches vs. expected. Known exceptions are marked, not fixed.</div>
+</div>
+<div style="font-family: 'Caveat', cursive; font-size: 20px; color: #E9D98B">Ligue 1 19/20 stopped early (COVID) — that's fine</div>
+</div>
+<div style="overflow-x: auto; background: rgba(0,0,0,0.25); border-radius: 8px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.45); padding: 6px 14px">
+<table style="width: 100%; min-width: 920px; border-collapse: collapse; font-size: 13px">
+<thead>
+<tr style="color: #97A29A; font-size: 12px; font-family: 'IBM Plex Mono', monospace">
+<th style="text-align: left; padding: 10px 8px 8px 0; font-family: 'IBM Plex Sans', sans-serif; font-weight: 500">League</th>
+<sc-for list="{{seasons}}" as="se" hint-placeholder-count="12"><th style="padding: 10px 4px 8px; font-weight: 500; text-align: center">{{se}}</th></sc-for>
+</tr>
+</thead>
+<tbody>
+<sc-for list="{{matches}}" as="row" hint-placeholder-count="5">
+<tr style="border-top: 1px dashed rgba(228,231,222,0.12)">
+<th scope="row" style="text-align: left; padding: 8px 8px 8px 0; font-weight: 500; white-space: nowrap">
+<span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" class="mag" style="flex: none; width: 38px; height: 26px; box-sizing: border-box; padding: 2px 3px; border-radius: 4px; background: #F1ECDF; border-bottom: 2px solid {{row.color}}; display: inline-flex; align-items: center; justify-content: center"><img src="{{row.logo}}" alt="" style="max-width: 100%; max-height: 100%; object-fit: contain"></span>{{row.league}}</span>
+</th>
+<sc-for list="{{row.cells}}" as="c" hint-placeholder-count="12">
+<td style="padding: 4px">
+<div class="mag" title="{{c.title}}" style="height: 34px; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 3px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; background: {{c.bg}}; color: {{c.fg}}; font-weight: {{c.weight}}; border: {{c.border}}; box-sizing: border-box">{{c.n}}<sc-if value="{{c.bad}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px">!</span></sc-if></div>
+</td>
+</sc-for>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: #97A29A">
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 14px; border-radius: 3px; background: rgba(228,231,222,0.06); border: 1px dashed rgba(228,231,222,0.25); box-sizing: border-box"></span>Matches expected</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 14px; border-radius: 3px; background: rgba(76,141,219,0.2); border: 1px solid #4C8DDB; box-sizing: border-box"></span>Known exception (~279)</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 14px; border-radius: 3px; background: rgba(224,123,57,0.22); border: 1px solid #E07B39; box-sizing: border-box"></span>Mismatch (!)</span>
+<span>Expected: 380 · Bundesliga 306 · Ligue 1 306 from 2023/24</span>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 18px">
+
+<section aria-label="Failed and suspicious responses" class="panel" style="flex: 999 1 620px; min-width: 0; background: rgba(19,26,23,0.78); border: 1px solid rgba(228,231,222,0.12); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 28px rgba(0,0,0,0.35)">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; align-items: center; gap: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #97A29A; text-transform: uppercase; letter-spacing: 0.1em"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E9D98B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9.5 17h-19z"></path><path d="M12 10v4"></path><path d="M12 17h.01"></path></svg><span>02 — Fouls & stoppages</span></div>
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">Failed and suspicious responses</h2>
+<div style="font-size: 13px; color: #97A29A">Failed after 5 attempts, or small, empty or WAF-challenge bodies. Re-queue deletes the stored file and puts the request back in the queue.</div>
+</div>
+<div style="overflow-x: auto; background: rgba(0,0,0,0.25); border-radius: 8px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.45); padding: 4px 14px">
+<table style="width: 100%; min-width: 680px; border-collapse: collapse; font-size: 13px">
+<thead>
+<tr style="text-align: left; color: #97A29A; font-size: 12px">
+<th style="padding: 10px 8px 8px 0; font-weight: 500">Source</th>
+<th style="padding: 10px 8px 8px; font-weight: 500">url</th>
+<th style="padding: 10px 8px 8px; font-weight: 500">Problem</th>
+<th style="padding: 10px 8px 8px; font-weight: 500">Attempts</th>
+<th style="padding: 10px 0 8px 8px; font-weight: 500"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Action</span></th>
+</tr>
+</thead>
+<tbody>
+<sc-for list="{{failures}}" as="f" hint-placeholder-count="5">
+<tr style="border-top: 1px dashed rgba(228,231,222,0.12)">
+<td style="padding: 10px 8px 10px 0"><span aria-hidden="true" style="width: 44px; height: 24px; box-sizing: border-box; padding: 2px 3px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; background: #F1ECDF"><img src="{{f.logo}}" alt="" style="max-width: 100%; max-height: 100%; object-fit: contain"></span><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Transfermarkt</span></td>
+<td style="padding: 10px 8px; font-family: 'IBM Plex Mono', monospace">{{f.url}}</td>
+<td style="padding: 10px 8px"><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #F3B48A">{{f.code}}</span> <span style="color: #97A29A">{{f.why}}</span></td>
+<td style="padding: 10px 8px; font-family: 'IBM Plex Mono', monospace">{{f.tries}}</td>
+<td style="padding: 6px 0 6px 8px; text-align: right"><button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid rgba(228,231,222,0.3); background: transparent; color: #E4E7DE; font-size: 13px; font-weight: 600"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"></path><path d="M20 4v7h-7"></path></svg>Re-queue</button></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+
+<section aria-label="Clubs per league-season" class="panel" style="flex: 1 1 340px; min-width: 0; background: rgba(19,26,23,0.78); border: 1px solid rgba(228,231,222,0.12); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 28px rgba(0,0,0,0.35)">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; align-items: center; gap: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #97A29A; text-transform: uppercase; letter-spacing: 0.1em"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E9D98B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path></svg><span>03 — Team sheets</span></div>
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">Clubs per league-season (T1)</h2>
+</div>
+<sc-for list="{{clubs}}" as="c" hint-placeholder-count="5">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 10px; border-top: 1px dashed rgba(228,231,222,0.14)">
+<div style="display: flex; align-items: center; gap: 10px">
+<span aria-hidden="true" class="mag" style="flex: none; width: 42px; height: 30px; box-sizing: border-box; padding: 3px 4px; border-radius: 5px; background: #F1ECDF; border-bottom: 3px solid {{c.color}}; display: flex; align-items: center; justify-content: center"><img src="{{c.logo}}" alt="" style="max-width: 100%; max-height: 100%; object-fit: contain"></span>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 14px; font-weight: 500">{{c.league}}</span>
+<span style="font-size: 12px; color: #97A29A">{{c.expect}}</span>
+</div>
+</div>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: #8FE0B4"><span aria-hidden="true" style="width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #8EE0B5, #45B87F 60%, #2E8A5C); box-shadow: 0 2px 2px rgba(0,0,0,0.5)"></span>{{c.found}}</span>
+</div>
+</sc-for>
+</section>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 18px">
+
+<section aria-label="Injuries per season" class="panel" style="flex: 999 1 620px; min-width: 0; background: rgba(19,26,23,0.78); border: 1px solid rgba(228,231,222,0.12); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 28px rgba(0,0,0,0.35)">
+<div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 8px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; align-items: center; gap: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #97A29A; text-transform: uppercase; letter-spacing: 0.1em"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E9D98B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6z"></path></svg><span>04 — Treatment room</span></div>
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">Injury events per season (T3)</h2>
+<div style="font-size: 13px; color: #97A29A">Players with zero injuries are normal: <span style="font-family: 'IBM Plex Mono', monospace; color: #E4E7DE">[COUNT]</span> of 9,640.</div>
+</div>
+<span style="font-size: 12px; padding: 3px 8px; border-radius: 6px; border: 1px dashed rgba(228,231,222,0.3); color: #97A29A">Sample values</span>
+</div>
+<div style="position: relative">
+<div aria-hidden="true" style="position: absolute; left: 41%; top: -2px; display: flex; align-items: flex-end; gap: 2px">
+<span style="font-family: 'Caveat', cursive; font-size: 19px; color: #E9D98B; line-height: 1">COVID-shortened</span>
+<svg width="28" height="30" viewBox="0 0 28 30"><g fill="none" stroke="#E9D98B" stroke-width="2" stroke-linecap="round" filter="url(#chalk)"><path d="M4 6 C 14 6, 20 12, 22 26"></path><path d="M16 21 L 22 27 L 26 20"></path></g></svg>
+</div>
+<div role="img" aria-label="Bar chart of injury events per season, 2014/15 to 2025/26" style="display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 10px; align-items: end; height: 220px; border-bottom: 1px solid rgba(228,231,222,0.3); padding-top: 20px">
+<sc-for list="{{inj}}" as="b" hint-placeholder-count="12">
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 200px">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #97A29A">{{b.n}}</span>
+<div class="bar" title="{{b.n}} injury events" style="width: 100%; height: {{b.h}}; background: {{b.c}}; border-radius: 4px 4px 0 0; box-shadow: inset 0 1px 0 rgba(255,255,255,0.25)"></div>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #97A29A; text-align: center">
+<sc-for list="{{seasons}}" as="se" hint-placeholder-count="12"><span>{{se}}</span></sc-for>
+</div>
+</section>
+
+<section aria-label="Definition of done" class="panel" style="flex: 1 1 340px; min-width: 0; background: rgba(19,26,23,0.78); border: 1px solid rgba(228,231,222,0.12); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 28px rgba(0,0,0,0.35)">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; align-items: center; gap: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #97A29A; text-transform: uppercase; letter-spacing: 0.1em"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E9D98B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg><span>05 — Full-time whistle</span></div>
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">Definition of done</h2>
+</div>
+<sc-for list="{{dod}}" as="d" hint-placeholder-count="5">
+<div style="display: flex; gap: 12px; align-items: flex-start; padding-top: 10px; border-top: 1px dashed rgba(228,231,222,0.14)">
+<span aria-hidden="true" class="mag" style="flex: none; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: {{d.magnet}}; color: #06110B; box-shadow: 0 3px 4px rgba(0,0,0,0.6), inset 0 -2px 0 rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.3)">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="{{d.icon}}"></path></svg>
+</span>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 14px; font-weight: 500">{{d.title}}</span>
+<span style="font-size: 12px; color: #97A29A">{{d.status}}</span>
+</div>
+</div>
+</sc-for>
+<div style="margin-top: 4px; background: rgba(0,0,0,0.32); box-shadow: inset 0 2px 6px rgba(0,0,0,0.5); border-radius: 8px; padding: 12px; font-size: 13px; color: #97A29A">Documented, not fixed: Serie A shot counts include blocked shots from 2018/19.</div>
+</section>
+</div>
+
+<footer aria-label="Photo credits" class="panel" style="background: rgba(19,26,23,0.86); border: 1px solid rgba(228,231,222,0.12); border-radius: 12px; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; gap: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #97A29A; text-transform: uppercase; letter-spacing: 0.1em"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E9D98B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M8 7l1.5-3h5L16 7"></path><circle cx="12" cy="13.5" r="3.5"></circle></svg><span>Photo credits — Wikimedia Commons</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12px; color: #97A29A">
+<sc-for list="{{credits}}" as="c" hint-placeholder-count="14">
+<a href="{{c.page}}" style="color: #C9CFC4; text-decoration: underline; text-decoration-color: rgba(201,207,196,0.35)">{{c.player}}: {{c.artist}} ({{c.license}})</a>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #97A29A">
+<span>Logos (public domain, Commons):</span>
+<sc-for list="{{logoCredits}}" as="c" hint-placeholder-count="6">
+<a href="{{c.page}}" style="color: #C9CFC4; text-decoration: underline; text-decoration-color: rgba(201,207,196,0.35)">{{c.name}}</a>
+</sc-for>
+</div>
+<div style="font-size: 12px; color: #97A29A">Player portraits, not photos of the injuries themselves, toned to look like film prints. CC BY-SA images are shared under the same licence. Logos and names are trademarks of their owners, used here only to identify them in a non-commercial academic project.</div>
+</footer>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mx: 0, my: 0, hot: false };
+    this.onMove = (e) => {
+      const r = e.currentTarget.getBoundingClientRect();
+      this._w = r.width;
+      this._pt = { x: Math.round(e.clientX - r.left), y: Math.round(e.clientY - r.top) };
+      if (this._raf) return;
+      this._raf = requestAnimationFrame(() => {
+        this._raf = null;
+        this.setState({ mx: this._pt.x, my: this._pt.y, hot: true });
+      });
+    };
+    this.onLeave = () => this.setState({ hot: false });
+  }
+  componentWillUnmount() {
+    if (this._raf) cancelAnimationFrame(this._raf);
+  }
+  renderVals() {
+    const seasons = ['14/15','15/16','16/17','17/18','18/19','19/20','20/21','21/22','22/23','23/24','24/25','25/26'];
+    // Logos: public-domain (PD-textlogo) files from Wikimedia Commons, used only to label each league.
+    const LG = [
+      { name: 'Premier League', color: '#B7A2F0', logo: '/_blob/960321996de7f75604b84004779b4cf8' },
+      { name: 'La Liga', color: '#F0A27E', logo: '/_blob/f2af1593b2cca78e5eaa2d7e2f540955' },
+      { name: 'Serie A', color: '#7EC3F0', logo: '/_blob/39448aa6095b3e32a4d0012af9600c87' },
+      { name: 'Bundesliga', color: '#F08A92', logo: '/_blob/14feb8bff576cc2770918178fdf626f9' },
+      { name: 'Ligue 1', color: '#CFDC7A', logo: '/_blob/d555ed1da5acb258f70513cefafc4c7b' }
+    ];
+    const TM_LOGO = '/_blob/77585013580ae4e86404b6c8abc7037b';
+    const MG = {
+      done: 'radial-gradient(circle at 35% 30%, #8EE0B5, #45B87F 60%, #2E8A5C)',
+      fail: 'radial-gradient(circle at 35% 30%, #F6B88C, #E07B39 60%, #B35A22)'
+    };
+
+    const expected = (li, si) => li === 3 ? 306 : li === 4 ? (si === 5 ? 279 : si >= 9 ? 306 : 380) : 380;
+    const found = (li, si) => (li === 2 && si === 3) ? 379 : expected(li, si);
+    const matches = LG.map((lg, li) => ({
+      league: lg.name, logo: lg.logo, color: lg.color,
+      cells: seasons.map((se, si) => {
+        const n = found(li, si), e = expected(li, si);
+        const known = li === 4 && si === 5;
+        const bad = n !== e;
+        return {
+          n: String(n), bad,
+          title: lg.name + ' ' + se + ': ' + n + ' found, ' + e + ' expected' + (known ? ' (COVID, known exception)' : ''),
+          bg: bad ? 'rgba(224,123,57,0.22)' : known ? 'rgba(76,141,219,0.2)' : 'rgba(228,231,222,0.05)',
+          border: bad ? '1px solid #E07B39' : known ? '1px solid #4C8DDB' : '1px dashed rgba(228,231,222,0.16)',
+          fg: bad ? '#F3B48A' : known ? '#A6C8F2' : '#E4E7DE',
+          weight: bad || known ? '700' : '400'
+        };
+      })
+    }));
+
+    const ok = { bg: 'rgba(69,184,127,0.16)', fg: '#8FE0B4', magnet: MG.done };
+    const warn = { bg: 'rgba(224,123,57,0.18)', fg: '#F3B48A', magnet: MG.fail };
+    const summary = [
+      Object.assign({ label: 'Football-Data CSVs', value: '60 / 60', sub: 'Union of columns at parse time', state: 'Pass', icon: 'M6 3h9l4 4v14H6z M14 3v5h5 M9 13h7 M9 17h7' }, ok),
+      Object.assign({ label: 'Understat league-seasons', value: '60 / 60', sub: 'Embedded JSON payloads', state: 'Pass', icon: 'M8 4c-2 0-3 1-3 3v2c0 1-1 2-2 3 1 1 2 2 2 3v2c0 2 1 3 3 3 M16 4c2 0 3 1 3 3v2c0 1 1 2 2 3-1 1-2 2-2 3v2c0 2-1 3-3 3' }, ok),
+      Object.assign({ label: 'Transfermarkt requests', value: '20,861', sub: '3 failed · 2 suspicious bodies', state: 'Attention', icon: 'M12 3l9.5 17h-19z M12 10v4 M12 17h.01' }, warn),
+      Object.assign({ label: 'Parsed tables', value: '8 / 8', sub: 'Original values + source_file', state: 'Pass', icon: 'M3 5h18v14H3z M3 10h18 M9 10v9' }, ok)
+    ];
+
+    const failures = [
+      { url: 'tmapi…/player/88755/injuries?page=1', code: '429', why: 'WAF challenge after 5 tries', tries: '5' },
+      { url: 'tmapi…/player/241641/performance', code: '503', why: 'Upstream error', tries: '5' },
+      { url: 'tmapi…/club/1041/players?season_id=2016', code: '403', why: 'x-amzn-waf-action: block', tries: '5' },
+      { url: 'tmapi…/player/502670/injuries?page=3', code: '200', why: 'Body 2 bytes — likely empty', tries: '1' },
+      { url: 'tmapi…/player/76277/matches?season_id=2022', code: '200', why: 'Challenge HTML instead of JSON', tries: '1' }
+    ].map(f => Object.assign(f, { logo: TM_LOGO }));
+
+    const expects = ['20 every season', '20 every season', '20 every season', '18 every season', '20, then 18 from 2023/24'];
+    const clubs = LG.map((lg, i) => ({ league: lg.name, logo: lg.logo, color: lg.color, expect: expects[i], found: '12 / 12' }));
+
+    const vals = [1820, 1905, 1960, 2010, 2085, 1790, 2240, 2310, 2280, 2350, 2400, 2190];
+    const inj = vals.map((v, i) => ({ n: v.toLocaleString('en-US'), h: Math.round(v / 2500 * 176) + 'px', c: i === 5 ? '#E07B39' : '#4C8DDB' }));
+
+    const check = 'M5 12l5 5L19 7', dash = 'M6 12h12';
+    const dod = [
+      { title: '60 Football-Data CSVs and 60 Understat league-seasons saved raw', status: 'Done', magnet: MG.done, icon: check },
+      { title: 'Transfermarkt T1–T5 complete, manifest clean', status: '5 entries to re-queue', magnet: MG.fail, icon: dash },
+      { title: '8 tables parsed with original values', status: 'Done', magnet: MG.done, icon: check },
+      { title: 'Validation report passes, exceptions documented', status: 'Serie A 2017/18 has 379 of 380 matches', magnet: MG.fail, icon: dash },
+      { title: 'README: endpoint behaviour, concurrency, run time', status: 'Draft started from smoke-test findings', magnet: MG.fail, icon: dash }
+    ];
+
+    // Same injury prints as the run console (one per player), scattered with a different seed.
+    const MOMENTS = [
+      { lg: 0, player: 'Van Dijk', what: 'ACL after Pickford tackle', area: 'Knee', match: 'Everton 2–2 Liverpool', date: '17 Oct 2020', stamp: "'20 10 17", recur: false },
+      { lg: 0, player: 'Elliott', what: 'fracture-dislocated ankle', area: 'Ankle', match: 'Leeds 0–3 Liverpool', date: '12 Sep 2021', stamp: "'21 09 12", recur: false },
+      { lg: 0, player: 'De Bruyne', what: 'hamstring tear, surgery', area: 'Hamstring', match: 'Burnley 0–3 Man City', date: '11 Aug 2023', stamp: "'23 08 11", recur: true },
+      { lg: 0, player: 'Timber', what: 'ACL on his league debut', area: 'Knee', match: 'Arsenal 2–1 Forest', date: '12 Aug 2023', stamp: "'23 08 12", recur: false },
+      { lg: 1, player: 'Dembélé', what: 'hamstring tendon rupture', area: 'Hamstring', match: 'Getafe 1–2 Barcelona', date: '16 Sep 2017', stamp: "'17 09 16", recur: true },
+      { lg: 1, player: 'Ansu Fati', what: 'meniscus tear', area: 'Knee', match: 'Barcelona 5–2 Betis', date: '7 Nov 2020', stamp: "'20 11 07", recur: true },
+      { lg: 1, player: 'Militão', what: 'two ACLs in 15 months', area: 'Knee', match: 'v Athletic, then v Osasuna', date: '12 Aug 2023 & 9 Nov 2024', stamp: "'24 11 09", recur: true },
+      { lg: 1, player: 'Alaba', what: 'ACL', area: 'Knee', match: 'Real Madrid 4–1 Villarreal', date: '17 Dec 2023', stamp: "'23 12 17", recur: false },
+      { lg: 1, player: 'Carvajal', what: 'ACL', area: 'Knee', match: 'Villarreal 0–2 Real Madrid', date: '5 Oct 2024', stamp: "'24 10 05", recur: false },
+      { lg: 2, player: 'Zaniolo', what: 'ACL, a second followed that year', area: 'Knee', match: 'Roma 1–2 Juventus', date: '12 Jan 2020', stamp: "'20 01 12", recur: true },
+      { lg: 2, player: 'Milik', what: 'second ACL in a year', area: 'Knee', match: 'SPAL 2–3 Napoli', date: '23 Sep 2017', stamp: "'17 09 23", recur: true },
+      { lg: 2, player: 'Chiesa', what: 'ACL', area: 'Knee', match: 'Roma 3–4 Juventus', date: '9 Jan 2022', stamp: "'22 01 09", recur: false },
+      { lg: 3, player: 'Wirtz', what: 'ACL', area: 'Knee', match: 'Leverkusen 0–1 Köln', date: '13 Mar 2022', stamp: "'22 03 13", recur: false },
+      { lg: 4, player: 'Neymar', what: 'metatarsal, later ankle surgery', area: 'Foot · Ankle', match: 'v Marseille, then v Lille', date: '25 Feb 2018 & 19 Feb 2023', stamp: "'23 02 19", recur: true }
+    ];
+    const CW = 'https://commons.wikimedia.org/wiki/File:';
+    const PHOTO = {
+      'Van Dijk': ['/_blob/ca7d991218dd388fb26ddb3ba23bc482', 'Ailura', 'CC BY-SA 3.0 AT', '20160604_AUT_NED_8876_(cropped).jpg'],
+      'Elliott': ['/_blob/e0182480352774d275eb46fdb358b2e0', 'crop by Indopug', 'CC BY-SA 4.0', 'Harvey_Elliott_in_2022.jpg'],
+      'De Bruyne': ['/_blob/2d5371cf28c9ea2c0706875ff7ba59ed', 'Bryan Berlin', 'CC BY-SA 4.0', 'Kevin_De_Bruyne_USMNT_v_Belgium_Mar_28_2026-64_(cropped).jpg'],
+      'Timber': ['/_blob/10cb23af2603da4284ab502fcc88589d', 'Carlo Bruil Fotografie', 'CC BY 2.0', 'JURRIEN_TIMBER.jpg'],
+      'Dembélé': ['/_blob/79fbfe305577570e1fdae29cf0f60a4d', 'Bryan Berlin', 'CC BY-SA 4.0', 'Ousmane_Dembele_France_v_Senegal_16_June_2026-341_(cropped)_2.jpg'],
+      'Ansu Fati': ['/_blob/c21c51bc3ce7a8dba770c8504e8040af', 'Olga Shcherbytska', 'CC BY-SA 4.0', '%D0%9C%D0%B0%D1%82%D1%87_%C2%AB%D0%94%D0%B8%D0%BD%D0%B0%D0%BC%D0%BE%C2%BB_-_%C2%AB%D0%91%D0%B0%D1%80%D1%81%D0%B5%D0%BB%D0%BE%D0%BD%D0%B0%C2%BB_0-1._2_%D0%BB%D0%B8%D1%81%D1%82%D0%BE%D0%BF%D0%B0%D0%B4%D0%B0_2021_%D1%80%D0%BE%D0%BA%D1%83_%E2%80%94_1289339_(cropped).jpg'],
+      'Militão': ['/_blob/a07f784a649f22de2f51cbbc97ec5ac7', 'Werner100359', 'CC BY-SA 4.0', '%C3%89der_Milit%C3%A3o_Real_Madrid_2019.jpg'],
+      'Alaba': ['/_blob/3e64334b8e44524ee88e5456fe89a102', 'Granada', 'CC BY-SA 4.0', '20180610_FIFA_Friendly_Match_Austria_vs._Brazil_David_Alaba_850_1632.jpg'],
+      'Carvajal': ['/_blob/68621829481ccee6e9fb80aac8e17d69', 'Rolandhino1', 'CC BY-SA 4.0', 'UEFA_EURO_qualifiers_Sweden_vs_Spain_20191015_Dani_Carvajal_10_(cropped).jpg'],
+      'Zaniolo': ['/_blob/675b1f141f7762a4e21ba9aa85d07d41', 'Joe K.', 'CC BY-SA 4.0', 'Nicol%C3%B2_Zaniolo_con_l%27Italia_U19.jpg'],
+      'Milik': ['/_blob/a52e379dd59227c5f1ff61d6400dc812', 'Supporterhéninois', 'CC0', 'Lens_-_Marseille_(03-02-2021)_44.jpg'],
+      'Chiesa': ['/_blob/c5584dcd594a8a4a965a6ae970c0b866', 'Kirill Venediktov', 'CC BY-SA 3.0', 'Federico_Chiesa_vs_Zenit_2021-10-20_(cropped2).jpg'],
+      'Wirtz': ['/_blob/87625c75693e9fd0540928ab6428a1df', 'Bryan Berlin', 'CC BY-SA 4.0', 'Florian_Wirtz_Ecuador_v_Germany_25_June_2026-181_(cropped).jpg'],
+      'Neymar': ['/_blob/9fcc6155ed140aace6ae6bfaaa1a933e', 'Antoine Dellenbach', 'CC BY-SA 2.0', 'Neymar_PSG.jpg']
+    };
+    const photoOf = (name) => {
+      const p = PHOTO[name];
+      return { img: p[0], artist: p[1], license: p[2], page: CW + p[3] };
+    };
+    const credits = Object.keys(PHOTO).map(name => Object.assign({ player: name }, photoOf(name)));
+    const logoCredits = [
+      ['Premier League', 'Premier_League.svg'], ['LaLiga', 'LaLiga_logo_(2023).svg'], ['Serie A', 'Logo_Serie_A_TIM_2018-2019.png'],
+      ['Bundesliga', 'Bundesliga_Wordmark_(2010-2017).svg'], ['Ligue 1', 'Ligue_1_2024_Logo.png'], ['Transfermarkt', 'Transfermarkt_logo.svg']
+    ].map(([name, f]) => ({ name, page: CW + f }));
+    let seed = 31;
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    const COLS = 4, ROW_H = 420, N = MOMENTS.length;
+    const order = MOMENTS.map((m, i) => i).sort((a, b) => ((a * 5) % N) - ((b * 5) % N));
+    const moments = order.map((idx, k) => {
+      const m = MOMENTS[idx];
+      const col = k % COLS, row = Math.floor(k / COLS);
+      const offset = row % 2 ? 0 : 12;
+      const x = Math.min(92, Math.max(-3, col * 25 + offset + rnd() * 14 - 4));
+      const y = 200 + row * ROW_H + Math.round(rnd() * 160);
+      return Object.assign({}, m, photoOf(m.player), {
+        _x: x, _y: y,
+        logo: LG[m.lg].logo,
+        left: 'calc(' + x.toFixed(1) + '% - 40px)',
+        top: y + 'px',
+        rot: (rnd() * 26 - 13).toFixed(1) + 'deg',
+        tape: (rnd() * 10 - 5).toFixed(1) + 'deg',
+        scale: (0.86 + rnd() * 0.24).toFixed(2),
+        flash: Math.round(20 + rnd() * 60) + '%'
+      });
+    });
+
+    // Prints stay hidden (faint ghost) until the cursor comes near one or hovers it.
+    const vw = this._w || 1440;
+    moments.forEach(pr => {
+      const cx = pr._x / 100 * vw - 40 + 88, cy = pr._y + 110;
+      const near = this.state.hot && Math.hypot(this.state.mx - cx, this.state.my - cy) < 190;
+      pr.op = near ? '1' : '0.05';
+    });
+    return {
+      seasons, matches, summary, failures, clubs, inj, dod, moments, credits, logoCredits,
+      onMove: this.onMove, onLeave: this.onLeave,
+      mx: this.state.mx, my: this.state.my, spotOn: this.state.hot ? '1' : '0'
+    };
+  }
+}
+</script>
+</body>
+</html>

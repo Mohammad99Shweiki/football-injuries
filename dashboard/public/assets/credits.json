@@ -1,0 +1,141 @@
+{
+  "note": "All files from Wikimedia Commons. Keep the credits footer. CC BY-SA files are shared under the same licence. Logos are public domain (PD-textlogo) but remain trademarks; use only to identify the league/site.",
+  "photos": [
+    {
+      "file": "photos/vandijk.jpg",
+      "player": "Virgil van Dijk",
+      "artist": "Ailura",
+      "license": "CC BY-SA 3.0 at",
+      "source": "https://commons.wikimedia.org/wiki/File:20160604_AUT_NED_8876_(cropped).jpg"
+    },
+    {
+      "file": "photos/elliott.jpg",
+      "player": "Harvey Elliott",
+      "artist": "crop by Indopug",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Harvey_Elliott_in_2022.jpg"
+    },
+    {
+      "file": "photos/debruyne.jpg",
+      "player": "Kevin De Bruyne",
+      "artist": "Bryan Berlin",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Kevin_De_Bruyne_USMNT_v_Belgium_Mar_28_2026-64_(cropped).jpg"
+    },
+    {
+      "file": "photos/timber.jpg",
+      "player": "Jurriën Timber",
+      "artist": "Carlo Bruil Fotografie",
+      "license": "CC BY 2.0",
+      "source": "https://commons.wikimedia.org/wiki/File:JURRIEN_TIMBER.jpg"
+    },
+    {
+      "file": "photos/dembele.jpg",
+      "player": "Ousmane Dembélé",
+      "artist": "Bryan Berlin",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Ousmane_Dembele_France_v_Senegal_16_June_2026-341_(cropped)_2.jpg"
+    },
+    {
+      "file": "photos/fati.jpg",
+      "player": "Ansu Fati",
+      "artist": "Olga Shcherbytska",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:%D0%9C%D0%B0%D1%82%D1%87_%C2%AB%D0%94%D0%B8%D0%BD%D0%B0%D0%BC%D0%BE%C2%BB_-_%C2%AB%D0%91%D0%B0%D1%80%D1%81%D0%B5%D0%BB%D0%BE%D0%BD%D0%B0%C2%BB_0-1._2_%D0%BB%D0%B8%D1%81%D1%82%D0%BE%D0%BF%D0%B0%D0%B4%D0%B0_2021_%D1%80%D0%BE%D0%BA%D1%83_%E2%80%94_1289339_(cropped).jpg"
+    },
+    {
+      "file": "photos/alaba.jpg",
+      "player": "David Alaba",
+      "artist": "Granada",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:20180610_FIFA_Friendly_Match_Austria_vs._Brazil_David_Alaba_850_1632.jpg"
+    },
+    {
+      "file": "photos/carvajal.jpg",
+      "player": "Dani Carvajal",
+      "artist": "Rolandhino1",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:UEFA_EURO_qualifiers_Sweden_vs_Spain_20191015_Dani_Carvajal_10_(cropped).jpg"
+    },
+    {
+      "file": "photos/zaniolo.jpg",
+      "player": "Nicolò Zaniolo",
+      "artist": "Joe K.",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Nicol%C3%B2_Zaniolo_con_l%27Italia_U19.jpg"
+    },
+    {
+      "file": "photos/milik.jpg",
+      "player": "Arkadiusz Milik",
+      "artist": "Supporterhéninois",
+      "license": "CC0",
+      "source": "https://commons.wikimedia.org/wiki/File:Lens_-_Marseille_(03-02-2021)_44.jpg"
+    },
+    {
+      "file": "photos/chiesa.jpg",
+      "player": "Federico Chiesa",
+      "artist": "Kirill Venediktov",
+      "license": "CC BY-SA 3.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Federico_Chiesa_vs_Zenit_2021-10-20_(cropped2).jpg"
+    },
+    {
+      "file": "photos/militao.jpg",
+      "player": "Éder Militão",
+      "artist": "Werner100359",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:%C3%89der_Milit%C3%A3o_Real_Madrid_2019.jpg"
+    },
+    {
+      "file": "photos/neymar.jpg",
+      "player": "Neymar",
+      "artist": "Antoine Dellenbach",
+      "license": "CC BY-SA 2.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Neymar_PSG.jpg"
+    },
+    {
+      "file": "photos/wirtz.jpg",
+      "player": "Florian Wirtz",
+      "artist": "Bryan Berlin",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Florian_Wirtz_Ecuador_v_Germany_25_June_2026-181_(cropped).jpg"
+    }
+  ],
+  "logos": [
+    {
+      "file": "logos/pl.png",
+      "name": "Premier League",
+      "license": "Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Premier_League.svg"
+    },
+    {
+      "file": "logos/laliga.png",
+      "name": "LaLiga",
+      "license": "Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:LaLiga_logo_(2023).svg"
+    },
+    {
+      "file": "logos/seriea.png",
+      "name": "Serie A",
+      "license": "Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Logo_Serie_A_TIM_2018-2019.png"
+    },
+    {
+      "file": "logos/bundesliga.png",
+      "name": "Bundesliga",
+      "license": "Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Bundesliga_Wordmark_(2010-2017).svg"
+    },
+    {
+      "file": "logos/ligue1.png",
+      "name": "Ligue 1",
+      "license": "Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Ligue_1_2024_Logo.png"
+    },
+    {
+      "file": "logos/transfermarkt.png",
+      "name": "Transfermarkt",
+      "license": "Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Transfermarkt_logo.svg"
+    }
+  ]
+}
