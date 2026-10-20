@@ -9,12 +9,18 @@ Flags: --dry-run, --limit N, --leagues ..., --seasons ..., --players N (see READ
 """
 
 import argparse
+import signal
 import time
 
 import pipeline
 import serve
 from collect.common import Manifest, RunContext, Selection, add_selection_args
 from collect.status import RunStatus
+
+
+def stop_on_sigterm(signum: int, frame: object) -> None:
+    """`docker stop` sends SIGTERM: treat it like Ctrl+C. Stored responses are written atomically, nothing is lost."""
+    raise KeyboardInterrupt
 
 
 def main() -> None:
@@ -31,6 +37,7 @@ def main() -> None:
         pipeline.run(RunContext(Manifest()), plan)
         return
 
+    signal.signal(signal.SIGTERM, stop_on_sigterm)
     controller = serve.RunController(RunStatus())
     serve.serve(controller)
     print(f"Dashboard: {serve.url()}", flush=True)

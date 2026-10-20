@@ -1,0 +1,10 @@
+# docker compose up --build   ->  dashboard at http://127.0.0.1:8765
+services:
+  app:
+    build: .
+    image: football-injuries
+    ports:
+      - "127.0.0.1:8765:8765" # localhost only, as the dashboard has no auth
+    volumes:
+      - ./data:/app/data # collected data stays on the host and survives rebuilds
+    stop_grace_period: 15s

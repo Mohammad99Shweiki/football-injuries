@@ -1,0 +1,12 @@
+# Only source goes into the build context; collected data is mounted at run time.
+.git
+.venv
+**/__pycache__
+data
+manifest.csv
+dashboard/node_modules
+dashboard/dist
+ui-handoff/design
+ui-handoff/assets
+*.part
+.DS_Store

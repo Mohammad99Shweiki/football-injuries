@@ -1,12 +1,14 @@
 """Static project configuration: paths, leagues, seasons and the expected counts used by validation."""
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = ROOT / "data" / "raw"
 TABLES_DIR = ROOT / "data" / "tables"
-MANIFEST_PATH = ROOT / "manifest.csv"
+# Overridable so the Docker image can keep it on the mounted data volume.
+MANIFEST_PATH = Path(os.environ.get("MANIFEST_PATH", ROOT / "manifest.csv"))
 
 USER_AGENT = "football-injuries-research/0.1 (academic coursework)"
 

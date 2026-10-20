@@ -13,6 +13,21 @@ brew install uv          # or see https://docs.astral.sh/uv/
 uv sync                  # Python 3.13 + dependencies (transfermarkt-api pinned to 5.0.0)
 ```
 
+## Docker (easiest)
+
+Needs only Docker Desktop. One image (~176 MB, Python 3.13 on Alpine) holds the collectors, parsers and the built dashboard.
+
+```sh
+docker compose up --build -d                  # dashboard at http://127.0.0.1:8765
+docker compose logs -f                        # collector logs
+docker compose stop                           # stop; progress is kept, `up -d` continues
+docker compose run --rm app --headless --limit 2   # terminal-only run, any run_all.py flags
+```
+
+- **Data:** `./data` is mounted into the container. Raw files, tables and run state stay on your machine and survive rebuilds. Local and Docker runs share them.
+- **Manifest:** in Docker the manifest is written to `data/manifest.csv` (`MANIFEST_PATH`); local runs use `./manifest.csv`.
+- **Localhost only:** the port is published to `127.0.0.1` only, because the dashboard has no login.
+
 ## Usage
 
 ```sh

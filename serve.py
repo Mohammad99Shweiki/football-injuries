@@ -10,6 +10,7 @@ No auth: it never listens beyond localhost.
 """
 
 import json
+import os
 import threading
 import traceback
 from http import HTTPStatus
@@ -23,7 +24,9 @@ from collect.config import ROOT
 from collect.status import RunStatus, StatusFlusher
 from validate import build_report
 
-HOST, PORT = "127.0.0.1", 8765
+# 127.0.0.1 by default. The Docker image sets 0.0.0.0 and publishes the port to the host's 127.0.0.1 only.
+HOST = os.environ.get("DASHBOARD_HOST", "127.0.0.1")
+PORT = int(os.environ.get("DASHBOARD_PORT", "8765"))
 DIST = ROOT / "dashboard" / "dist"
 
 
@@ -172,7 +175,7 @@ def serve(controller: RunController) -> ThreadingHTTPServer:
 
 
 def url() -> str:
-    return f"http://{HOST}:{PORT}"
+    return f"http://{'127.0.0.1' if HOST == '0.0.0.0' else HOST}:{PORT}"
 
 
 if __name__ == "__main__":
