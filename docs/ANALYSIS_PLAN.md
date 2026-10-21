@@ -49,9 +49,10 @@ Use one row per team-season (~1,150). Use per-match rates.
 |---|---|---|
 | Pressing | PPDA (Σatt/Σdef), opponent PPDA | Understat |
 | Attacking approach | deep completions for and against per match, npxG per match, npxGA per match | Understat |
-| Shooting volume | shots on target for and against per match (avoid total shots because of the Serie A definition change) | Football-Data |
 | Physical intensity | fouls committed and suffered per match, cards per match (yellow + 2×red), corners | Football-Data |
-| Workload | total matches in all competitions, European matches, mean rest days, share of matches with < 4 days rest, rest-day variability | TM fixtures |
+| Workload | total matches in all competitions, European matches, mean rest days, share of matches with < 4 days rest, rest-day variability (gaps > 21 days left out) | TM fixtures |
+
+Shooting volume (shots on target) was dropped on 2026-10-21; `rest_mean` was dropped as redundant (see DECISIONS).
 | Rotation | squad minutes concentration (share of minutes by the top 14 players, or HHI) | TM player stats |
 
 - Check correlations, drop redundant features (|r| > 0.9), and document the final feature set.
