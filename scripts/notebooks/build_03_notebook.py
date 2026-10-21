@@ -53,7 +53,7 @@ and Football-Data's Serie A values are inflated in 2018-19 to 2020-21 (see `DECI
 8. How features differ by season and league
 9. Correlations and redundant features
 10. Standardise and save, with roles
-11. Style dimensions: one equal-weight score per way of playing
+11. Phase-of-play dimensions: how a team attacks and how it defends
 12. Report
 
 **Inputs:** `data/tables/` (`us_team_matches`, `us_team_stats`, `fd_matches`, `tm_fixtures`),
@@ -380,46 +380,47 @@ assert np.allclose(z.mean(), 0) and np.allclose(z.std(ddof=0), 1)
 roles.groupby(["role", "status"]).feature.apply(", ".join).to_frame()
 ''')
 
-# ---- step 11 (style dimensions)
+# ---- step 11 (phase-of-play dimensions)
 md('''
-## Step 11. Style dimensions
+## Step 11. Phase-of-play dimensions
 
-Several style features measure the same thing: opponent PPDA, deep completions for and against, corners for and
-against and the slow-attack share all describe **dominance** of the ball. In the distance K-means uses, that one
-dimension would count six times, and the clusters would mostly sort teams by strength. So each **way of playing**
-becomes one score, the mean of the signed z-scores of its features, re-standardised; every style feature is used
-exactly once (see `DECISIONS.md`).
+Football analysis describes a style **per phase of play**: how a team attacks (in possession) and how it defends
+(out of possession) (Fernandez-Navarro et al. 2016; Demir et al. 2025). The style features become four dimensions per
+phase; each is the mean of its features' signed z-scores, re-standardised, so every dimension weighs the same in
+Phase 4's clustering (one per phase). Formation (back-three share) is a **structure**, not a style: a back three is
+used by possession teams and by low blocks alike, so it is not clustered and is reported per style instead. Fouls
+suffered describe the opponent more than the team and are left out.
 
-| Dimension | Features (sign) |
-|---|---|
-| dominance | opponent PPDA (+), deep completions (+), deep completions against (−), corners for (+), corners against (−), slow-attack share (+) |
-| pressing | PPDA (−): fewer passes allowed per defensive action = more pressing |
-| counter | fast-attack share (+) |
-| high line | conceded fast-attack share (+) |
-| physical | fouls committed (+), fouls suffered (+), cards (+) |
-| set pieces | set-piece share (+) |
-| long shots | outside-box shot share (+) |
-| back three | back-three minutes share (+) |
+| Phase | Dimension | Features (sign) | Literature term |
+|---|---|---|---|
+| attack | possession | opponent PPDA (+), deep completions (+), corners for (+) | possession vs direct |
+| attack | patience | slow-attack share (+) | slow progression, elaborate build-up |
+| attack | verticality | fast-attack share (+) | fast progression, counter-attack |
+| attack | directness | outside-box shot share (+), set-piece share (+) | direct play, set plays |
+| defence | press | PPDA (−) | high vs low pressure |
+| defence | high line | conceded fast-attack share (+) | line height, exposure to counters |
+| defence | territory conceded | deep completions against (+), corners against (+) | deep block vs defending forward |
+| defence | aggression | fouls (+), cards (+) | duel-based, physical defending |
 ''')
 code('''
-DIMENSIONS = {
-    "dominance": {"opp_ppda": 1, "deep_pm": 1, "deep_against_pm": -1, "corners_for_pm": 1, "corners_against_pm": -1,
-                  "slow_attack_share": 1},
-    "pressing": {"ppda": -1},
-    "counter": {"fast_attack_share": 1},
-    "high_line": {"conceded_fast_share": 1},
-    "physical": {"fouls_pm": 1, "fouled_pm": 1, "cards_pm": 1},
-    "set_pieces": {"set_piece_share": 1},
-    "long_shots": {"outside_box_share": 1},
-    "back_three": {"back_three_share": 1},
+PHASE_DIMS = {
+    "attack": {"possession": {"opp_ppda": 1, "deep_pm": 1, "corners_for_pm": 1}, "patience": {"slow_attack_share": 1},
+               "verticality": {"fast_attack_share": 1}, "directness": {"outside_box_share": 1, "set_piece_share": 1}},
+    "defence": {"press": {"ppda": -1}, "high_line": {"conceded_fast_share": 1},
+                "territory_conceded": {"deep_against_pm": 1, "corners_against_pm": 1}, "aggression": {"fouls_pm": 1, "cards_pm": 1}},
 }
-used = [f for parts in DIMENSIONS.values() for f in parts]
-assert sorted(used) == sorted(STYLE) and len(used) == len(set(used)), "every style feature exactly once"
-dims = pd.DataFrame({name: sum(sign * z[f] for f, sign in parts.items()) / len(parts) for name, parts in DIMENSIONS.items()})
-dims = (dims - dims.mean()) / dims.std(ddof=0)
-style_dims = features[["league", "season", "season_key", "tm_club_id", "club"]].join(dims)
+NOT_CLUSTERED = {"back_three_share": "structure (formation), reported per style", "fouled_pm": "describes the opponent"}
+used = [f for dims_ in PHASE_DIMS.values() for parts in dims_.values() for f in parts]
+assert sorted(used + list(NOT_CLUSTERED)) == sorted(STYLE) and len(used) == len(set(used)), "every style feature placed once"
+frames = []
+for phase, dims_ in PHASE_DIMS.items():
+    d = pd.DataFrame({f"{phase}_{name}": sum(sign * z[f] for f, sign in parts.items()) / len(parts) for name, parts in dims_.items()})
+    frames.append((d - d.mean()) / d.std(ddof=0))
+dims = pd.concat(frames, axis=1)
+style_dims = features[["league", "season", "season_key", "tm_club_id", "club", "back_three_share"]].join(dims)
 style_dims.to_parquet(OUT_DIR / "style_dimensions.parquet", index=False)
-log("3.11", f"{len(STYLE)} style features combined into {len(DIMENSIONS)} equal-weight style dimensions", len(features), len(style_dims))
+log("3.11", f"{len(used)} style features combined into 4 attacking + 4 defensive dimensions (back-three share kept as structure)",
+    len(features), len(style_dims))
 dim_corr = dims.corr().round(2)
 dim_corr
 ''')
@@ -442,7 +443,7 @@ text = [
     "",
     f"- **{len(out):,} team-seasons, {len(ALL)} features, none missing.** League match counts agree between Understat and Football-Data.",
     f"- **Redundant pairs (|r| > {REDUNDANT_R}):** {len(redundant)}" + (f"; dropped {', '.join(DROP)}." if DROP else "."),
-    f"- **{len(STYLE)} style features** form **{len(DIMENSIONS)} equal-weight style dimensions**, which are clustered; "
+    f"- **{len(used)} style features** form **4 attacking and 4 defensive dimensions**, clustered per phase in Phase 4; "
     f"{len(KEEP)} features in all are standardised over all team-seasons (outcome and exposure features are kept for "
     "Phases 4–5, not clustered).",
     "",
@@ -454,10 +455,13 @@ text = [
     "",
     md_table(ranges.rename_axis("feature")),
     "",
-    "## 3. Style dimensions (clustered in Phase 4)",
+    "## 3. Phase-of-play dimensions (clustered per phase in Phase 4)",
     "",
-    md_table(pd.DataFrame({"features (sign)": {d: ", ".join(f"{f} ({'+' if v > 0 else '−'})" for f, v in parts.items())
-                                                for d, parts in DIMENSIONS.items()}}).rename_axis("dimension")),
+    md_table(pd.DataFrame([(ph, d, ", ".join(f"{f} ({'+' if v > 0 else '−'})" for f, v in parts.items()))
+                           for ph, dims_ in PHASE_DIMS.items() for d, parts in dims_.items()],
+                          columns=["phase", "dimension", "features (sign)"]), index=False),
+    "",
+    "Not clustered: " + "; ".join(f"`{f}` ({why})" for f, why in NOT_CLUSTERED.items()) + ".",
     "",
     "Correlations between the dimensions:",
     "",
@@ -483,7 +487,7 @@ text = [
     "",
     f"- `data/{PHASE}/team_season_features.parquet`: raw features and z-scores (`z_*`, the {len(KEEP)} kept features).",
     f"- `data/{PHASE}/feature_roles.csv`: group, role (style / outcome / exposure) and status of every feature.",
-    f"- `data/{PHASE}/style_dimensions.parquet`: the {len(DIMENSIONS)} style dimension scores per team-season (Phase 4 input).",
+    f"- `data/{PHASE}/style_dimensions.parquet`: the 4 attacking and 4 defensive dimension scores and the back-three share per team-season (Phase 4 input).",
     "",
 ]
 (REPORTS_DIR / "03_features.md").write_text("\\n".join(text), encoding="utf-8")

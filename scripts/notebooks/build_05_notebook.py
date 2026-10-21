@@ -20,42 +20,42 @@ def code(text: str) -> None:
 md('''
 # Phase 5: Injury analysis (pattern evaluation)
 
-**Question:** do players in teams with different playing styles get injured differently: how often, how badly
-(days lost) and where on the body; and how does this change over seasons and differ between leagues?
+**Question:** how did playing styles evolve between 2014/15 and 2025/26, and how did injuries (frequency, days lost,
+body area) change with them, across seasons and leagues?
 
-**Unit:** the **player-club-season** (Phase 2 membership: ≥ 1 appearance or marked injured), with its team's style
-(Phase 4, k = 7; k = 4 as a check). Injuries are those lasting more than 7 days (Phase 2).
+**Unit:** the **player-club-season** (Phase 2 membership), carrying its team's **attacking style**, **defensive
+style**, their combination (Phase 4) and its **formation** (back three: ≥ 50% of minutes). Injuries last > 7 days.
 
 **Methods** (descriptive, as the course allows):
-- **Rates:** injuries per player-season, injuries per 1,000 minutes, days lost per player-season, share severe.
-- **League-adjusted rate ratio (RR):** Transfermarkt records injuries at very different rates per league, so each
-  group's injuries are compared with what its players would have at their **league's average rate** (indirect
-  standardisation): RR = observed / expected. RR 1.2 = 20% more than the league average. A stricter version uses
-  the average of league × age band × position.
-- **95% confidence intervals:** bootstrap over **team-seasons** (players of one squad share coaches, medical staff
-  and schedule, so they are not independent), 1,000 resamples, fixed seed.
-- **Tests:** chi-square for the body-area mix (with Cramér's V as effect size) and for observed vs expected injuries.
+- **Rates:** injuries per player-season, per 1,000 minutes, days lost per player-season, share severe (> 28 days).
+- **League-adjusted rate ratio (RR):** observed injuries ÷ expected at the league's 12-season average (indirect
+  standardisation), because Transfermarkt records injuries at very different rates per league. A stricter version
+  uses league × age band × position.
+- **95% CIs:** bootstrap over **team-seasons** (players of one squad are not independent), 1,000 resamples, seed 42.
+- **Tests:** chi-square (observed vs expected; body-area mix with Cramér's V). Body-area patterns are reported only
+  when they hold **within leagues** (labelling differs a lot between leagues).
+- **Evolution:** eras 2014–18, 2018–22, 2022–26; trend shapes; style transitions; Kitagawa decomposition of injury
+  trends into the style mix and within-style change.
 
 **Steps**
 1. Player-season table
 2. Rate and bootstrap helpers; league baselines
-3. Injury frequency and days lost by style
-4. Body areas by style
+3. Injuries by attacking style, defensive style, combination and formation
+4. Body areas by style (within leagues)
 5. Seasons: injury trend and style shares over time
-6. Leagues: rates, body areas, style effect within each league
+6. Leagues: style effects within each league
 7. Age and position: is it the squad mix?
 8. Team strength and workload
 9. Fitness absences (secondary outcome)
 10. Sensitivity checks
-12. Style cards: what each style looks like on the pitch
-13. Core teams only
-14. How the ways of playing changed, and in what shape
-15. How teams move between styles
-16. Style mix and injuries per era
-17. How much of the injury trend comes from styles changing (decomposition)
-18. Style dimensions vs injury outcomes across league-seasons
-19. One story per league
-20. Report
+11. Style cards: what each style looks like on the pitch
+12. How the ways of attacking and defending changed, and in what shape
+13. How teams move between styles
+14. Style mix and injuries per era
+15. How much of the injury trend comes from styles changing (decomposition)
+16. Style dimensions vs injury outcomes across league-seasons
+17. One story per league
+18. Report
 
 **Inputs:** `data/02_injuries/`, `data/03_features/`, `data/04_clusters/`, `tm_squads`, `us_team_matches`.
 **Outputs:** `data/05_injury_analysis/`, `reports/05_injury_analysis.md`, `reports/figures/05_*.png`.
@@ -77,12 +77,13 @@ from matplotlib.colors import LinearSegmentedColormap
 from scipy.stats import chi2, chi2_contingency
 
 sys.path.insert(0, str(Path.cwd().parent))  # project root, for the analysis package
-from analysis.config import DATA_DIR, FIGURES_DIR, REPORTS_DIR, SEASONS, phase_dir
-from analysis.load import league_from_understat, read_table, season_key
+from analysis.config import DATA_DIR, FIGURES_DIR, REPORTS_DIR, phase_dir
+from analysis.load import league_from_understat, read_table
 from analysis.report import md_table
 
 pd.set_option("display.max_columns", 30)
 pd.set_option("display.width", 220)
+pd.set_option("display.max_colwidth", 160)
 
 PHASE = "05_injury_analysis"
 OUT_DIR = phase_dir(PHASE)
@@ -93,12 +94,17 @@ AGE_BANDS = [0, 21, 25, 29, 99]  # ≤ 21, 22–25, 26–29, 30+ (age on 1 Janua
 AGE_LABELS = ["≤21", "22–25", "26–29", "30+"]
 COVID_SEASONS = ["2019-20", "2020-21"]
 LEAGUES = ["Premier League", "La Liga", "Serie A", "Bundesliga", "Ligue 1"]
+ATTACK = ["Positional possession", "Build-up into the box", "Counter-attack", "Direct play"]
+DEFENCE = ["High press, high line", "Compact mid-block", "Aggressive duel press", "Low block"]
+FORMATION = ["back three", "back four"]
+ERAS = {range(2014, 2018): "2014–18", range(2018, 2022): "2018–22", range(2022, 2026): "2022–26"}
+ERA_ORDER = list(ERAS.values())
+RARE = "rare combination"
 
-# Chart palette: validated reference palette (dataviz skill), categorical slots in fixed order by style.
+# Chart palette: validated reference palette (dataviz skill), categorical slots in fixed order.
 INK, MUTED, GRID, SURFACE = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb"
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
 DIVERGING = LinearSegmentedColormap.from_list("blue_gray_red", ["#2a78d6", "#f0efec", "#e34948"])
-SEQUENTIAL = LinearSegmentedColormap.from_list("blue", ["#f0efec", "#86b6ef", "#2a78d6", "#104281"])
 plt.rcParams.update({
     "figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "axes.edgecolor": MUTED, "axes.labelcolor": INK,
     "text.color": INK, "xtick.color": MUTED, "ytick.color": MUTED, "axes.grid": True, "grid.color": GRID,
@@ -113,16 +119,20 @@ def save(fig, name: str) -> str:
     plt.close(fig)
     display(Image(filename=str(path)))
     return name
+
+
+def era_of(season: int) -> str:
+    return next(label for years, label in ERAS.items() if season in years)
 ''')
 
 # ---- step 1
 md('''
 ## Step 1. Player-season table
 
-One row per player-club-season with: league, season, club, team style (k = 7 and k = 4), team strength (points per
-match), team workload (Phase 3 exposure features), the player's age band and position, minutes in all competitions,
-and his injuries at that club that season (count, days lost, severe, by body area, with surgery), plus mild injuries
-(4–7 days) and fitness absences for the sensitivity check and the secondary outcome.
+One row per player-club-season with league, season, club, the team's attacking and defensive style and their
+combination, formation, strength (points per match), workload (Phase 3 exposure features), the player's age band and
+position, minutes in all competitions, and his injuries there that season (count, days lost, severe, surgery, by body
+area), plus mild injuries (4–7 days) and fitness absences.
 ''')
 code('''
 members = pd.read_parquet(DATA_DIR / "02_injuries" / "player_club_seasons.parquet")
@@ -131,30 +141,39 @@ mild = pd.read_parquet(DATA_DIR / "02_injuries" / "injuries_mild.parquet")
 non_inj = pd.read_parquet(DATA_DIR / "02_injuries" / "non_injuries.parquet")
 clusters = pd.read_parquet(DATA_DIR / "04_clusters" / "team_season_clusters.parquet").rename(columns={"tm_club_id": "club_id"})
 features = pd.read_parquet(DATA_DIR / "03_features" / "team_season_features.parquet").rename(columns={"tm_club_id": "club_id"})
+style_dims = pd.read_parquet(DATA_DIR / "03_features" / "style_dimensions.parquet").rename(columns={"tm_club_id": "club_id"})
 roles = pd.read_csv(DATA_DIR / "03_features" / "feature_roles.csv")
 EXPOSURE = roles[(roles.role == "exposure") & (roles.status == "kept")].feature.tolist()
+DIMS = {ph: [c for c in style_dims.columns if c.startswith(f"{ph}_")] for ph in ["attack", "defence"]}
 
-# Team strength: league points per match (Understat).
+clusters["formation"] = np.where(clusters.back_three, "back three", "back four")
+clusters["style_group"] = np.where(clusters.rare_style, RARE, clusters["style"])
+clusters["era"] = clusters.season.map(era_of)
+COMBOS = (clusters[~clusters.rare_style].drop_duplicates("style")
+          .assign(a=lambda d: d.attack_style.map(ATTACK.index), d=lambda d: d.defence_style.map(DEFENCE.index))
+          .sort_values(["a", "d"])["style"].tolist())
+
 um = read_table("us_team_matches")
 points = (um.assign(league=um.league.map(league_from_understat), season=um.season.astype(int), pts=um.pts.astype(float))
           .groupby(["league", "season", "team_id"]).pts.mean().rename("points_pm").reset_index().rename(columns={"team_id": "us_team_id"}))
 keys = pd.read_csv(DATA_DIR / "01_entities" / "team_seasons.csv", dtype={"tm_club_id": str, "us_team_id": str}).rename(columns={"tm_club_id": "club_id"})
 team = (clusters.merge(keys[["league", "season", "club_id", "us_team_id"]], on=["league", "season", "club_id"])
-        .merge(points, on=["league", "season", "us_team_id"]).merge(features[["league", "season", "club_id"] + EXPOSURE], on=["league", "season", "club_id"]))
+        .merge(points, on=["league", "season", "us_team_id"])
+        .merge(features[["league", "season", "club_id"] + EXPOSURE], on=["league", "season", "club_id"])
+        .merge(style_dims[["season", "club_id"] + DIMS["attack"] + DIMS["defence"]], on=["season", "club_id"]))
 team["strength"] = pd.qcut(team.points_pm, 3, labels=["weaker third", "middle third", "stronger third"])
 assert len(team) == 1170
 
-# Player attributes: position (constant per player) and age on 1 January of the season.
 sq = read_table("tm_squads")
 player = sq[["playerId", "position_group", "date_of_birth"]].replace("", np.nan).groupby("playerId").first()
-ps = members.merge(team.drop(columns=["club", "season_key", "us_team_id"]), on=["league", "season", "club_id"], how="left")
-ps = ps.join(player, on="playerId")
+TEAM_COLS = ["league", "season", "club_id", "attack_style", "defence_style", "style", "style_group", "rare_style", "formation",
+             "back_three_share", "era", "points_pm", "strength"] + EXPOSURE
+ps = members.merge(team[TEAM_COLS], on=["league", "season", "club_id"], how="left").join(player, on="playerId")
 dob = pd.to_datetime(ps.date_of_birth, errors="coerce")
 ps["age"] = ((pd.to_datetime((ps.season + 1).astype(str) + "-01-01") - dob).dt.days / 365.25).round(1)
 ps["age_band"] = pd.cut(ps.age, AGE_BANDS, labels=AGE_LABELS)
 ps["position"] = ps.position_group.str.title()
 
-# Injuries per player-club-season.
 KEY = ["playerId", "club_id", "season"]
 inj = injuries.assign(severe=injuries.severity.str.startswith("severe"), surgery=injuries.surgery.astype(bool))
 agg = inj.groupby(KEY).agg(injuries=("days", "size"), days_lost=("days", "sum"), severe=("severe", "sum"), surgeries=("surgery", "sum"))
@@ -166,15 +185,13 @@ count_cols = ["injuries", "days_lost", "severe", "surgeries", "mild_injuries", "
 ps[count_cols] = ps[count_cols].fillna(0).astype(int)
 ps["team_season"] = ps.league + " " + ps.season_key + " " + ps.club_id
 
-# Checks: every injury lands on exactly one player-season; every player-season has a style.
-assert ps.cluster_name.notna().all()
+assert ps.attack_style.notna().all() and ps.defence_style.notna().all()
 assert ps.injuries.sum() == len(injuries), (ps.injuries.sum(), len(injuries))
-ps.to_parquet(OUT_DIR / "player_seasons.parquet", index=False)
 pd.Series({
     "player-club-seasons": len(ps), "players": ps.playerId.nunique(), "team-seasons": ps.team_season.nunique(),
     "injuries > 7 days": int(ps.injuries.sum()), "days lost": int(ps.days_lost.sum()),
     "mild injuries (4–7 days)": int(ps.mild_injuries.sum()), "fitness absences": int(ps.fitness_absences.sum()),
-    "missing age": int(ps.age.isna().sum()), "missing position": int(ps.position.isna().sum()),
+    "in rare combinations": int(ps.rare_style.sum()), "missing age": int(ps.age.isna().sum()),
 }, name="count").to_frame()
 ''')
 
@@ -182,11 +199,8 @@ pd.Series({
 md('''
 ## Step 2. Rate and bootstrap helpers; league baselines
 
-`summarise(df, by)` gives, per group: player-seasons, injuries, the four rates and the league-adjusted rate ratios
-(frequency and days lost) with bootstrap 95% CIs. The bootstrap resamples **team-seasons** within each group.
-
-League baseline: each league's average injuries and days lost per player-season over all 12 seasons (the decision of
-Phase 0). The stricter baseline uses league × age band × position.
+`summarise(df, by)` gives per group: player-seasons, injuries, the rates and the league-adjusted rate ratios
+(frequency and days lost) with bootstrap 95% CIs over team-seasons. `GROUPINGS` lists the four ways of grouping teams.
 ''')
 code('''
 def add_expected(df: pd.DataFrame, strata: list[str], suffix: str = "") -> pd.DataFrame:
@@ -196,8 +210,7 @@ def add_expected(df: pd.DataFrame, strata: list[str], suffix: str = "") -> pd.Da
 
 
 ps = add_expected(ps, ["league"])
-lap = ps.dropna(subset=["age_band", "position"]).copy()
-lap = add_expected(lap, ["league", "age_band", "position"], "_lap")
+lap = add_expected(ps.dropna(subset=["age_band", "position"]).copy(), ["league", "age_band", "position"], "_lap")
 ps = ps.join(lap[["exp_inj_lap", "exp_days_lap"]])
 rng = np.random.default_rng(SEED)
 
@@ -206,8 +219,7 @@ def boot_ratio(teams: pd.DataFrame, num: str, den: str) -> tuple[float, float]:
     """95% CI of sum(num) / sum(den), resampling team-seasons."""
     n, v_num, v_den = len(teams), teams[num].to_numpy(), teams[den].to_numpy()
     idx = rng.integers(0, n, (N_BOOT, n))
-    ratios = v_num[idx].sum(axis=1) / v_den[idx].sum(axis=1)
-    return tuple(np.percentile(ratios, [2.5, 97.5]))
+    return tuple(np.percentile(v_num[idx].sum(axis=1) / v_den[idx].sum(axis=1), [2.5, 97.5]))
 
 
 def summarise(df: pd.DataFrame, by: str | list[str], adjust: str = "") -> pd.DataFrame:
@@ -221,8 +233,7 @@ def summarise(df: pd.DataFrame, by: str | list[str], adjust: str = "") -> pd.Dat
         tot = t[cols + ["ps"]].sum()
         rows.append(dict(zip(by, key if isinstance(key, tuple) else (key,))) | {
             "player-seasons": int(tot.ps), "team-seasons": len(t), "injuries": int(tot.injuries),
-            "injuries / player-season": tot.injuries / tot.ps,
-            "per 1,000 min": 1000 * tot.injuries / tot.minutes,
+            "injuries / player-season": tot.injuries / tot.ps, "per 1,000 min": 1000 * tot.injuries / tot.minutes,
             "days lost / player-season": tot.days_lost / tot.ps,
             "severe share": tot.severe / tot.injuries if tot.injuries else np.nan,
             "RR": tot.injuries / tot[f"exp_inj{adjust}"], "RR low": rr_lo, "RR high": rr_hi,
@@ -232,7 +243,6 @@ def summarise(df: pd.DataFrame, by: str | list[str], adjust: str = "") -> pd.Dat
 
 
 def fmt(table: pd.DataFrame) -> pd.DataFrame:
-    """Rounded, with CIs written as 'RR (low–high)'."""
     t = table.copy()
     t["RR (95% CI)"] = t.apply(lambda r: f"{r['RR']:.2f} ({r['RR low']:.2f}–{r['RR high']:.2f})", axis=1)
     t["days RR (95% CI)"] = t.apply(lambda r: f"{r['days RR']:.2f} ({r['days RR low']:.2f}–{r['days RR high']:.2f})", axis=1)
@@ -240,40 +250,47 @@ def fmt(table: pd.DataFrame) -> pd.DataFrame:
     return t.round({"injuries / player-season": 3, "per 1,000 min": 3, "days lost / player-season": 1, "severe share": 3})
 
 
-def gof_test(df: pd.DataFrame, by: str, adjust: str = "") -> tuple[float, int, float]:
-    """Chi-square of observed vs expected injuries across groups (Poisson assumption; injuries are overdispersed, so
-    the bootstrap CIs are the main evidence)."""
-    g = df.groupby(by, observed=True)[["injuries", f"exp_inj{adjust}"]].sum()
-    stat = (((g.injuries - g[f"exp_inj{adjust}"]) ** 2) / g[f"exp_inj{adjust}"]).sum()
-    dof = len(g) - 1
-    return stat, dof, chi2.sf(stat, dof)
+def gof_test(df: pd.DataFrame, by: str) -> tuple[float, int, float]:
+    """Chi-square of observed vs expected injuries across groups (Poisson assumption; overdispersed data, so the
+    bootstrap CIs are the main evidence)."""
+    g = df.groupby(by, observed=True)[["injuries", "exp_inj"]].sum()
+    stat = (((g.injuries - g.exp_inj) ** 2) / g.exp_inj).sum()
+    return stat, len(g) - 1, chi2.sf(stat, len(g) - 1)
 
 
-baseline = ps.groupby("league")[["injuries", "days_lost"]].mean().rename(
-    columns={"injuries": "injuries / player-season", "days_lost": "days lost / player-season"}).round(3)
+GROUPINGS = {"attacking style": ("attack_style", ATTACK), "defensive style": ("defence_style", DEFENCE),
+             "combined style": ("style", COMBOS), "formation": ("formation", FORMATION)}
+COLS = ["player-seasons", "team-seasons", "injuries", "injuries / player-season", "per 1,000 min",
+        "days lost / player-season", "severe share", "RR (95% CI)", "days RR (95% CI)"]
+baseline = ps.groupby("league")[["injuries", "days_lost"]].mean().round(3)
 baseline
 ''')
 
 # ---- step 3
 md('''
-## Step 3. Injury frequency and days lost by style
+## Step 3. Injuries by attacking style, defensive style, combination and formation
 
-The core comparison: for each of the seven styles, raw rates and the league-adjusted rate ratios for frequency and
-for days lost, with 95% CIs. An RR whose CI excludes 1 differs from the league average.
+League-adjusted RRs with 95% CIs for each grouping. The attack × defence grid then shows whether a difference belongs
+to the attacking or the defensive phase: reading **along a row** changes only the defensive style, **down a column**
+only the attacking style.
 ''')
 code('''
-STYLE_ORDER = (clusters.drop_duplicates("cluster").sort_values("cluster").cluster_name.tolist())
-by_style = summarise(ps, "cluster_name").loc[STYLE_ORDER]
-by_style_lap = summarise(ps.dropna(subset=["exp_inj_lap"]), "cluster_name", "_lap").loc[STYLE_ORDER]
-style_test = gof_test(ps, "cluster_name")
-print(f"observed vs expected across styles: chi² = {style_test[0]:.1f}, df = {style_test[1]}, p = {style_test[2]:.2g}")
-fmt(by_style)
+results = {name: summarise(ps[~ps.rare_style] if col == "style" else ps, col).loc[order] for name, (col, order) in GROUPINGS.items()}
+tests = {name: gof_test(ps[~ps.rare_style] if col == "style" else ps, col) for name, (col, order) in GROUPINGS.items()}
+for name, t in results.items():
+    print(f"\\n{name}: observed vs expected chi² = {tests[name][0]:.1f}, df = {tests[name][1]}, p = {tests[name][2]:.2g}")
+    display(fmt(t)[COLS])
+grid = summarise(ps, ["attack_style", "defence_style"])
+grid_rr = grid["RR"].unstack().loc[ATTACK, DEFENCE]
+grid_n = grid["team-seasons"].unstack().loc[ATTACK, DEFENCE]
+grid_days = grid["days RR"].unstack().loc[ATTACK, DEFENCE]
+display(grid_rr.round(2))
+grid_days.round(2)
 ''')
 code('''
-# Figure: league-adjusted rate ratios with 95% CIs, frequency and days lost, one row per style.
-def ci_plot(ax, table: pd.DataFrame, rr: str, lo: str, hi: str, title: str) -> None:
+def ci_plot(ax, table: pd.DataFrame, rr: str, lo: str, hi: str, title: str, colors=SERIES) -> None:
     y = np.arange(len(table))[::-1]
-    for yi, (name, r), color in zip(y, table.iterrows(), SERIES):
+    for yi, (name, r), color in zip(y, table.iterrows(), colors):
         ax.plot([r[lo], r[hi]], [yi, yi], color=color, linewidth=2.5, solid_capstyle="round")
         ax.scatter(r[rr], yi, s=60, color=color, edgecolors=SURFACE, linewidths=1.5, zorder=3)
         ax.text(r[hi] + 0.01, yi, f"{r[rr]:.2f}", va="center", fontsize=9, color=INK)
@@ -283,105 +300,119 @@ def ci_plot(ax, table: pd.DataFrame, rr: str, lo: str, hi: str, title: str) -> N
     ax.grid(axis="y", visible=False)
 
 
-fig, axes = plt.subplots(1, 2, figsize=(13, 4.2), sharey=True)
-ci_plot(axes[0], by_style, "RR", "RR low", "RR high", "Injuries (league-adjusted RR, 95% CI)")
-ci_plot(axes[1], by_style, "days RR", "days RR low", "days RR high", "Days lost (league-adjusted RR, 95% CI)")
-for ax in axes:
+fig, axes = plt.subplots(3, 2, figsize=(13, 9.5), gridspec_kw={"height_ratios": [4, 4, 2]})
+for row, name in enumerate(["attacking style", "defensive style", "formation"]):
+    t = results[name]
+    ci_plot(axes[row, 0], t, "RR", "RR low", "RR high", f"{name.capitalize()}: injuries (RR, 95% CI)")
+    ci_plot(axes[row, 1], t, "days RR", "days RR low", "days RR high", f"{name.capitalize()}: days lost (RR, 95% CI)")
+for ax in axes[-1]:
     ax.set_xlabel("rate ratio (1 = league average)")
 fig.tight_layout()
 style_fig = save(fig, "05_rates_by_style.png")
+
+fig, axes = plt.subplots(1, 2, figsize=(15, 3.8))
+for ax, data, title in [(axes[0], grid_rr, "Injuries RR"), (axes[1], grid_days, "Days lost RR")]:
+    vals = data.to_numpy(dtype=float)
+    ax.imshow(np.log2(vals), cmap=DIVERGING, vmin=-0.5, vmax=0.5, aspect="auto")
+    ax.set_xticks(range(len(DEFENCE)), DEFENCE, rotation=15, ha="right")
+    ax.set_yticks(range(len(ATTACK)), ATTACK)
+    ax.grid(False)
+    for (i, j), v in np.ndenumerate(vals):
+        n = grid_n.to_numpy()[i, j]
+        ax.text(j, i, f"{v:.2f}\\n(n={int(n)})", ha="center", va="center", fontsize=8,
+                color=MUTED if n < 40 else (INK if abs(np.log2(v)) < 0.35 else "white"))
+    ax.set_title(f"{title}: attacking style (rows) × defensive style (columns)", loc="left")
+fig.tight_layout()
+grid_fig = save(fig, "05_attack_defence_grid.png")
 ''')
 
 # ---- step 4
 md('''
-## Step 4. Body areas by style
+## Step 4. Body areas by style (within leagues)
 
-Share of each style's injuries per body area. *Unknown* is shown but left out of the test, since its share depends on
-recording. Chi-square tests whether the body-area mix differs by style; Cramér's V says how much (0 = not at all,
-0.1 small, 0.3 medium). Standardised residuals show which cells drive it (beyond ±2 = notably more or fewer injuries
-there than if the mix were the same for every style).
+Leagues label injuries very differently (*unspecified muscle* is 29% of La Liga injuries, 7% of Premier League
+ones), so for each style and body area the share is taken **within each league**, relative to that league's share
+(1 = same), summarised by the median over leagues and the number of leagues above 1. A pattern in 4–5 leagues is a
+style pattern; one that flips is labelling. The pooled chi-square and Cramér's V give the overall size.
 ''')
 code('''
 AREA_COLS = [c for c in ps.columns if c.startswith("area: ")]
-area_by_style = ps.groupby("cluster_name")[AREA_COLS].sum().loc[STYLE_ORDER].rename(columns=lambda c: c[6:])
-area_order = area_by_style.sum().sort_values(ascending=False).index.tolist()
-area_by_style = area_by_style[area_order]
-known = area_by_style.drop(columns="unknown")
-chi, p_area, dof_area, expected = chi2_contingency(known)
-cramers_v = np.sqrt(chi / (known.to_numpy().sum() * (min(known.shape) - 1)))
-residuals = (known - expected) / np.sqrt(expected)
-area_share = area_by_style.div(area_by_style.sum(axis=1), axis=0)
-print(f"chi² = {chi:.1f}, df = {dof_area}, p = {p_area:.2g}, Cramér's V = {cramers_v:.3f}")
-display((100 * area_share).round(1))
-residuals.round(1)
+AREAS = (ps[AREA_COLS].sum().sort_values(ascending=False).rename(index=lambda c: c[6:]).drop("unknown").index[:8].tolist())
+
+
+def within_league_areas(col: str, order: list[str], data: pd.DataFrame = ps) -> tuple[pd.DataFrame, pd.DataFrame]:
+    medians, above = {}, {}
+    for a in AREAS:
+        g = data.groupby(["league", col])[[f"area: {a}", "injuries"]].sum()
+        lg = data.groupby("league")[[f"area: {a}", "injuries"]].sum()
+        rel = (g[f"area: {a}"] / g.injuries).unstack().div(lg[f"area: {a}"] / lg.injuries, axis=0).reindex(columns=order)
+        medians[a], above[a] = rel.median(), (rel > 1).sum()
+    return pd.DataFrame(medians).loc[order], pd.DataFrame(above).loc[order]
+
+
+def pooled_test(col: str, order: list[str], data: pd.DataFrame = ps) -> tuple[float, float]:
+    known = data.groupby(col)[[f"area: {a}" for a in AREAS]].sum().loc[order]
+    stat, p, dof, _ = chi2_contingency(known)
+    return p, np.sqrt(stat / (known.to_numpy().sum() * (min(known.shape) - 1)))
+
+
+body = {}
+for name, (col, order) in GROUPINGS.items():
+    data = ps[~ps.rare_style] if col == "style" else ps
+    med, above = within_league_areas(col, order, data)
+    p, v = pooled_test(col, order, data)
+    body[name] = {"median": med, "above": above, "p": p, "V": v}
+    print(f"\\n{name}: pooled chi² p = {p:.2g}, Cramér's V = {v:.3f}")
+    display(med.round(2))
+    display(above)
 ''')
 code('''
-fig, axes = plt.subplots(1, 2, figsize=(16, 4.6), gridspec_kw={"width_ratios": [1.1, 1]})
-im = axes[0].imshow(100 * area_share.to_numpy(), cmap=SEQUENTIAL, aspect="auto")
-axes[0].set_title("Share of each style's injuries by body area (%)", loc="left")
-axes[1].imshow(residuals.to_numpy(), cmap=DIVERGING, vmin=-4, vmax=4, aspect="auto")
-axes[1].set_title(f"Standardised residuals (known areas; Cramér's V = {cramers_v:.2f})", loc="left")
-for ax, data, fmtv in [(axes[0], 100 * area_share, "{:.0f}"), (axes[1], residuals, "{:+.1f}")]:
-    ax.set_xticks(range(data.shape[1]), data.columns, rotation=50, ha="right")
-    ax.set_yticks(range(data.shape[0]), data.index)
+fig, axes = plt.subplots(1, 3, figsize=(20, 4), gridspec_kw={"width_ratios": [1, 1, 0.55]})
+for ax, name in zip(axes, ["attacking style", "defensive style", "formation"]):
+    med, above = body[name]["median"], body[name]["above"]
+    vals = med.to_numpy(dtype=float)
+    ax.imshow(np.log2(vals), cmap=DIVERGING, vmin=-0.4, vmax=0.4, aspect="auto")
+    ax.set_xticks(range(len(AREAS)), AREAS, rotation=40, ha="right")
+    ax.set_yticks(range(len(med)), med.index)
     ax.grid(False)
-    vals = data.to_numpy()
     for (i, j), v in np.ndenumerate(vals):
-        dark = (v > 18) if ax is axes[0] else abs(v) > 3
-        ax.text(j, i, fmtv.format(v), ha="center", va="center", fontsize=8, color="white" if dark else INK)
+        k = above.to_numpy()[i, j]
+        strong = k >= 4 or k <= 1
+        ax.text(j, i, f"{v:.2f}\\n{k}/5", ha="center", va="center", fontsize=7.5, color=INK, fontweight="bold" if strong else "normal")
+    ax.set_title(f"{name.capitalize()} (V = {body[name]['V']:.2f})", loc="left")
+fig.suptitle("Body-area share relative to the league's share (median over leagues; x/5 = leagues above 1)", x=0.01, ha="left", fontsize=11)
 fig.tight_layout()
 area_fig = save(fig, "05_body_areas_by_style.png")
-''')
-md('''
-### Within each league
-
-Leagues label injuries differently (e.g. *unspecified muscle* is 29% of La Liga injuries but 7% of Premier League
-ones), so a style common in one league could look different only because of labelling. For each body area: the
-style's share **within a league** relative to that league's share (1 = same), and in how many of the 5 leagues it is
-above 1. A difference that holds in 4–5 leagues is a style pattern; one that flips between leagues is labelling.
-''')
-code('''
-AREAS_CHECK = [a for a in area_order if a != "unknown"][:7]
-within_area = {}
-for a in AREAS_CHECK:
-    g = ps.groupby(["league", "cluster_name"])[[f"area: {a}", "injuries"]].sum()
-    lg = ps.groupby("league")[[f"area: {a}", "injuries"]].sum()
-    within_area[a] = (g[f"area: {a}"] / g.injuries).unstack().div(lg[f"area: {a}"] / lg.injuries, axis=0)[STYLE_ORDER]
-leagues_above = pd.DataFrame({a: (t > 1).sum() for a, t in within_area.items()}).loc[STYLE_ORDER]
-median_rel = pd.DataFrame({a: t.median() for a, t in within_area.items()}).loc[STYLE_ORDER].round(2)
-display(within_area["hamstring"].round(2))
-display(leagues_above.rename(columns=lambda c: f"{c}: leagues > 1"))
-median_rel
 ''')
 
 # ---- step 5
 md('''
 ## Step 5. Seasons
 
-Injuries per player-season by season (raw, with 95% CIs), with the calendar events from the project notes, and how
-the share of each style changed per league. Raw season rates mix real change with Transfermarkt's recording changes
-(Phase 0: Premier League 2018-19 jump), so the per-league view and the share of unknown body areas are shown with it.
+Injuries per player-season by season (with 95% CIs and calendar events) and the share of each attacking and
+defensive style per league over the seasons. Raw season rates mix real change with Transfermarkt's recording changes
+(Phase 0: the Premier League 2018-19 jump), so the unknown body-area share is shown with them.
 ''')
 code('''
 by_season = summarise(ps, "season_key")
 unknown_share = (ps.groupby("season_key")["area: unknown"].sum() / ps.groupby("season_key").injuries.sum()).rename("unknown body area")
 season_league = ps.groupby(["season_key", "league"]).apply(lambda d: d.injuries.sum() / len(d), include_groups=False).unstack()[LEAGUES]
-style_share = pd.crosstab([clusters.league, clusters.season_key], clusters.cluster_name, normalize="index")[STYLE_ORDER]
-display(fmt(by_season).join(unknown_share.round(3)))
-display(season_league.round(3))
+shares = {ph: pd.crosstab([clusters.league, clusters.season_key], clusters[col], normalize="index")[order]
+          for ph, (col, order) in {"attack": ("attack_style", ATTACK), "defence": ("defence_style", DEFENCE)}.items()}
+display(fmt(by_season)[["player-seasons", "injuries / player-season", "days lost / player-season", "severe share", "RR (95% CI)"]].join(unknown_share.round(3)))
+season_league.round(3)
 ''')
 code('''
-EVENTS = {"2019-20": "COVID restart", "2020-21": "congested season,\\nfive subs", "2022-23": "mid-season\\nWorld Cup",
-          "2024-25": "new CL format"}
-LABEL_Y = {"2019-20": 0.97, "2020-21": 0.85, "2022-23": 0.97, "2024-25": 0.97}  # stagger neighbouring labels
+EVENTS = {"2019-20": "COVID restart", "2020-21": "congested season,\\nfive subs", "2022-23": "mid-season\\nWorld Cup", "2024-25": "new CL format"}
+LABEL_Y = {"2019-20": 0.97, "2020-21": 0.85, "2022-23": 0.97, "2024-25": 0.97}
 fig, ax = plt.subplots(figsize=(12, 4))
 x = np.arange(len(by_season))
-ax.fill_between(x, by_season["injuries / player-season"] * by_season["RR low"] / by_season["RR"],
-                by_season["injuries / player-season"] * by_season["RR high"] / by_season["RR"], color=SERIES[0], alpha=0.15, linewidth=0)
-ax.plot(x, by_season["injuries / player-season"], color=SERIES[0], marker="o", markersize=6)
+rate = by_season["injuries / player-season"]
+ax.fill_between(x, rate * by_season["RR low"] / by_season["RR"], rate * by_season["RR high"] / by_season["RR"], color=SERIES[0], alpha=0.15, linewidth=0)
+ax.plot(x, rate, color=SERIES[0], marker="o", markersize=6)
 ax.set_xticks(x, by_season.index)
 ax.set_ylabel("injuries > 7 days per player-season")
-ax.set_ylim(0, by_season["injuries / player-season"].max() * 1.35)
+ax.set_ylim(0, rate.max() * 1.35)
 for s, label in EVENTS.items():
     xi = list(by_season.index).index(s)
     ax.axvline(xi, color=MUTED, linewidth=1, linestyle=":")
@@ -389,17 +420,18 @@ for s, label in EVENTS.items():
 ax.set_title("Injury frequency by season (all Big Five; band = 95% CI)", loc="left")
 trend_fig = save(fig, "05_season_trend.png")
 
-fig, axes = plt.subplots(1, 5, figsize=(20, 4), sharey=True)
-for ax, lg in zip(axes, LEAGUES):
-    d = style_share.loc[lg].reindex(by_season.index).fillna(0)
-    ax.stackplot(range(len(d)), d.T.to_numpy(), colors=SERIES[:len(STYLE_ORDER)], edgecolor=SURFACE, linewidth=0.8)
-    ax.set_title(lg, loc="left")
-    ax.set_xticks(range(0, len(d), 3), [d.index[i][2:] for i in range(0, len(d), 3)])
-    ax.set_ylim(0, 1)
-    ax.grid(False)
-axes[0].set_ylabel("share of team-seasons")
-handles = [plt.Rectangle((0, 0), 1, 1, color=SERIES[i]) for i in range(len(STYLE_ORDER))]
-fig.legend(handles, STYLE_ORDER, loc="lower center", ncol=len(STYLE_ORDER), frameon=False, bbox_to_anchor=(0.5, -0.06))
+fig, axes = plt.subplots(2, 5, figsize=(20, 7.5), sharey=True)
+for row, (ph, order) in enumerate([("attack", ATTACK), ("defence", DEFENCE)]):
+    for ax, lg in zip(axes[row], LEAGUES):
+        d = shares[ph].loc[lg].reindex(by_season.index).fillna(0)
+        ax.stackplot(range(len(d)), d.T.to_numpy(), colors=SERIES[:4], edgecolor=SURFACE, linewidth=0.8)
+        ax.set_title(f"{lg}: {ph}", loc="left")
+        ax.set_xticks(range(0, len(d), 3), [d.index[i][2:] for i in range(0, len(d), 3)])
+        ax.set_ylim(0, 1)
+        ax.grid(False)
+    axes[row, 0].set_ylabel("share of team-seasons")
+    handles = [plt.Rectangle((0, 0), 1, 1, color=SERIES[i]) for i in range(4)]
+    axes[row, 4].legend(handles, order, loc="center left", bbox_to_anchor=(1.02, 0.5), frameon=False, fontsize=9)
 fig.tight_layout()
 shares_fig = save(fig, "05_style_shares_by_league.png")
 ''')
@@ -408,34 +440,35 @@ shares_fig = save(fig, "05_style_shares_by_league.png")
 md('''
 ## Step 6. Leagues
 
-Rates and body-area mix per league (raw: these differ partly because of recording), and the **style effect within
-each league**: the RR of each style against its own league's average (the league-adjusted RR computed separately per
-league). A pattern that holds in several leagues is more convincing than one carried by a single league.
+Rates per league (raw; partly recording) and each style's RR **within its own league** (its league's average = 1).
+A pattern that holds in several leagues is more convincing than one carried by a single league.
 ''')
 code('''
 by_league = summarise(ps, "league").loc[LEAGUES]
-league_area = ps.groupby("league")[AREA_COLS].sum().loc[LEAGUES].rename(columns=lambda c: c[6:])[area_order]
-league_area_share = league_area.div(league_area.sum(axis=1), axis=0)
-within = summarise(ps, ["league", "cluster_name"])
-rr_within = within["RR"].unstack()[STYLE_ORDER].loc[LEAGUES]
-n_within = within["team-seasons"].unstack()[STYLE_ORDER].loc[LEAGUES]
-display(fmt(by_league))
-display((100 * league_area_share).round(1))
-display(rr_within.round(2))
-n_within
+within = {}
+for name in ["attacking style", "defensive style"]:
+    col, order = GROUPINGS[name]
+    t = summarise(ps, ["league", col])
+    within[name] = (t["RR"].unstack().reindex(index=LEAGUES, columns=order), t["team-seasons"].unstack().reindex(index=LEAGUES, columns=order))
+display(fmt(by_league)[COLS])
+for name, (rr, n) in within.items():
+    print(name)
+    display(rr.round(2))
 ''')
 code('''
-fig, ax = plt.subplots(figsize=(12, 3.6))
-vals = rr_within.to_numpy()
-ax.imshow(np.log2(vals), cmap=DIVERGING, vmin=-0.6, vmax=0.6, aspect="auto")
-ax.set_xticks(range(len(STYLE_ORDER)), STYLE_ORDER, rotation=25, ha="right")
-ax.set_yticks(range(len(LEAGUES)), LEAGUES)
-ax.grid(False)
-for (i, j), v in np.ndenumerate(vals):
-    n = n_within.to_numpy()[i, j]
-    ax.text(j, i, "–" if np.isnan(v) else f"{v:.2f}\\n(n={int(n)})", ha="center", va="center", fontsize=8,
-            color=INK if np.isnan(v) or abs(np.log2(v)) < 0.45 else "white")
-ax.set_title("Injury RR of each style within its league (1 = league average; n = team-seasons)", loc="left")
+fig, axes = plt.subplots(1, 2, figsize=(15, 3.8))
+for ax, (name, (rr, n)) in zip(axes, within.items()):
+    vals = rr.to_numpy(dtype=float)
+    ax.imshow(np.log2(vals), cmap=DIVERGING, vmin=-0.6, vmax=0.6, aspect="auto")
+    ax.set_xticks(range(rr.shape[1]), rr.columns, rotation=15, ha="right")
+    ax.set_yticks(range(len(LEAGUES)), LEAGUES)
+    ax.grid(False)
+    for (i, j), v in np.ndenumerate(vals):
+        k = n.to_numpy()[i, j]
+        ax.text(j, i, "–" if np.isnan(v) else f"{v:.2f}\\n(n={int(k)})", ha="center", va="center", fontsize=8,
+                color=INK if np.isnan(v) or abs(np.log2(v)) < 0.45 else "white")
+    ax.set_title(f"Injury RR by {name} within each league", loc="left")
+fig.tight_layout()
 league_fig = save(fig, "05_style_within_league.png")
 ''')
 
@@ -443,18 +476,19 @@ league_fig = save(fig, "05_style_within_league.png")
 md('''
 ## Step 7. Age and position
 
-Styles differ in squad make-up (e.g. elite clubs field older players). If the style differences in step 3 were only
-the age and position mix, they would shrink when the expected injuries come from **league × age band × position**
-instead of league alone. Rates by age band and position are shown for context.
+If style differences were only squad make-up, they would shrink when expected injuries come from **league × age
+band × position** instead of league alone.
 ''')
 code('''
-compare = pd.DataFrame({
-    "RR, league-adjusted": by_style["RR"], "RR, league × age × position": by_style_lap["RR"],
-    "days RR, league-adjusted": by_style["days RR"], "days RR, league × age × position": by_style_lap["days RR"],
-}).round(2)
-mix = pd.concat([ps.groupby("cluster_name").age.mean().round(1).rename("mean age"),
-                 pd.crosstab(ps.cluster_name, ps.position, normalize="index").round(2)], axis=1).loc[STYLE_ORDER]
-display(compare.join(mix))
+adjusted = {}
+for name in ["attacking style", "defensive style", "formation"]:
+    col, order = GROUPINGS[name]
+    lap_t = summarise(ps.dropna(subset=["exp_inj_lap"]), col, "_lap").loc[order]
+    mix = pd.concat([ps.groupby(col).age.mean().round(1).rename("mean age"),
+                     pd.crosstab(ps[col], ps.position, normalize="index").round(2)], axis=1).loc[order]
+    adjusted[name] = pd.DataFrame({"RR, league": results[name]["RR"], "RR, league × age × position": lap_t["RR"],
+                                   "days RR, league": results[name]["days RR"], "days RR, league × age × position": lap_t["days RR"]}).round(2).join(mix)
+    display(adjusted[name])
 display(fmt(summarise(ps.dropna(subset=["age_band"]), "age_band"))[["player-seasons", "injuries / player-season", "days lost / player-season", "severe share"]])
 fmt(summarise(ps.dropna(subset=["position"]), "position"))[["player-seasons", "injuries / player-season", "days lost / player-season", "severe share"]]
 ''')
@@ -463,230 +497,471 @@ fmt(summarise(ps.dropna(subset=["position"]), "position"))[["player-seasons", "i
 md('''
 ## Step 8. Team strength and workload
 
-Styles partly follow team strength (Phase 4: eta² = 0.41 for points). **Strength:** the style RRs within each third
-of teams by points per match: if a style's pattern holds among similarly strong teams, it is not just strength.
-**Workload:** players of teams in the busiest third (share of matches on < 4 days' rest) vs the rest, within each
-style: is congestion linked to injuries regardless of style?
+Styles follow team strength partly (Phase 4: eta² 0.39 attack, 0.34 defence). **Strength:** style RRs within each
+third of teams by points per match. **Workload:** player-seasons in the busiest third (share of matches on < 4 days'
+rest) vs the rest, overall and within each style.
 ''')
 code('''
-rr_strength = summarise(ps, ["strength", "cluster_name"])["RR"].unstack()[STYLE_ORDER]
-n_strength = summarise(ps, ["strength", "cluster_name"])["team-seasons"].unstack()[STYLE_ORDER]
 ps["congestion"] = pd.qcut(ps.short_rest_share, 3, labels=["lightest third", "middle third", "busiest third"], duplicates="drop")
 by_congestion = summarise(ps, "congestion")
-rr_congestion = summarise(ps, ["congestion", "cluster_name"])["RR"].unstack()[STYLE_ORDER]
-display(rr_strength.round(2))
-display(n_strength)
-display(fmt(by_congestion))
-rr_congestion.round(2)
+strength_rr, congestion_rr = {}, {}
+for name in ["attacking style", "defensive style"]:
+    col, order = GROUPINGS[name]
+    strength_rr[name] = summarise(ps, ["strength", col])["RR"].unstack().reindex(columns=order)
+    congestion_rr[name] = summarise(ps, ["congestion", col])["RR"].unstack().reindex(columns=order)
+    display(strength_rr[name].round(2))
+    display(congestion_rr[name].round(2))
+fmt(by_congestion)[COLS]
 ''')
 
 # ---- step 9
 md('''
 ## Step 9. Fitness absences (secondary outcome)
 
-*Fitness* absences are not injuries (Phase 2) but may show loss of conditioning. They are recorded almost only in
-the Bundesliga (10.9 per 100 player-seasons vs ≤ 1.1 elsewhere), so they are compared by style **within the
-Bundesliga**.
+*Fitness* absences (not injuries; mostly reconditioning) are recorded almost only in the Bundesliga, so they are
+compared by style within the Bundesliga.
 ''')
 code('''
 bl = ps[ps.league == "Bundesliga"]
-fitness = bl.groupby("cluster_name").agg(player_seasons=("playerId", "size"), fitness_absences=("fitness_absences", "sum"))
-fitness["per 100 player-seasons"] = (100 * fitness.fitness_absences / fitness.player_seasons).round(1)
-fitness.loc[STYLE_ORDER]
+fitness = {}
+for name in ["attacking style", "defensive style"]:
+    col, order = GROUPINGS[name]
+    f = bl.groupby(col).agg(player_seasons=("playerId", "size"), fitness_absences=("fitness_absences", "sum")).reindex(order)
+    f["per 100 player-seasons"] = (100 * f.fitness_absences / f.player_seasons).round(1)
+    fitness[name] = f
+    display(f)
 ''')
 
 # ---- step 10
 md('''
 ## Step 10. Sensitivity checks
 
-The league-adjusted RR by style under each variation in the plan. A finding is robust if its direction holds in
-every row. (Expected injuries are recomputed within each variant.)
+The league-adjusted RR per style under each variation; a finding is robust if its direction holds in every row.
 ''')
 code('''
-def rr_variant(df: pd.DataFrame, count: str = "injuries") -> pd.Series:
-    d = df.assign(injuries=df[count])
-    d = add_expected(d, ["league"])
-    t = summarise(d, "cluster_name")
-    return t["RR"].reindex(STYLE_ORDER)
+def rr_variant(df: pd.DataFrame, col: str, order: list[str], count: str = "injuries") -> pd.Series:
+    d = add_expected(df.assign(injuries=df[count]), ["league"])
+    return summarise(d, col)["RR"].reindex(order)
 
 
-variants = {
-    "main (> 7 days)": rr_variant(ps),
-    "≥ 900 minutes only": rr_variant(ps[ps.minutes >= 900]),
-    "severe only (> 28 days)": rr_variant(ps, "severe"),
-    "> 3 days (adds mild)": rr_variant(ps.assign(more=ps.injuries + ps.mild_injuries), "more"),
-    "multi-club players out": rr_variant(ps[ps.clubs_in_season == 1]),
-    "COVID seasons out": rr_variant(ps[~ps.season_key.isin(COVID_SEASONS)]),
+VARIANTS = {
+    "main (> 7 days)": lambda d: (d, "injuries"),
+    "≥ 900 minutes only": lambda d: (d[d.minutes >= 900], "injuries"),
+    "severe only (> 28 days)": lambda d: (d, "severe"),
+    "> 3 days (adds mild)": lambda d: (d.assign(more=d.injuries + d.mild_injuries), "more"),
+    "multi-club players out": lambda d: (d[d.clubs_in_season == 1], "injuries"),
+    "COVID seasons out": lambda d: (d[~d.season_key.isin(COVID_SEASONS)], "injuries"),
 }
-sensitivity = pd.DataFrame(variants).T.round(2)
-direction = (np.sign(sensitivity - 1).nunique() == 1)
-k4 = summarise(ps, "cluster_k4_name")
-display(sensitivity)
-print("same direction in every variant:", direction[direction].index.tolist())
-fmt(k4)[["player-seasons", "injuries / player-season", "days lost / player-season", "severe share", "RR (95% CI)", "days RR (95% CI)"]]
+sensitivity, robust = {}, {}
+for name in ["attacking style", "defensive style", "formation"]:
+    col, order = GROUPINGS[name]
+    sensitivity[name] = pd.DataFrame({v: rr_variant(data, col, order, count) for v, (data, count) in
+                                      ((v, f(ps)) for v, f in VARIANTS.items())}).T.round(2)
+    signs = np.sign(sensitivity[name] - 1)
+    robust[name] = [s for s in order if signs[s].nunique() == 1 and signs[s].iloc[0] != 0]
+    display(sensitivity[name])
+    print("same direction in every variant:", robust[name])
 ''')
 
-# ---- steps 12-19 (style cards and evolution), from phase5_evolution_steps.py
-sys.path.insert(0, str(Path(__file__).parent))
-from phase5_evolution_steps import STEPS  # noqa: E402
-
-for kind, text in STEPS:
-    (md if kind == "markdown" else code)(text)
-
-# ---- step 20
+# ---- step 11
 md('''
-## Step 20. Report
+## Step 11. Style cards: what each style looks like on the pitch
+
+Each style is described from its **core** team-seasons, those clearly closer to their own style than to any other in
+that phase (distance to own centroid ≤ 80% of the distance to the next). A card gives the defining traits in football
+terms, the matching numbers in real units against the all-team average, formation, strength, typical core teams per
+era, and the styles of the other phase it is most often paired with.
 ''')
 code('''
-sig = by_style[(by_style["RR low"] > 1) | (by_style["RR high"] < 1)]
-sig_days = by_style[(by_style["days RR low"] > 1) | (by_style["days RR high"] < 1)]
-cols = ["player-seasons", "team-seasons", "injuries", "injuries / player-season", "per 1,000 min", "days lost / player-season",
-        "severe share", "RR (95% CI)", "days RR (95% CI)"]
-text = [
-    "# Phase 5: Injury analysis",
-    "",
-    f"Generated {date.today().isoformat()} by `notebooks/05_injury_analysis.ipynb`, where each step is shown with its checks.",
-    "",
-    "## Key numbers",
-    "",
-    f"- {len(ps):,} player-club-seasons, {int(ps.injuries.sum()):,} injuries > 7 days, {int(ps.days_lost.sum()):,} days lost.",
-    f"- Styles whose injury RR CI excludes 1: " + (", ".join(f"{s} {r:.2f}" for s, r in sig["RR"].items()) or "none") + ".",
-    f"- Styles whose days-lost RR CI excludes 1: " + (", ".join(f"{s} {r:.2f}" for s, r in sig_days["days RR"].items()) or "none") + ".",
-    f"- Observed vs expected injuries across styles: chi² = {style_test[0]:.1f}, df = {style_test[1]}, p = {style_test[2]:.2g}.",
-    f"- Body-area mix by style: chi² = {chi:.1f}, df = {dof_area}, p = {p_area:.2g}, Cramér's V = {cramers_v:.3f}.",
-    f"- Same direction in every sensitivity check: {', '.join(direction[direction].index) or 'none'}.",
-    "",
-    "## 1. Injuries by style (k = 7)",
-    "",
-    md_table(fmt(by_style)[cols].rename_axis("style")),
-    "",
-    f"![Rates by style](figures/{style_fig})",
-    "",
-    "## 2. Body areas by style",
-    "",
-    md_table((100 * area_share).round(1).rename_axis("style")),
-    "",
-    "Standardised residuals (known areas):",
-    "",
-    md_table(residuals.round(1).rename_axis("style")),
-    "",
-    f"![Body areas](figures/{area_fig})",
-    "",
-    "Within each league (style's share relative to its league's share; median over leagues, and leagues above 1):",
-    "",
-    md_table(median_rel.rename_axis("style")),
-    "",
-    md_table(leagues_above.rename_axis("style")),
-    "",
-    "## 3. Seasons",
-    "",
-    md_table(fmt(by_season)[["player-seasons", "injuries / player-season", "days lost / player-season", "severe share"]].join(unknown_share.round(3)).rename_axis("season")),
-    "",
-    f"![Season trend](figures/{trend_fig})",
-    "",
-    f"![Style shares](figures/{shares_fig})",
-    "",
-    "## 4. Leagues",
-    "",
-    md_table(fmt(by_league)[cols].rename_axis("league")),
-    "",
-    "Style RR within each league:",
-    "",
-    md_table(rr_within.round(2).rename_axis("league")),
-    "",
-    f"![Within league](figures/{league_fig})",
-    "",
-    "## 5. Age and position",
-    "",
-    md_table(compare.join(mix).rename_axis("style")),
-    "",
-    "## 6. Team strength and workload",
-    "",
-    "Style RR within thirds of team strength (points per match):",
-    "",
-    md_table(rr_strength.round(2).rename_axis("strength")),
-    "",
-    "By congestion (share of matches on < 4 days' rest, thirds over player-seasons):",
-    "",
-    md_table(fmt(by_congestion)[cols].rename_axis("congestion")),
-    "",
-    "## 7. Fitness absences (Bundesliga, secondary outcome)",
-    "",
-    md_table(fitness.loc[STYLE_ORDER].rename_axis("style")),
-    "",
-    "## 8. Sensitivity checks (injury RR by style)",
-    "",
-    md_table(sensitivity.rename_axis("variant")),
-    "",
-    "k = 4 robustness check:",
-    "",
-    md_table(fmt(k4)[cols].rename_axis("style (k = 4)")),
-    "",
-    "## 9. Style cards (core team-seasons)",
-    "",
-    *[f"- **{name}** ({c['family (k = 4)']} family; {c['team-seasons']} team-seasons, core {c['core']}): {c['how it plays']}. "
-      f"{c['in numbers (core)']}. Points/match {c['points/match']}, European matches {c['European matches']}. "
-      f"Typical: {c['typical 2014–18']} | {c['typical 2018–22']} | {c['typical 2022–26']}." for name, c in cards.iterrows()],
-    "",
-    "Injury RR, all teams vs core teams only:",
-    "",
-    md_table(core_check.rename_axis("style")),
-    "",
-    "## 10. How the ways of playing changed",
-    "",
-    md_table(era_all.T.round(2).assign(shape=shapes["all leagues"]).rename_axis("dimension (z)")),
-    "",
-    "Shape per league:",
-    "",
-    md_table(shapes.rename_axis("dimension")),
-    "",
-    "In real units (all leagues):",
-    "",
-    md_table(raw_by_era.round(3).rename_axis("measure")),
-    "",
-    f"![Dimensions over time](figures/{dims_fig})",
-    "",
-    "## 11. How teams move between styles",
-    "",
-    md_table((100 * transition_share).round(0).rename_axis("style \\u2192 next season")),
-    "",
-    "Largest moves between styles:",
-    "",
-    md_table(flows, index=False),
-    "",
-    "## 12. Style mix and injuries per era",
-    "",
-    md_table((100 * mix_era).round(1).rename_axis("era")),
-    "",
-    "Injury RR per style and era (fixed league baselines):",
-    "",
-    md_table(rr_era.round(2).rename_axis("era")),
-    "",
-    "## 13. Where the injury trend comes from (Kitagawa decomposition)",
-    "",
-    md_table(decomposition[decomposition.scope == "all leagues"].drop(columns="scope").round(3), index=False),
-    "",
-    f"![Decomposition](figures/{decomp_fig})",
-    "",
-    "## 14. Style dimensions vs injury outcomes (within-league correlations, 60 league-seasons)",
-    "",
-    md_table(link.rename_axis("dimension")),
-    "",
-    "Season-to-season changes (within league, n = 55; removes slow shared trends):",
-    "",
-    md_table(link_changes.rename_axis("dimension")),
-    "",
-    f"![Links](figures/{link_fig})",
-    "",
-    "## 15. One story per league",
-    "",
-    *[f"{story}\\n" for story in stories.values()],
-    "",
-    "## 16. Outputs",
-    "",
-    f"- `data/{PHASE}/player_seasons.parquet`: the player-club-season table with style, strength, workload, age, position and injuries.",
-    "",
-]
+CORE_RATIO = 0.8
+RAW = {"attack_possession": ("deep_pm", "deep completions per match"), "attack_patience": ("slow_attack_share", "shots from slow, patient attacks"),
+       "attack_verticality": ("fast_attack_share", "shots from fast attacks"), "attack_directness": ("outside_box_share", "shots from outside the box"),
+       "defence_press": ("ppda", "PPDA (lower = more pressing)"), "defence_high_line": ("conceded_fast_share", "shots conceded from fast attacks"),
+       "defence_territory_conceded": ("deep_against_pm", "deep completions conceded per match"), "defence_aggression": ("fouls_pm", "fouls per match")}
+PHRASE = {"attack_possession": ("dominates the ball and plays in the opponent's half", "spends long spells without the ball"),
+          "attack_patience": ("builds up slowly and patiently", "rarely builds up slowly"),
+          "attack_verticality": ("attacks fast and vertically, on the break", "rarely attacks at speed"),
+          "attack_directness": ("shoots from distance and relies on set plays", "works the ball into the box before shooting"),
+          "defence_press": ("presses high and wins the ball back quickly", "sits off and lets the opponent have the ball"),
+          "defence_high_line": ("holds a high line, exposed to counters", "keeps a deep, protected line"),
+          "defence_territory_conceded": ("lets opponents near the box", "keeps opponents far from goal"),
+          "defence_aggression": ("defends through fouls and duels, many cards", "defends cleanly, few fouls")}
+ts = team.merge(features[["season", "club_id"] + [r for r, _ in RAW.values()]], on=["season", "club_id"])
+for ph, col, order in [("attack", "attack_style", ATTACK), ("defence", "defence_style", DEFENCE)]:
+    cen = ts.groupby(col)[DIMS[ph]].mean().loc[order]
+    x = ts[DIMS[ph]].to_numpy()
+    dist = np.linalg.norm(x[:, None, :] - cen.to_numpy()[None], axis=2)
+    own_i = ts[col].map(order.index).to_numpy()
+    own = dist[np.arange(len(ts)), own_i]
+    dist[np.arange(len(ts)), own_i] = np.inf
+    ts[f"{ph}_core"] = own / dist.min(axis=1) <= CORE_RATIO
+    ts[f"{ph}_dist"] = own
+
+
+def value(feature: str, v: float) -> str:
+    return f"{100 * v:.0f}%" if feature.endswith("share") else f"{v:.1f}"
+
+
+cards = {}
+for ph, col, order, other in [("attack", "attack_style", ATTACK, "defence_style"), ("defence", "defence_style", DEFENCE, "attack_style")]:
+    rows = []
+    for name in order:
+        s = ts[ts[col] == name]
+        core = s[s[f"{ph}_core"]]
+        cz = core[DIMS[ph]].mean()
+        top = cz.abs().sort_values(ascending=False).index[:3]
+        typical = (core.sort_values(f"{ph}_dist").groupby("era").head(2).assign(t=lambda d: d.club + " " + d.season_key)
+                   .groupby("era").t.apply(", ".join).reindex(ERA_ORDER).fillna("–"))
+        pairs = s[other].value_counts(normalize=True).head(2)
+        rows.append({"style": name, "team-seasons": len(s), "core": f"{len(core)} ({len(core) / len(s):.0%})",
+                     "how it plays": "; ".join(PHRASE[d][0 if cz[d] > 0 else 1] for d in top),
+                     "in numbers (core)": "; ".join(f"{RAW[d][1]}: {value(RAW[d][0], core[RAW[d][0]].mean())} (all {value(RAW[d][0], ts[RAW[d][0]].mean())})" for d in top),
+                     "back-three minutes": f"{100 * s.back_three_share.mean():.0f}%", "points/match": round(core.points_pm.mean(), 2),
+                     "most often with": ", ".join(f"{k} ({v:.0%})" for k, v in pairs.items()),
+                     **{f"typical {e}": typical[e] for e in ERA_ORDER}})
+    cards[ph] = pd.DataFrame(rows).set_index("style")
+    display(cards[ph])
+ps = ps.merge(ts[["season", "club_id", "attack_core", "defence_core"]], on=["season", "club_id"], how="left")
+core_check = {}
+for ph, name in [("attack", "attacking style"), ("defence", "defensive style")]:
+    col, order = GROUPINGS[name]
+    core_t = summarise(ps[ps[f"{ph}_core"]], col).loc[order]
+    core_check[name] = pd.DataFrame({"RR, all teams": results[name]["RR"], "RR, core teams": core_t["RR"],
+                                     "days RR, all teams": results[name]["days RR"], "days RR, core teams": core_t["days RR"]}).round(2)
+    display(core_check[name])
+''')
+
+# ---- step 12
+md('''
+## Step 12. How the ways of attacking and defending changed, and in what shape
+
+Each dimension's mean per era (2014–18, 2018–22, 2022–26), for all leagues and per league, with the shape: **rising**,
+**falling**, **peak** (up then down), **dip** (down then up) or **flat** (every step under 0.1 SD). Real-unit means
+show the same changes in football terms.
+''')
+code('''
+SHAPE_TOL = 0.1
+ALL_DIMS = DIMS["attack"] + DIMS["defence"]
+
+
+def shape(values: list[float]) -> str:
+    steps = [0 if abs(d) < SHAPE_TOL else int(np.sign(d)) for d in np.diff(values)]
+    if steps == [0, 0]:
+        return "flat"
+    if all(s >= 0 for s in steps):
+        return "rising"
+    if all(s <= 0 for s in steps):
+        return "falling"
+    return "peak" if steps == [1, -1] else "dip"
+
+
+era_dims = ts.groupby(["league", "era"])[ALL_DIMS].mean()
+era_all = ts.groupby("era")[ALL_DIMS].mean().loc[ERA_ORDER]
+shapes = pd.DataFrame({lg: {d: shape(era_dims.loc[lg].loc[ERA_ORDER, d].tolist()) for d in ALL_DIMS} for lg in LEAGUES})
+shapes.insert(0, "all leagues", [shape(era_all[d].tolist()) for d in ALL_DIMS])
+raw_by_era = ts.groupby("era")[[r for r, _ in RAW.values()] + ["back_three_share"]].mean().loc[ERA_ORDER].T
+raw_by_era.index = [RAW[d][1] for d in ALL_DIMS] + ["minutes in a back three"]
+display(era_all.T.round(2).assign(shape=shapes["all leagues"]))
+display(shapes)
+raw_by_era.round(3)
+''')
+code('''
+LEAGUE_COLORS = dict(zip(LEAGUES, SERIES))
+season_dims = ts.groupby(["season_key", "league"])[ALL_DIMS].mean()
+seasons_x = sorted(ts.season_key.unique())
+fig, axes = plt.subplots(2, 4, figsize=(18, 7), sharex=True, sharey=True)
+for ax, d in zip(axes.flat, ALL_DIMS):
+    for lg in LEAGUES:
+        y = season_dims[d].xs(lg, level="league").reindex(seasons_x)
+        ax.plot(range(len(y)), y, color=LEAGUE_COLORS[lg], linewidth=1.8, label=lg)
+    ax.axhline(0, color=MUTED, linewidth=0.8)
+    ph, dim = d.split("_", 1)
+    ax.set_title(f"{ph}: {dim.replace('_', ' ')} ({shapes.loc[d, 'all leagues']})", loc="left")
+    ax.set_xticks(range(0, len(seasons_x), 3), [seasons_x[i][2:] for i in range(0, len(seasons_x), 3)])
+axes[0, 0].legend(frameon=False, fontsize=8)
+for ax in axes[:, 0]:
+    ax.set_ylabel("mean score (z)")
+fig.tight_layout()
+dims_fig = save(fig, "05_style_dimensions_over_time.png")
+''')
+
+# ---- step 13
+md('''
+## Step 13. How teams move between styles
+
+For every club that played in its Big Five league in two consecutive seasons: its attacking (and defensive) style in
+season *t* and *t + 1*. The diagonal is how often a style is kept; the largest off-diagonal flows are the routes of
+change.
+''')
+code('''
+transitions = {}
+for ph, col, order in [("attack", "attack_style", ATTACK), ("defence", "defence_style", DEFENCE)]:
+    nxt = ts[["club_id", "season", col]].assign(season=lambda d: d.season - 1).rename(columns={col: "next"})
+    moves = ts[["club_id", "season", "era", col]].merge(nxt, on=["club_id", "season"])
+    t = pd.crosstab(moves[col], moves["next"]).loc[order, order]
+    flows = t.stack().rename("clubs").reset_index().rename(columns={col: "from"})
+    flows = flows[flows["from"] != flows["next"]].sort_values("clubs", ascending=False).head(5)
+    transitions[ph] = {"share": t.div(t.sum(axis=1), axis=0), "flows": flows, "kept": np.trace(t.to_numpy()) / t.to_numpy().sum()}
+    print(f"{ph}: {len(moves):,} consecutive pairs; style kept {transitions[ph]['kept']:.0%}")
+    display((100 * transitions[ph]["share"]).round(0))
+    display(flows)
+''')
+
+# ---- step 14
+md('''
+## Step 14. Style mix and injuries per era
+
+Share of team-seasons per style and era, and each style's injury RR per era against its league's **fixed** 12-season
+baseline, so change over time stays visible.
+''')
+code('''
+mix_era, rr_era, days_era = {}, {}, {}
+for name in ["attacking style", "defensive style", "formation"]:
+    col, order = GROUPINGS[name]
+    mix_era[name] = pd.crosstab(clusters.era, clusters[col], normalize="index").loc[ERA_ORDER, order]
+    t = summarise(ps, ["era", col])
+    rr_era[name] = t["RR"].unstack().loc[ERA_ORDER, order]
+    days_era[name] = t["days RR"].unstack().loc[ERA_ORDER, order]
+    print(name)
+    display((100 * mix_era[name]).round(1))
+    display(rr_era[name].round(2))
+by_era = summarise(ps, "era").loc[ERA_ORDER]
+fmt(by_era)[COLS]
+''')
+
+# ---- step 15
+md('''
+## Step 15. How much of the injury trend comes from styles changing?
+
+**Kitagawa decomposition.** The overall rate is the share-weighted sum of cell rates; between two eras its change
+splits exactly into **style mix** (cell shares changed × average rate) and **within styles** (cell rates changed ×
+average share). Cells are league × combined style (attack × defence), so both phases count. The same is done with
+attacking style only and defensive style only, to see which phase's shift matters more. Outcomes per player-season:
+injuries, days lost, severe injuries, hamstring injuries, knee injuries.
+''')
+code('''
+OUTCOMES = {"injuries": "injuries", "days lost": "days_lost", "severe injuries": "severe",
+            "hamstring injuries": "area: hamstring", "knee injuries": "area: knee"}
+PAIRS = [(ERA_ORDER[0], ERA_ORDER[1]), (ERA_ORDER[1], ERA_ORDER[2]), (ERA_ORDER[0], ERA_ORDER[2])]
+FIRST_LAST = f"{ERA_ORDER[0]} → {ERA_ORDER[2]}"
+
+
+def decompose(df: pd.DataFrame, outcome: str, e0: str, e1: str, cells: list[str]) -> dict:
+    def table(e):
+        t = df[df.era == e].groupby(cells, observed=True).agg(n=(outcome, "size"), rate=(outcome, "mean"))
+        return t.assign(w=t.n / t.n.sum())
+    j = table(e0)[["w", "rate"]].join(table(e1)[["w", "rate"]], how="outer", lsuffix="0", rsuffix="1")
+    j[["w0", "w1"]] = j[["w0", "w1"]].fillna(0)
+    j["rate0"], j["rate1"] = j.rate0.fillna(j.rate1), j.rate1.fillna(j.rate0)
+    total = (j.w1 * j.rate1).sum() - (j.w0 * j.rate0).sum()
+    mix = ((j.w1 - j.w0) * (j.rate0 + j.rate1) / 2).sum()
+    within = ((j.rate1 - j.rate0) * (j.w0 + j.w1) / 2).sum()
+    assert abs(total - mix - within) < 1e-9
+    return {"from": (j.w0 * j.rate0).sum(), "to": (j.w1 * j.rate1).sum(), "change": total, "from style mix": mix, "within styles": within}
+
+
+CELLS = {"combined style": ["style_group"], "attacking style": ["attack_style"], "defensive style": ["defence_style"]}
+rows = []
+for label, col in OUTCOMES.items():
+    for e0, e1 in PAIRS:
+        for by, cells in CELLS.items():
+            rows.append({"outcome": label, "eras": f"{e0} → {e1}", "scope": "all leagues", "styles": by,
+                         **decompose(ps, col, e0, e1, ["league"] + cells)})
+            for lg in LEAGUES:
+                rows.append({"outcome": label, "eras": f"{e0} → {e1}", "scope": lg, "styles": by,
+                             **decompose(ps[ps.league == lg], col, e0, e1, cells)})
+decomposition = pd.DataFrame(rows)
+main_dec = decomposition[(decomposition.scope == "all leagues") & (decomposition.styles == "combined style")]
+phase_dec = decomposition[(decomposition.scope == "all leagues") & (decomposition.eras == FIRST_LAST)].pivot(
+    index="outcome", columns="styles", values="from style mix").loc[list(OUTCOMES)]
+display(main_dec.drop(columns=["scope", "styles"]).round(3))
+display(phase_dec.round(3))
+decomposition[(decomposition.eras == FIRST_LAST) & (decomposition.outcome == "injuries") & (decomposition.styles == "combined style")].round(3)
+''')
+code('''
+d = decomposition[(decomposition.eras == FIRST_LAST) & (decomposition.outcome == "injuries") & (decomposition.styles == "combined style")].set_index("scope").loc[["all leagues"] + LEAGUES]
+fig, ax = plt.subplots(figsize=(10, 4))
+y = np.arange(len(d))[::-1]
+ax.barh(y + 0.18, d["from style mix"], height=0.34, color=SERIES[0], label="from the style mix changing")
+ax.barh(y - 0.18, d["within styles"], height=0.34, color=SERIES[1], label="within styles")
+ax.scatter(d.change, y, color=INK, zorder=3, s=30, label="total change")
+ax.axvline(0, color=MUTED, linewidth=1)
+ax.set_yticks(y, d.index)
+ax.set_xlabel(f"change in injuries per player-season, {FIRST_LAST}")
+ax.set_title("Where the injury trend comes from", loc="left")
+ax.grid(axis="y", visible=False)
+ax.legend(frameon=False, fontsize=8, loc="lower right")
+decomp_fig = save(fig, "05_trend_decomposition.png")
+''')
+
+# ---- step 16
+md('''
+## Step 16. Style dimensions vs injury outcomes across league-seasons
+
+For the 60 league-seasons: average style scores against injury outcomes, **within league** (both centred on the
+league's 12-season mean). These level correlations partly repeat shared long-run trends (including recording
+changes); the stricter version uses **season-to-season changes** within each league (n = 55). Aggregate association
+only.
+''')
+code('''
+ls_dims = ts.groupby(["league", "season_key"])[ALL_DIMS].mean()
+g = ps.groupby(["league", "season_key"])
+known = g.injuries.sum() - g["area: unknown"].sum()
+ls_out = pd.DataFrame({
+    "injuries / player-season": g.injuries.mean(), "days lost / player-season": g.days_lost.mean(),
+    "severe share": g.severe.sum() / g.injuries.sum(), "hamstring share": g["area: hamstring"].sum() / known,
+    "knee share": g["area: knee"].sum() / known,
+    "muscle share": (g["area: hamstring"].sum() + g["area: unspecified muscle"].sum() + g["area: thigh"].sum()
+                     + g["area: calf/achilles/lower leg"].sum()) / known,
+})
+centred = lambda t: t - t.groupby(level="league").transform("mean")
+changes = lambda t: t.groupby(level="league").diff().dropna()
+cd, co = centred(ls_dims), centred(ls_out)
+dd, do = changes(ls_dims.sort_index()), changes(ls_out.sort_index())
+link = pd.DataFrame({o: {d: cd[d].corr(co[o]) for d in ALL_DIMS} for o in co.columns}).round(2)
+link_changes = pd.DataFrame({o: {d: dd[d].corr(do[o]) for d in ALL_DIMS} for o in do.columns}).round(2)
+strongest = link.abs().stack().sort_values(ascending=False).head(6)
+display(link)
+display(link_changes)
+strongest.rename("|r|").to_frame()
+''')
+code('''
+fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
+for ax, (d, o) in zip(axes, strongest.index[:2]):
+    for lg in LEAGUES:
+        ax.scatter(cd.xs(lg, level="league")[d], co.xs(lg, level="league")[o], color=LEAGUE_COLORS[lg], s=40,
+                   edgecolors=SURFACE, linewidths=1, label=lg)
+    ax.set_xlabel(f"{d.replace('_', ' ')} (vs league's 12-season mean)")
+    ax.set_ylabel(f"{o} (vs league mean)")
+    ax.set_title(f"levels r = {link.loc[d, o]:+.2f}; season-to-season r = {link_changes.loc[d, o]:+.2f}", loc="left")
+axes[0].legend(frameon=False, fontsize=8)
+fig.tight_layout()
+link_fig = save(fig, "05_style_injury_links.png")
+''')
+
+# ---- step 17
+md('''
+## Step 17. One story per league
+
+Each league's evolution in a few sentences from steps 12–15: which attacking and defensive styles grew and shrank,
+how the ways of playing changed, and what happened to injuries, split into the style-mix part and the within-style part.
+''')
+code('''
+stories = {}
+first, last = ERA_ORDER[0], ERA_ORDER[2]
+mix_league = {ph: pd.crosstab([clusters.league, clusters.era], clusters[col], normalize="index")[order]
+              for ph, col, order in [("attack", "attack_style", ATTACK), ("defence", "defence_style", DEFENCE)]}
+
+
+def shifts(ph: str, lg: str) -> str:
+    m = mix_league[ph].loc[lg]
+    ch = (m.loc[last] - m.loc[first]).sort_values()
+    up, down = ch.index[-1], ch.index[0]
+    return (f"{up} {100 * m.loc[first, up]:.0f}% → {100 * m.loc[last, up]:.0f}%, "
+            f"{down} {100 * m.loc[first, down]:.0f}% → {100 * m.loc[last, down]:.0f}%")
+
+
+for lg in LEAGUES:
+    dec = decomposition[(decomposition.scope == lg) & (decomposition.eras == FIRST_LAST) & (decomposition.styles == "combined style")].set_index("outcome")
+    inj, days, ham, knee = (dec.loc[o] for o in ["injuries", "days lost", "hamstring injuries", "knee injuries"])
+    moved = [f"{d.split('_', 1)[1].replace('_', ' ')} ({d.split('_')[0]}) {shapes.loc[d, lg]}" for d in ALL_DIMS if shapes.loc[d, lg] != "flat"]
+    b3 = ts[ts.league == lg].groupby("era").back_three_share.mean()
+    stories[lg] = (
+        f"**{lg}.** From {first} to {last}: attack {shifts('attack', lg)}; defence {shifts('defence', lg)}; "
+        f"back-three minutes {100 * b3[first]:.0f}% → {100 * b3[last]:.0f}%. "
+        + (f"Trends: {', '.join(moved)}. " if moved else "")
+        + f"Injuries per player-season {inj['from']:.2f} → {inj['to']:.2f} ({inj.change:+.2f}: {inj['from style mix']:+.3f} from the style mix, "
+        f"{inj['within styles']:+.3f} within styles); days lost {days['from']:.1f} → {days['to']:.1f}; hamstring injuries "
+        f"{ham['from']:.3f} → {ham['to']:.3f} (style mix {ham['from style mix']:+.3f}); knee {knee['from']:.3f} → {knee['to']:.3f} "
+        f"(style mix {knee['from style mix']:+.3f})."
+    )
+    display(Markdown(stories[lg]))
+''')
+
+# ---- step 18
+md('''
+## Step 18. Report
+''')
+code('''
+ps.to_parquet(OUT_DIR / "player_seasons.parquet", index=False)
+
+
+def sig_list(t: pd.DataFrame, rr: str = "RR") -> str:
+    lo, hi = f"{rr} low", f"{rr} high"
+    s = t[(t[lo] > 1) | (t[hi] < 1)]
+    return ", ".join(f"{i} {r:.2f}" for i, r in s[rr].items()) or "none"
+
+
+text = ["# Phase 5: Injury analysis", "",
+        f"Generated {date.today().isoformat()} by `notebooks/05_injury_analysis.ipynb`, where each step is shown with its checks.", "",
+        "## Key numbers", "",
+        f"- {len(ps):,} player-club-seasons, {int(ps.injuries.sum()):,} injuries > 7 days, {int(ps.days_lost.sum()):,} days lost."]
+for name in ["attacking style", "defensive style", "formation"]:
+    text.append(f"- {name.capitalize()}: injury RR CI excludes 1 for {sig_list(results[name])}; days RR for {sig_list(results[name], 'days RR')}; "
+                f"robust in every sensitivity check: {', '.join(robust[name]) or 'none'}.")
+text += ["", "## 1. Injuries by style", ""]
+for name in GROUPINGS:
+    text += [f"### {name.capitalize()}", "", md_table(fmt(results[name])[COLS].rename_axis(name)), ""]
+text += ["Injury RR, attacking style (rows) × defensive style (columns):", "", md_table(grid_rr.round(2).rename_axis("attack \\\\ defence")), "",
+         "Days lost RR:", "", md_table(grid_days.round(2).rename_axis("attack \\\\ defence")), "",
+         f"![Rates](figures/{style_fig})", "", f"![Grid](figures/{grid_fig})", "",
+         "## 2. Body areas by style (relative to the league's share; median over leagues, leagues above 1)", ""]
+for name in ["attacking style", "defensive style", "formation"]:
+    b = body[name]
+    text += [f"### {name.capitalize()} (pooled chi² p = {b['p']:.2g}, Cramér's V = {b['V']:.3f})", "",
+             md_table(b["median"].round(2).rename_axis(name)), "", md_table(b["above"].rename_axis(name)), ""]
+text += [f"![Body areas](figures/{area_fig})", "", "## 3. Seasons", "",
+         md_table(fmt(by_season)[["player-seasons", "injuries / player-season", "days lost / player-season", "severe share"]].join(unknown_share.round(3)).rename_axis("season")), "",
+         f"![Trend](figures/{trend_fig})", "", f"![Shares](figures/{shares_fig})", "", "## 4. Leagues", "",
+         md_table(fmt(by_league)[COLS].rename_axis("league")), ""]
+for name, (rr, n) in within.items():
+    text += [f"{name.capitalize()} RR within each league:", "", md_table(rr.round(2).rename_axis("league")), ""]
+text += [f"![Within league](figures/{league_fig})", "", "## 5. Age and position", ""]
+for name, t in adjusted.items():
+    text += [md_table(t.rename_axis(name)), ""]
+text += ["## 6. Team strength and workload", ""]
+for name in strength_rr:
+    text += [f"{name.capitalize()} RR within strength thirds:", "", md_table(strength_rr[name].round(2).rename_axis("strength")), "",
+             f"{name.capitalize()} RR within congestion thirds:", "", md_table(congestion_rr[name].round(2).rename_axis("congestion")), ""]
+text += ["By congestion:", "", md_table(fmt(by_congestion)[COLS].rename_axis("congestion")), "",
+         "## 7. Fitness absences (Bundesliga, secondary outcome)", ""]
+for name, f in fitness.items():
+    text += [md_table(f.rename_axis(name)), ""]
+text += ["## 8. Sensitivity checks (injury RR)", ""]
+for name, t in sensitivity.items():
+    text += [f"### {name.capitalize()}", "", md_table(t.rename_axis("variant")), ""]
+text += ["## 9. Style cards (core team-seasons)", ""]
+for ph, title in [("attack", "Attacking styles"), ("defence", "Defensive styles")]:
+    text += [f"### {title}", ""]
+    for name, c in cards[ph].iterrows():
+        text.append(f"- **{name}** ({c['team-seasons']} team-seasons, core {c['core']}): {c['how it plays']}. {c['in numbers (core)']}. "
+                    f"Back-three minutes {c['back-three minutes']}; points/match {c['points/match']}; most often with {c['most often with']}. "
+                    f"Typical: {c['typical 2014–18']} | {c['typical 2018–22']} | {c['typical 2022–26']}.")
+    text.append("")
+text += ["Injury RR, all teams vs core teams only:", ""]
+for name, t in core_check.items():
+    text += [md_table(t.rename_axis(name)), ""]
+text += ["## 10. How the ways of attacking and defending changed", "",
+         md_table(era_all.T.round(2).assign(shape=shapes["all leagues"]).rename_axis("dimension (z)")), "",
+         md_table(shapes.rename_axis("dimension")), "", md_table(raw_by_era.round(3).rename_axis("measure (all leagues)")), "",
+         f"![Dimensions](figures/{dims_fig})", "", "## 11. How teams move between styles", ""]
+for ph, tr in transitions.items():
+    text += [f"{ph.title()}: style kept from one season to the next {tr['kept']:.0%}.", "",
+             md_table((100 * tr["share"]).round(0).rename_axis(f"{ph} \\u2192 next season")), "", md_table(tr["flows"], index=False), ""]
+text += ["## 12. Style mix and injuries per era", ""]
+for name in mix_era:
+    text += [f"### {name.capitalize()}", "", md_table((100 * mix_era[name]).round(1).rename_axis("era")), "",
+             "Injury RR per era (fixed league baselines):", "", md_table(rr_era[name].round(2).rename_axis("era")), ""]
+text += ["## 13. Where the injury trend comes from (Kitagawa decomposition)", "",
+         md_table(main_dec.drop(columns=["scope", "styles"]).round(3), index=False), "",
+         f"Style-mix part, {FIRST_LAST}, by which phase's styles are used:", "", md_table(phase_dec.round(3).rename_axis("outcome")), "",
+         f"![Decomposition](figures/{decomp_fig})", "",
+         "## 14. Style dimensions vs injury outcomes (60 league-seasons, within league)", "",
+         "Levels:", "", md_table(link.rename_axis("dimension")), "",
+         "Season-to-season changes (n = 55):", "", md_table(link_changes.rename_axis("dimension")), "",
+         f"![Links](figures/{link_fig})", "", "## 15. One story per league", "", *[f"{s}\\n" for s in stories.values()], "",
+         "## 16. Outputs", "",
+         f"- `data/{PHASE}/player_seasons.parquet`: the player-club-season table with styles, formation, strength, workload, age, position and injuries.", ""]
 (REPORTS_DIR / "05_injury_analysis.md").write_text("\\n".join(text), encoding="utf-8")
 print("wrote", REPORTS_DIR / "05_injury_analysis.md")
 ''')
