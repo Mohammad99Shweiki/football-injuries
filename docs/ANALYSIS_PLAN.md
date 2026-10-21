@@ -63,7 +63,7 @@ Shooting volume (shots on target) was dropped on 2026-10-21; `rest_mean` was dro
 - **K-means**, k = 2…10, with several random initialisations and a fixed seed. Report elbow (inertia), silhouette, Davies–Bouldin and Calinski–Harabasz for each k. Choose k from these plus interpretability.
 - **Hierarchical (Ward)** at the same k: show the dendrogram and the adjusted Rand index against K-means.
 - **Stability:** bootstrap resampling: mean ARI and per-cluster Jaccard (Hennig 2007); usable k = every cluster ≥ 0.6.
-- **Two variants:** with and without outcome features (npxG/npxGA), to test whether clusters are about style or team strength. Pick one with me. *Done 2026-10-21: style only, on 8 equal-weight style dimensions; k = 7 main, k = 4 check (see DECISIONS).*
+- **Two variants:** with and without outcome features (npxG/npxGA), to test whether clusters are about style or team strength. Pick one with me. *Done 2026-10-21: style only, clustered per phase of play (attacking k = 4, defensive k = 4; style = the pair; formation reported, not clustered; see DECISIONS).*
 - **Profiling:** cluster centroids in original units, a radar or heatmap, a descriptive name for each cluster, and example teams.
 - **Output:** `data/04_clusters/team_season_clusters.parquet`, `reports/04_clustering.md` and figures (PCA 2D scatter for visualisation only).
 
@@ -87,7 +87,7 @@ Shooting volume (shots on target) was dropped on 2026-10-21; `rest_mean` was dro
   - multi-club players excluded
   - COVID seasons excluded
   - injuries > 3 days (adding the mild 4–7 day band)
-  - k = 4 clustering instead of k = 7
+  - core team-seasons only (clear members of their style)
 - **Secondary outcome:** *Fitness* absences (non-injuries, mostly reconditioning) per cluster, read mainly within the Bundesliga where they are recorded.
 - **Output:** `data/05_injury_analysis/player_seasons.parquet`, `reports/05_injury_analysis.md` and figures.
 

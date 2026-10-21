@@ -27,7 +27,7 @@ Run analysis code with the `analysis` dependency group (kept out of the Docker i
 | Leagues | Premier League, La Liga, Serie A, Bundesliga, Ligue 1 |
 | Seasons | 2014/15 – 2025/26 (12 seasons) |
 | Algorithm | Clustering: K-means (k by elbow + silhouette), compared with hierarchical (Ward) |
-| Unit | **Hybrid:** cluster **team-seasons** (1,170 rows) by style (8 equal-weight style dimensions; workload kept as exposure, not clustered, decided 2026-10-21); each **player-season** inherits its team's cluster; injuries analysed at player-season level |
+| Unit | **Hybrid:** cluster **team-seasons** (1,170 rows) by playing style **per phase of play**: attacking style and defensive style (4 + 4 dimensions, K-means k = 4 each; formation and workload not clustered, decided 2026-10-21); each **player-season** inherits its team's cluster; injuries analysed at player-season level |
 | Injury scope | Injuries keeping a player out **more than 7 days** |
 | Sources | Understat (style: PPDA, deep, xG), Football-Data.co.uk (shots, fouls, cards, corners, dates), Transfermarkt (injuries, squads, minutes, fixtures, age, position) |
 
@@ -79,7 +79,7 @@ Season keys differ per source: FD `season_code` "1415", Understat/TM start year 
 2. ~~Player-season inclusion~~ **Settled 2026-10-21:** ≥ 1 appearance **or** ≥ 1 match marked injured for the club that season; sensitivity check at ≥ 900 minutes (see `docs/DECISIONS.md`).
 3. ~~Players at two clubs~~ **Settled 2026-10-21:** each injury goes to the club the player was at on its date (per-match records); injuries at non-Big Five clubs dropped; multi-club player-seasons flagged (`multi_club_season`).
 4. ~~Feature scaling~~ **Settled 2026-10-21:** standardise globally across all team-seasons, so that changes over time and differences between leagues are preserved.
-5. ~~Team strength~~ **Settled 2026-10-21:** style only (npxG/npxGA not clustered); clusters still partly follow strength (eta² 0.41 for points), so Phase 5 compares injuries within strength bands too. Main clustering k = 7, robustness check k = 4.
+5. ~~Team strength~~ **Settled 2026-10-21:** style only (npxG/npxGA not clustered); clusters still partly follow strength (eta² 0.41 for points), so Phase 5 compares injuries within strength bands too. Styles per phase (attack k = 4, defence k = 4) and their combination.
 
 ## Final proposal text (for reference)
 **Title:** Playing Style and Injury Patterns in Europe's Big Five Football Leagues (2014/15–2025/26)

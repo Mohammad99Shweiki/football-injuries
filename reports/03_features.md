@@ -6,7 +6,7 @@ Generated 2026-10-21 by `notebooks/03_features.ipynb`, where each step is shown 
 
 - **1,170 team-seasons, 23 features, none missing.** League match counts agree between Understat and Football-Data.
 - **Redundant pairs (|r| > 0.9):** 1; dropped rest_mean.
-- **15 style features** form **8 equal-weight style dimensions**, which are clustered; 22 features in all are standardised over all team-seasons (outcome and exposure features are kept for Phases 4–5, not clustered).
+- **13 style features** form **4 attacking and 4 defensive dimensions**, clustered per phase in Phase 4; 22 features in all are standardised over all team-seasons (outcome and exposure features are kept for Phases 4–5, not clustered).
 
 ## 1. Features
 
@@ -64,31 +64,33 @@ Generated 2026-10-21 by `notebooks/03_features.ipynb`, where each step is shown 
 | rest_sd | 3.23 | 0.38 | 2.07 | 4.61 |
 | top14_share | 0.8 | 0.05 | 0.6 | 0.95 |
 
-## 3. Style dimensions (clustered in Phase 4)
+## 3. Phase-of-play dimensions (clustered per phase in Phase 4)
 
-| dimension | features (sign) |
-|---|---|
-| dominance | opp_ppda (+), deep_pm (+), deep_against_pm (−), corners_for_pm (+), corners_against_pm (−), slow_attack_share (+) |
-| pressing | ppda (−) |
-| counter | fast_attack_share (+) |
-| high_line | conceded_fast_share (+) |
-| physical | fouls_pm (+), fouled_pm (+), cards_pm (+) |
-| set_pieces | set_piece_share (+) |
-| long_shots | outside_box_share (+) |
-| back_three | back_three_share (+) |
+| phase | dimension | features (sign) |
+|---|---|---|
+| attack | possession | opp_ppda (+), deep_pm (+), corners_for_pm (+) |
+| attack | patience | slow_attack_share (+) |
+| attack | verticality | fast_attack_share (+) |
+| attack | directness | outside_box_share (+), set_piece_share (+) |
+| defence | press | ppda (−) |
+| defence | high_line | conceded_fast_share (+) |
+| defence | territory_conceded | deep_against_pm (+), corners_against_pm (+) |
+| defence | aggression | fouls_pm (+), cards_pm (+) |
+
+Not clustered: `back_three_share` (structure (formation), reported per style); `fouled_pm` (describes the opponent).
 
 Correlations between the dimensions:
 
-| dimension | dominance | pressing | counter | high_line | physical | set_pieces | long_shots | back_three |
+| dimension | attack_possession | attack_patience | attack_verticality | attack_directness | defence_press | defence_high_line | defence_territory_conceded | defence_aggression |
 |---|---|---|---|---|---|---|---|---|
-| dominance | 1.0 | 0.45 | -0.31 | 0.28 | -0.35 | -0.38 | -0.37 | 0.03 |
-| pressing | 0.45 | 1.0 | -0.14 | 0.37 | 0.31 | -0.14 | 0.07 | -0.21 |
-| counter | -0.31 | -0.14 | 1.0 | -0.08 | 0.04 | 0.04 | 0.02 | -0.05 |
-| high_line | 0.28 | 0.37 | -0.08 | 1.0 | -0.07 | 0.03 | -0.07 | -0.08 |
-| physical | -0.35 | 0.31 | 0.04 | -0.07 | 1.0 | 0.17 | 0.34 | -0.02 |
-| set_pieces | -0.38 | -0.14 | 0.04 | 0.03 | 0.17 | 1.0 | 0.03 | -0.05 |
-| long_shots | -0.37 | 0.07 | 0.02 | -0.07 | 0.34 | 0.03 | 1.0 | -0.18 |
-| back_three | 0.03 | -0.21 | -0.05 | -0.08 | -0.02 | -0.05 | -0.18 | 1.0 |
+| attack_possession | 1.0 | 0.5 | -0.27 | -0.55 | 0.39 | 0.28 | -0.6 | -0.48 |
+| attack_patience | 0.5 | 1.0 | -0.27 | -0.42 | 0.0 | 0.03 | -0.27 | -0.33 |
+| attack_verticality | -0.27 | -0.27 | 1.0 | 0.04 | -0.14 | -0.08 | 0.24 | 0.1 |
+| attack_directness | -0.55 | -0.42 | 0.04 | 1.0 | -0.04 | -0.03 | 0.27 | 0.31 |
+| defence_press | 0.39 | 0.0 | -0.14 | -0.04 | 1.0 | 0.37 | -0.55 | 0.25 |
+| defence_high_line | 0.28 | 0.03 | -0.08 | -0.03 | 0.37 | 1.0 | -0.28 | -0.08 |
+| defence_territory_conceded | -0.6 | -0.27 | 0.24 | 0.27 | -0.55 | -0.28 | 1.0 | 0.07 |
+| defence_aggression | -0.48 | -0.33 | 0.1 | 0.31 | 0.25 | -0.08 | 0.07 | 1.0 |
 
 ## 3b. Strongest correlations between features
 
@@ -174,10 +176,10 @@ Correlations between the dimensions:
 | 3.5 | player-club-season minutes to club-season rotation | 36525 | 1170 |
 | 3.6 | feature groups joined to team-seasons | 1170 | 1170 |
 | 3.9 | standardised 22 features over all team-seasons (dropped: rest_mean) | 1170 | 1170 |
-| 3.11 | 15 style features combined into 8 equal-weight style dimensions | 1170 | 1170 |
+| 3.11 | 13 style features combined into 4 attacking + 4 defensive dimensions (back-three share kept as structure) | 1170 | 1170 |
 
 ## 7. Outputs
 
 - `data/03_features/team_season_features.parquet`: raw features and z-scores (`z_*`, the 22 kept features).
 - `data/03_features/feature_roles.csv`: group, role (style / outcome / exposure) and status of every feature.
-- `data/03_features/style_dimensions.parquet`: the 8 style dimension scores per team-season (Phase 4 input).
+- `data/03_features/style_dimensions.parquet`: the 4 attacking and 4 defensive dimension scores and the back-three share per team-season (Phase 4 input).
