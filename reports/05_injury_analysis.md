@@ -271,6 +271,42 @@ By congestion:
 | middle third | 11970 | 386 | 7200 | 0.602 | 0.437 | 28.4 | 0.459 | -4.5 | -1.1 | 0.93 (0.88–0.98) | 0.96 (0.91–1.01) |
 | busiest third | 12155 | 387 | 9333 | 0.768 | 0.469 | 33.0 | 0.431 | 9.1 | 2.1 | 1.13 (1.06–1.20) | 1.07 (1.01–1.12) |
 
+### Same club, with and without the style
+
+Injury RR in a style's seasons ÷ the same clubs' RR in their other seasons (95% CI over clubs):
+
+| grouping | style | clubs | style seasons | other seasons | ratio, league × season | low, league × season | high, league × season | ratio, + team strength | low, + team strength | high, + team strength | ratio, per team match, + strength | low, per team match, + strength | high, per team match, + strength |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| attacking style | Positional possession | 41 | 162 | 271 | 1.15 | 1.04 | 1.27 | 1.08 | 0.99 | 1.17 | 1.07 | 0.99 | 1.14 |
+| attacking style | Build-up into the box | 96 | 337 | 586 | 0.97 | 0.92 | 1.02 | 0.95 | 0.91 | 1.0 | 0.95 | 0.91 | 0.99 |
+| attacking style | Counter-attack | 102 | 252 | 579 | 0.94 | 0.88 | 0.99 | 0.98 | 0.93 | 1.02 | 0.99 | 0.94 | 1.04 |
+| attacking style | Direct play | 108 | 324 | 577 | 0.98 | 0.93 | 1.03 | 1.02 | 0.97 | 1.07 | 1.02 | 0.98 | 1.07 |
+| defensive style | High press, high line | 65 | 221 | 442 | 1.1 | 1.02 | 1.18 | 1.03 | 0.98 | 1.09 | 1.0 | 0.95 | 1.05 |
+| defensive style | Compact mid-block | 91 | 280 | 578 | 1.03 | 0.97 | 1.09 | 0.99 | 0.94 | 1.04 | 1.0 | 0.94 | 1.05 |
+| defensive style | Aggressive duel press | 81 | 242 | 451 | 0.96 | 0.92 | 1.01 | 1.0 | 0.95 | 1.05 | 1.0 | 0.95 | 1.06 |
+| defensive style | Low block | 84 | 276 | 415 | 0.97 | 0.91 | 1.03 | 1.0 | 0.95 | 1.06 | 1.01 | 0.96 | 1.06 |
+
+Seasons right after a club switched into or out of a style (RR against league × season × strength):
+
+| grouping | style | switch | switches | RR season before (+ strength) | RR season after (+ strength) | change |
+|---|---|---|---|---|---|---|
+| attacking style | Positional possession | into | 61 | 1.06 | 1.08 | 0.02 |
+| attacking style | Positional possession | out of | 40 | 1.08 | 1.1 | 0.02 |
+| attacking style | Build-up into the box | into | 136 | 1.03 | 0.98 | -0.05 |
+| attacking style | Build-up into the box | out of | 123 | 0.97 | 1.06 | 0.09 |
+| attacking style | Counter-attack | into | 94 | 0.97 | 0.99 | 0.03 |
+| attacking style | Counter-attack | out of | 133 | 0.97 | 0.94 | -0.03 |
+| attacking style | Direct play | into | 138 | 0.98 | 1.0 | 0.02 |
+| attacking style | Direct play | out of | 133 | 1.03 | 0.98 | -0.06 |
+| defensive style | High press, high line | into | 99 | 1.01 | 1.04 | 0.02 |
+| defensive style | High press, high line | out of | 97 | 1.08 | 1.1 | 0.02 |
+| defensive style | Compact mid-block | into | 140 | 1.0 | 1.01 | 0.01 |
+| defensive style | Compact mid-block | out of | 144 | 0.97 | 1.06 | 0.09 |
+| defensive style | Aggressive duel press | into | 78 | 1.02 | 1.02 | -0.0 |
+| defensive style | Aggressive duel press | out of | 98 | 0.98 | 1.01 | 0.03 |
+| defensive style | Low block | into | 98 | 0.96 | 1.06 | 0.1 |
+| defensive style | Low block | out of | 76 | 0.97 | 0.91 | -0.06 |
+
 ## 7. Fitness absences (Bundesliga, secondary outcome)
 
 | attacking style | player_seasons | fitness_absences | per 100 player-seasons |

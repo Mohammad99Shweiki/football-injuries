@@ -50,7 +50,7 @@ style**, their combination (Phase 4) and its **formation** (back three: ≥ 50% 
 5. Seasons: injury trend and style shares over time
 6. Leagues: style effects within each league
 7. Adjusting step by step: season, team strength, age and position, matches played
-8. Team strength and workload
+8. Team strength and workload; same club with and without the style
 9. Fitness absences (secondary outcome)
 10. Sensitivity checks
 11. Style cards: what each style looks like on the pitch
@@ -574,6 +574,49 @@ for name in ["attacking style", "defensive style"]:
     display(strength_rr[name].round(2))
     display(congestion_rr[name].round(2))
 fmt(by_congestion)[COLS]
+''')
+md('''
+**Same club, with and without the style.** The strongest check on "style or club?" available without a model: for
+the clubs that played some seasons in a style and some not, their injury RR in the style's seasons is divided by
+their RR in their other seasons (so the club itself, its medical staff and its recording are held fixed), with a
+bootstrap over clubs. Then the seasons right after a club **switched into** or **out of** the style, against the
+season before: if the style itself raised injuries, switching in should raise the RR and switching out lower it.
+''')
+code('''
+SAME_CLUB_EXP = [("league × season", ""), ("+ team strength", "_str"), ("per team match, + strength", "_match_str")]
+team_t = ps.groupby(["team_season", "club_id", "season", "attack_style", "defence_style"], observed=True)[
+    ["injuries", "exp_inj", "exp_inj_str", "exp_inj_match_str"]].sum().reset_index()
+same_rows, switch_rows = [], []
+for name in ["attacking style", "defensive style"]:
+    col, order = GROUPINGS[name]
+    for style in order:
+        t = team_t.assign(inside=team_t[col] == style)
+        mixed = t.groupby("club_id").inside.transform(lambda x: x.any() and not x.all())
+        w = t[mixed]
+        row = {"grouping": name, "style": style, "clubs": w.club_id.nunique(), "style seasons": int(w.inside.sum()),
+               "other seasons": int((~w.inside).sum())}
+        for label, suffix in SAME_CLUB_EXP:
+            c = w.groupby(["club_id", "inside"])[["injuries", f"exp_inj{suffix}"]].sum().unstack(fill_value=0)
+            ratio = lambda d: (d[("injuries", True)].sum() / d[(f"exp_inj{suffix}", True)].sum()) / (
+                d[("injuries", False)].sum() / d[(f"exp_inj{suffix}", False)].sum())
+            rng = np.random.default_rng([SEED, zlib.crc32(f"same club|{style}|{suffix}".encode())])
+            boot = [ratio(c.iloc[rng.integers(0, len(c), len(c))]) for _ in range(N_BOOT)]
+            row[f"ratio, {label}"] = ratio(c)
+            row[f"low, {label}"], row[f"high, {label}"] = np.percentile(boot, [2.5, 97.5])
+        same_rows.append(row)
+        s_ = t.sort_values(["club_id", "season"]).assign(rr=lambda d: d.injuries / d.exp_inj_str)
+        s_["prev_inside"] = s_.groupby("club_id").inside.shift()
+        s_["prev_rr"] = s_.groupby("club_id").rr.shift()
+        s_ = s_[s_.groupby("club_id").season.shift() == s_.season - 1]
+        for direction, mask in [("into", s_.inside & (s_.prev_inside == False)), ("out of", ~s_.inside & (s_.prev_inside == True))]:
+            m = s_[mask]
+            switch_rows.append({"grouping": name, "style": style, "switch": direction, "switches": len(m),
+                                "RR season before (+ strength)": m.prev_rr.mean(), "RR season after (+ strength)": m.rr.mean(),
+                                "change": (m.rr - m.prev_rr).mean()})
+same_club = pd.DataFrame(same_rows).set_index(["grouping", "style"])
+switches = pd.DataFrame(switch_rows).set_index(["grouping", "style", "switch"])
+display(same_club.round(2))
+switches.round(2)
 ''')
 
 # ---- step 9
@@ -1137,6 +1180,8 @@ league_rolling.to_csv(TABLES / "season_league_rolling.csv")
 body_fdr.to_csv(TABLES / "body_areas_fdr.csv", index=False)
 breakdown.to_csv(TABLES / "breakdown_position_age.csv", index=False)
 ladder.to_csv(TABLES / "rr_adjustment_ladder.csv", index=False)
+same_club.to_csv(TABLES / "same_club.csv")
+switches.to_csv(TABLES / "style_switches.csv")
 pd.concat(alt_clusterings, names=["phase"]).to_csv(TABLES / "rr_alternative_clusterings.csv")
 pd.concat(days_sensitivity, names=["grouping"]).to_csv(TABLES / "days_sensitivity.csv")
 
@@ -1182,6 +1227,11 @@ for name in strength_rr:
     text += [f"{name.capitalize()} RR within strength thirds:", "", md_table(strength_rr[name].round(2).rename_axis("strength")), "",
              f"{name.capitalize()} RR within congestion thirds:", "", md_table(congestion_rr[name].round(2).rename_axis("congestion")), ""]
 text += ["By congestion:", "", md_table(fmt(by_congestion)[COLS].rename_axis("congestion")), "",
+         "### Same club, with and without the style", "",
+         "Injury RR in a style's seasons ÷ the same clubs' RR in their other seasons (95% CI over clubs):", "",
+         md_table(same_club.round(2).reset_index(), index=False), "",
+         "Seasons right after a club switched into or out of a style (RR against league × season × strength):", "",
+         md_table(switches.round(2).reset_index(), index=False), "",
          "## 7. Fitness absences (Bundesliga, secondary outcome)", ""]
 for name, f in fitness.items():
     text += [md_table(f.rename_axis(name)), ""]

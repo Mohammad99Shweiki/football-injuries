@@ -91,6 +91,8 @@ numbers |= {
     "attacking style mix beyond strength": round(d.loc["attacking style", "from style mix"], 3),
     "attacking style mix, strength ignored": round(d.loc["attacking style", "style mix, strength ignored"], 3),
     "body-area findings": int(fdr.finding.sum()), "body-area tests": len(fdr),
+    "same club, possession, + strength": round(pd.read_csv(DATA_DIR / "05_injury_analysis" / "tables" / "same_club.csv")
+                                              .set_index("style").loc["Positional possession", "ratio, + team strength"], 2),
 }
 pd.Series(numbers, name="value").to_frame()
 ''')
@@ -113,6 +115,7 @@ EXPECTED_TEXT = {
     "RR high press, per match + strength": "{:.2f} per match", "change in injuries / player-season": "+{:.3f}",
     "attacking style mix beyond strength": "+{:.3f} beyond team strength", "attacking style mix, strength ignored": "+{:.3f} when strength is ignored",
     "body-area findings": "{} of", "body-area tests": "of {} patterns",
+    "same club, possession, + strength": "{:.2f} after team strength (CI",
 }
 rows = []
 for key, pattern in EXPECTED_TEXT.items():

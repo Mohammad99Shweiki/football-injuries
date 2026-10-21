@@ -1,5 +1,7 @@
 # Playing Style and Injury Patterns in Europe's Big Five Football Leagues (2014/15–2025/26)
 
+*Style or schedule? Possession teams get injured more, but mostly because of who they are and how much they play.*
+
 Master's data mining project, An-Najah National University. Summary of methods and results for the course report.
 Every number below is produced by the notebooks in `notebooks/` (00–05) and checked by `notebooks/06_report.ipynb`;
 decisions are logged in `docs/DECISIONS.md`, every preprocessing step with row counts in `docs/PREPROCESSING_LOG.md`.
@@ -17,7 +19,9 @@ Players in **positional-possession** teams had 21% more injuries per player-seas
 (rate ratio 1.21, 95% CI 1.11–1.32), and high-press, high-line teams 14% more. Most of that comes with being a strong
 team that plays more matches: the possession ratio falls to 1.09 after team strength, 1.08 after age and position,
 and 1.05 per team match after strength (CI 1.00–1.10); the high press falls to 1.05 and 1.02. A small excess for
-possession remains in every version; it is an association, not a cause. Body-area differences between styles are
+possession remains in every version; it is an association, not a cause. Comparing the same clubs' seasons with and
+without possession gives 1.08 after team strength (CI 0.99–1.17), and clubs switching into or out of a style show no
+consistent change, so the evidence for an effect of the style itself is weak. Body-area differences between styles are
 small: only 2 of 72 patterns survive a permutation test with correction for multiple comparisons (the low block has
 fewer hamstring injuries, the high press fewer knee injuries). Between 2014–18 and 2022–26 injuries rose by
 +0.043 per player-season; a Kitagawa decomposition attributes +0.038 to the shift in attacking styles beyond team
@@ -159,6 +163,11 @@ Rate ratios against the league-season average (95% CI over clubs):
   with ≥ 1 appearance only, COVID seasons out), but **smaller for severe injuries** (1.07), which are reported more
   reliably. Days lost show no clear style difference (days-lost RR 0.96–1.07, all CIs include 1).
 - Busy schedules go with more injuries: the busiest third of teams by short rest has RR 1.13 (1.06–1.20).
+- **Same club, with and without the style:** for the 41 clubs that played some seasons in Positional possession and
+  some not, injuries in their possession seasons are 1.15 times those in their other seasons against the league-season
+  average, 1.08 after team strength (CI 0.99–1.17) and 1.07 per match (0.99–1.14). Clubs switching into possession go
+  from 1.06 to 1.08 the next season, and clubs switching out from 1.08 to 1.10: no consistent change. For every other
+  style the same-club ratio after strength is 0.95–1.03.
 
 *Figure 3: `figures/05_rates_by_style.png`; `figures/05_attack_defence_grid.png`.*
 
@@ -213,11 +222,13 @@ league, partly because of recording changes.
 
 ## 6. Discussion
 
-The main finding is that **who plays a style matters more than the style**: possession and the high press are played
+The main finding is that **who plays a style matters more than the style** (style or schedule? mostly schedule): possession and the high press are played
 mostly by strong teams with long seasons (European football), and once team strength and matches played are taken
 into account their excess falls from 21% and 14% to about 5% and 2%. A plausible reading, not measured here (no
 tracking data), is that match load and squad demands drive most of the difference, and that possession play may add a
-little through more high-speed actions in the opponent's half. Styles barely change **where** players get hurt; the
+little through more high-speed actions in the opponent's half. The same-club comparison points the same way: a club's
+possession seasons have slightly more injuries than its other seasons (about 8% after strength, not significant), and
+switching style does not move its injury rate. Styles barely change **where** players get hurt; the
 two robust patterns are protective (low block: fewer hamstring injuries; high press: fewer knee injuries). As the Big
 Five moved towards patient possession, the style mix shifted towards the slightly more injury-prone styles, which
 accounts for part of the rise in injuries (+0.038 of +0.043 from the attacking shift beyond strength), but this is an
