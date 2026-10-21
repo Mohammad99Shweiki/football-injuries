@@ -445,8 +445,8 @@ def run() -> str:
         "(Corona virus, Virus, Quarantine). Labels such as \"Ill\", \"flu\", \"cold\", \"Fitness\" and \"Rest\" sit under "
         "\"Unknown\", so the exclusion list has to be built from labels (Phase 2).",
         f"- **Several diagnoses for one absence:** {inj['same_start_records']} records share player + start date "
-        f"({inj['same_start_events']} absences), e.g. Hip injury + Torn muscle fiber. They need one rule in Phase 2 "
-        "(keep the longest record per absence).",
+        f"({inj['same_start_events']} absences), e.g. Hip injury + Torn muscle fiber. Decided: each record counts "
+        "as a separate injury (see DECISIONS.md).",
         "",
         "### Per season",
         "",
