@@ -7,11 +7,13 @@ screenshots of the existing run console (`/`) and validation report (`/validatio
 
 ## What to design
 
-**Analysis Studio**: a local web app where one analyst (a master's student) walks a data mining project **step by
-step**, from parsed tables to the final report: runs each step, **inspects what it produced through tables and
-charts**, reviews and approves the hand-checked inputs, and finalises the results. It replaces reading Jupyter
-notebooks. It is a new section of an existing app (the "Run console" that collected the data), so it must use the
-**same visual language**: a tactics-board / chalkboard theme (dark board, chalk-white text, coloured magnets as status
+**Step 2 · Analysis** of an existing local web app. The app already has **Step 1 · Scraping** (a live "Run console"
+and a "Validation report" for the data collection). Step 2 adds, in the same app: the **project progress** (where the
+study stands, phase by phase), the **Analysis Studio** where one analyst (a master's student) walks the data mining
+project **step by step** from parsed tables to the final report (runs each step, **inspects what it produced through
+tables and charts**, reviews and approves the hand-checked inputs, finalises), and the **results explorer** that
+presents the findings. It replaces reading Jupyter notebooks and two separate web pages. It must use the **same
+visual language** as Step 1: a tactics-board / chalkboard theme (dark board, chalk-white text, coloured magnets as status
 markers, hand-drawn chalk annotations and arrows, a small mascot "Chalky"). Use the attached `tokens.css` for every
 colour, font, spacing, radius, shadow and duration.
 
@@ -44,7 +46,14 @@ files), a log row (rows before → after, e.g. "82,075 → 24,581 injuries"), an
 
 ## Screens (frames to produce)
 
-1. **Pipeline overview** (home). All 7 phases as a horizontal play diagram (like set-piece arrows on a board), each
+0. **App navigation** across both steps: a top-level switch "1 · Scraping" (Run console, Validation report: existing
+   screens, unchanged) and "2 · Analysis" (Progress, Studio, Results, Logs). It must read as one product: Scraping is
+   finished and feeds Analysis, so show that hand-off (e.g. Scraping marked done with its headline "27,197 files ·
+   0 failed", an arrow into Analysis). Deep-linkable routes (/scraping, /scraping/validation, /analysis,
+   /analysis/studio/phase-2/step-7, /analysis/results).
+1. **Pipeline overview / Progress** (home of Step 2). It doubles as the project's progress page shown to the
+   supervisor: the research question in two sentences, key numbers (1,170 team-seasons, 24,581 injuries > 7 days,
+   4 × 4 styles, headline result "Positional possession: 24% more injuries, 95% CI 18–30%"), then all 7 phases as a horizontal play diagram (like set-piece arrows on a board), each
    phase a magnet showing status and its headline count (e.g. "1,170 team-seasons", "24,581 injuries > 7 days").
    Review points shown as flags on the path. Actions: Run all, Run from here, Open phase. A "what changed since last
    run" strip (e.g. "label map edited → phases 2, 5, 6 stale").
@@ -77,11 +86,21 @@ files), a log row (rows before → after, e.g. "82,075 → 24,581 injuries"), an
    - **soft membership**: per team-season probability bars (e.g. Napoli 2022-23: 0.92 Positional possession);
    - **style cards** (name, how it plays, key numbers vs average, typical teams per era); names editable with a rule
      explanation; **Confirm k and names** button.
-6. **Results explorer** (Phase 5). Filters at top: phase of play, league, era, position, age group. Cards: rate ratios
-   with confidence intervals (dot + whisker), attack × defence grid (heatmap with sample sizes, small cells greyed),
-   body areas (heatmap with "x/5 leagues"), style shares over time (stacked area per league), injury trend with
-   calendar events (COVID restart, five substitutes, mid-season World Cup, new Champions League format), decomposition
-   bars (style mix vs within styles). Clicking a style anywhere filters every card.
+6. **Results explorer** (Phase 5–6, presentation quality). Tabs Styles / Evolution / Injuries / Trends / Leagues;
+   filters at top: phase of play (attack / defence), league, and the selected style (chip, clearable). Cards:
+   - cluster map (dots shaded by fuzzy membership: faint = borderline; hover: "Napoli 2022-23 · Positional possession
+     0.82 · next: Build-up 0.11");
+   - style cards (how it plays in football words, key numbers vs average, clear members, typical teams per era,
+     injury RR and "+12.4 injuries per 100 player-seasons");
+   - style shares over time (stacked area) and the 8 style dimensions over seasons (small multiples);
+   - rate ratios with 95% CIs (dot + whisker) next to the absolute excess;
+   - attack × defence grid (heatmap, shrunk values with raw on hover, small cells greyed);
+   - body areas (heatmap, "x/5 leagues", ★ for the 9 patterns that survive multiple-testing correction);
+   - who carries the excess: RR by position and age band per style (heatmap);
+   - injury trend: single seasons as dots with CI band plus a 3-season rolling line, calendar events annotated
+     (COVID restart, five substitutes, mid-season World Cup, new Champions League format);
+   - decomposition bars (style mix vs within styles) and one story per league.
+   Clicking a style anywhere (legend, card, dot, cell) filters every card.
 7. **Logs**: Decisions (date, decision, reason; searchable, linked from steps) and Preprocessing log (step, type,
    input, operation, rows before → after, output). Timeline layout.
 8. **Finalise** (Phase 6): checklist of everything the report needs (all checks passed, review points approved,
@@ -110,7 +129,7 @@ files), a log row (rows before → after, e.g. "82,075 → 24,581 injuries"), an
 
 ## Deliverables
 
-Frames for screens 1–8 at 1440 px, plus the step inspector and clustering studio at 768 and 375 px; a component sheet
+Frames for screens 0–8 at 1440 px, plus the step inspector and clustering studio at 768 and 375 px; a component sheet
 (magnet status badge, check row, data grid, CI dot-whisker, heatmap cell, step list item, review row with inline
 editor, approve bar, stale banner); and notes on interactions. Keep the tactics-board identity; make data screens
 calm and legible (results are presented to a supervisor), with the playful elements (chalk arrows, Chalky) limited to
