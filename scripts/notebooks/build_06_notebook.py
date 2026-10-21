@@ -47,8 +47,9 @@ SUMMARY = (REPORTS_DIR / "summary.md").read_text(encoding="utf-8")
 md('''
 ## Step 1. Headline numbers recomputed from the data
 
-Counts, style shares per era, raw rates by style and the league-adjusted rate ratios (point estimates; the CIs are
-in the Phase 5 notebook).
+Counts, style shares per era, raw rates by style, the rate ratios against league × season and their stricter
+versions (+ team strength, per team match), the decomposition and the body-area findings (point estimates; the CIs
+are in the Phase 5 notebook).
 ''')
 code('''
 ps = pd.read_parquet(DATA_DIR / "05_injury_analysis" / "player_seasons.parquet")
@@ -76,6 +77,20 @@ numbers = {
     "days RR positional possession": rr(ps, "attack_style", "days_lost", "exp_days")["Positional possession"],
     "injuries / player-season 2014–18": round(ps[ps.era == "2014–18"].injuries.mean(), 3),
     "injuries / player-season 2022–26": round(ps[ps.era == "2022–26"].injuries.mean(), 3),
+    "RR positional possession, + strength": rr(ps, "attack_style", exp="exp_inj_str")["Positional possession"],
+    "RR positional possession, + age × position": rr(ps.dropna(subset=["exp_inj_full"]), "attack_style", exp="exp_inj_full")["Positional possession"],
+    "RR positional possession, per match + strength": rr(ps, "attack_style", exp="exp_inj_match_str")["Positional possession"],
+    "RR high press, + strength": rr(ps, "defence_style", exp="exp_inj_str")["High press, high line"],
+    "RR high press, per match + strength": rr(ps, "defence_style", exp="exp_inj_match_str")["High press, high line"],
+}
+dec = pd.read_csv(DATA_DIR / "05_injury_analysis" / "tables" / "decomposition.csv")
+d = dec[(dec.eras == "2014–18 → 2022–26") & (dec.scope == "all leagues") & (dec.outcome == "injuries")].set_index("styles")
+fdr = pd.read_csv(DATA_DIR / "05_injury_analysis" / "tables" / "body_areas_fdr.csv")
+numbers |= {
+    "change in injuries / player-season": round(d.loc["combined style", "change"], 3),
+    "attacking style mix beyond strength": round(d.loc["attacking style", "from style mix"], 3),
+    "attacking style mix, strength ignored": round(d.loc["attacking style", "style mix, strength ignored"], 3),
+    "body-area findings": int(fdr.finding.sum()), "body-area tests": len(fdr),
 }
 pd.Series(numbers, name="value").to_frame()
 ''')
@@ -91,8 +106,13 @@ EXPECTED_TEXT = {
     "positional possession share 2014–18 (%)": "from {}% to", "positional possession share 2022–26 (%)": "to {}% of team-seasons",
     "back-three minutes 2014–18 (%)": "rose from {}%", "back-three minutes 2022–26 (%)": "to {}% of minutes",
     "RR positional possession": "rate ratio {:.2f}", "RR counter-attack": "**{:.2f} (", "RR high press, high line": "**{:.2f} (",
-    "RR low block": "**{:.2f} (", "days RR positional possession": "**{:.2f} (",
+    "RR low block": "**{:.2f} (", "days RR positional possession": "| {:.2f} (",
     "injuries / player-season 2014–18": "from {:.3f}", "injuries / player-season 2022–26": "to {:.3f} per player-season",
+    "RR positional possession, + strength": "{:.2f} after team strength", "RR positional possession, + age × position": "{:.2f} after age and position",
+    "RR positional possession, per match + strength": "{:.2f} per team match", "RR high press, + strength": "high press: {:.2f} after team strength",
+    "RR high press, per match + strength": "{:.2f} per match", "change in injuries / player-season": "+{:.3f}",
+    "attacking style mix beyond strength": "+{:.3f} beyond team strength", "attacking style mix, strength ignored": "+{:.3f} when strength is ignored",
+    "body-area findings": "{} of", "body-area tests": "of {} patterns",
 }
 rows = []
 for key, pattern in EXPECTED_TEXT.items():
@@ -182,6 +202,13 @@ for league, d in [("All leagues", style_dims)] + [(lg, style_dims[style_dims.lea
              for s in m.index for c in dim_cols]
 files["dimension_trends"] = rows
 
+# Rate ratios under each adjustment and exposure (Phase 5 step 7).
+lad = pd.read_csv(T / "rr_adjustment_ladder.csv")
+files["rr_ladder"] = [{"grouping": {"attacking style": "attack", "defensive style": "defence"}.get(q.grouping, q.grouping),
+                       "style": q["style"], "exposure": q.exposure, "adjustment": q.adjustment, "rr": r(q.RR, 2),
+                       "rr_low": r(q["RR low"], 2), "rr_high": r(q["RR high"], 2), "days_rr": r(q["days RR"], 2),
+                       "excess_per_100": r(q["excess / 100 player-seasons"], 1)} for _, q in lad.iterrows()]
+
 # Injury rate ratios by style and formation.
 rows = []
 for grouping, file, order in [("attack", "attacking_style", ATTACK), ("defence", "defensive_style", DEFENCE), ("formation", "formation", ["back three", "back four"])]:
@@ -228,7 +255,8 @@ files["breakdown"] = [{"phase": "attack" if q.grouping == "attacking style" else
 dec = pd.read_csv(T / "decomposition.csv")
 dec = dec[dec.eras == "2014–18 → 2022–26"]
 files["decomposition"] = [{"scope": q.scope, "outcome": q.outcome, "styles": q.styles, "from": r(q["from"]), "to": r(q.to),
-                           "change": r(q.change), "style_mix": r(q["from style mix"]), "within_styles": r(q["within styles"])} for _, q in dec.iterrows()]
+                           "change": r(q.change), "strength_mix": r(q["from strength mix"]), "style_mix": r(q["from style mix"]),
+                           "within_styles": r(q["within styles"]), "style_mix_strength_ignored": r(q["style mix, strength ignored"])} for _, q in dec.iterrows()]
 
 st = pd.read_csv(T / "league_stories.csv")
 files["league_stories"] = [{"league": q.league, "story": q.story.replace("**", "")} for q in st.itertuples()]

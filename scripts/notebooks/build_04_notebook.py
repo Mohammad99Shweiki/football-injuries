@@ -33,9 +33,10 @@ three) is reported per style, not clustered. Team strength and workload are show
 3. Profiles at k = 4 per phase: centroids, typical teams, strength, workload, formation, leagues
 4. Names (by rule) and the combined style; saved clusters
 5. Soft memberships (Gaussian mixture) and consensus clustering
-6. How the attacking and defensive styles combine
-7. 2-D views (PCA, for visualisation only)
-8. Report
+6. Sensitivity clusterings: k = 3, and style relative to the league-season
+7. How the attacking and defensive styles combine
+8. 2-D views (PCA, for visualisation only)
+9. Report
 
 **Input:** `data/03_features/` (phase dimensions, features), `us_team_matches` (points, strength check only).
 **Outputs:** `data/04_clusters/`, `reports/04_clustering.md`, `reports/figures/04_*.png`.
@@ -323,7 +324,9 @@ clustering, check and refine that:
 - **Consensus clustering**: 50 bootstrap K-means fits, 50 bootstrap GMM fits and Ward are combined into how often each
   pair of team-seasons ends up together (co-association), and that matrix is clustered (average linkage, k = 4).
 
-K-means stays the main assignment; agreement with GMM and the consensus (adjusted Rand index) is its robustness check.
+K-means stays the main assignment. Ward and GMM are the **independent** checks (different methods); the consensus is
+built half from bootstrap K-means, so its high agreement with K-means is expected: it is a **stability summary**, not
+an independent validation.
 ''')
 code('''
 def align(reference: np.ndarray, labels: np.ndarray, k: int) -> np.ndarray:
@@ -406,9 +409,46 @@ display(agreement.round(3).T)
 clarity.round(2)
 ''')
 
+# ---- step 6 (sensitivity clusterings)
+md('''
+## Step 6. Sensitivity clusterings
+
+Two alternative clusterings, used in Phase 5 only to check that the injury results do not depend on these choices:
+- **k = 3** per phase (the attacking k = 4 is borderline: weakest-cluster Jaccard 0.64, and silhouette favours fewer
+  clusters). Each k = 3 cluster is labelled by the k = 4 style most of its team-seasons have.
+- **Relative style:** K-means k = 4 on the league-season-centred dimensions (Phase 3): how a team played compared
+  with its league that season, so the drift of the whole Big Five does not define the clusters. Named by the same
+  rules as the main clustering.
+''')
+code('''
+rel_dims = pd.read_parquet(DATA_DIR / "03_features" / "style_dimensions_relative.parquet")
+assert (rel_dims.tm_club_id.to_numpy() == out.tm_club_id.to_numpy()).all() and (rel_dims.season.to_numpy() == out.season.to_numpy()).all()
+sens_rows = []
+for ph in PHASES:
+    k3 = kmeans[(ph, 3)].labels_
+    major = pd.crosstab(k3, out[f"{ph}_style"])
+    label = {c: f"{major.loc[c].idxmax()} ({major.loc[c].max() / major.loc[c].sum():.0%})" for c in major.index}
+    out[f"{ph}_k3_style"] = pd.Series(k3).map(label).to_numpy()
+    xr = rel_dims[DIMS[ph]].to_numpy()
+    km_rel = KMeans(n_clusters=MAIN_K[ph], n_init=N_INIT, random_state=SEED).fit(xr)
+    cen = pd.DataFrame(km_rel.cluster_centers_, columns=[c.removeprefix(f"{ph}_") for c in DIMS[ph]])
+    out[f"{ph}_rel_style"] = pd.Series(km_rel.labels_).map(name_clusters(cen, NAMING[ph])).to_numpy()
+    sens_rows.append({"phase": ph, "k = 3 vs k = 4 (ARI)": adjusted_rand_score(k3, kmeans[(ph, MAIN_K[ph])].labels_),
+                      "relative vs main (ARI)": adjusted_rand_score(km_rel.labels_, kmeans[(ph, MAIN_K[ph])].labels_),
+                      "same name, relative vs main": (out[f"{ph}_rel_style"] == out[f"{ph}_style"]).mean(),
+                      "relative silhouette": silhouette_score(xr, km_rel.labels_)})
+sensitivity_clusters = pd.DataFrame(sens_rows).set_index("phase")
+assert out.notna().all().all()
+out.to_parquet(OUT_DIR / "team_season_clusters.parquet", index=False)
+for ph in PHASES:
+    display(pd.crosstab(out[f"{ph}_style"], out[f"{ph}_k3_style"]).loc[ORDER[ph]])
+    display(pd.crosstab(out[f"{ph}_style"], out[f"{ph}_rel_style"]).loc[ORDER[ph], ORDER[ph]])
+sensitivity_clusters.round(3)
+''')
+
 # ---- step 5
 md('''
-## Step 6. How the attacking and defensive styles combine
+## Step 7. How the attacking and defensive styles combine
 
 Team-seasons, points per match and back-three minutes per combination. Typical teams are the ones closest to the
 combination's centre in both phases.
@@ -446,7 +486,7 @@ heat_fig = save(fig, "04_centroids.png")
 
 # ---- step 6
 md('''
-## Step 7. 2-D views
+## Step 8. 2-D views
 
 PCA of each phase's four dimensions, **only to draw** the clusters. Marker shapes and labels carry identity
 alongside colour.
@@ -475,7 +515,7 @@ pca_fig = save(fig, "04_pca.png")
 
 # ---- step 7
 md('''
-## Step 8. Report
+## Step 9. Report
 ''')
 code('''
 cols = ["phase", "k", "silhouette", "davies_bouldin", "calinski_harabasz", "stability (mean ARI)", "min cluster Jaccard",
@@ -517,7 +557,13 @@ text += ["## 4. Soft memberships and consensus", "",
          md_table(clarity.round(2).rename_axis(["phase", "style"])), "",
          "GMM BIC by k (lower is better):", "",
          md_table(gmm_summary.pivot(index="k", columns="phase", values="BIC").round(0).rename_axis("k")), ""]
-text += ["## 5. Combined styles", "", md_table(combo.rename_axis("attack \\\\ defence")), "",
+text += ["## 5. Sensitivity clusterings (used in Phase 5 checks)", "",
+         md_table(sensitivity_clusters.round(3).T.rename_axis("measure")), "",
+         *[x for ph in PHASES for x in (f"{ph.capitalize()}: main style (rows) vs k = 3 cluster:", "",
+           md_table(pd.crosstab(out[f"{ph}_style"], out[f"{ph}_k3_style"]).loc[ORDER[ph]].rename_axis(f"{ph} style")), "",
+           f"{ph.capitalize()}: main style (rows) vs relative style:", "",
+           md_table(pd.crosstab(out[f"{ph}_style"], out[f"{ph}_rel_style"]).loc[ORDER[ph], ORDER[ph]].rename_axis(f"{ph} style")), "")]]
+text += ["## 6. Combined styles", "", md_table(combo.rename_axis("attack \\\\ defence")), "",
          md_table(combos.rename_axis("style")), "", f"![Centroids](figures/{heat_fig})", "", f"![PCA](figures/{pca_fig})", ""]
 (REPORTS_DIR / "04_clustering.md").write_text("\\n".join(text), encoding="utf-8")
 print("wrote", REPORTS_DIR / "04_clustering.md")

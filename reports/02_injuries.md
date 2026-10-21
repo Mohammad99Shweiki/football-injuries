@@ -22,6 +22,7 @@ Generated 2026-10-21 by `notebooks/02_injuries.ipynb`, where each step is shown 
 | 2.6 | keep injuries at a Big Five club-season the player belongs to | 71195 | 37554 | 33641 |
 | 2.8 | remove non-injuries (illness, fitness, rest, medical, not from football) | 37554 | 32088 | 5466 |
 | 2.9 | keep injuries lasting more than 7 days (5,180 of 4–7 days kept separately as mild) | 32088 | 24581 | 7507 |
+| 2.9b | days lost without double counting: 184 overlapping injuries lose 7,850 of 1,113,471 days | 24581 | 24581 | 0 |
 
 Records by where the injury happened (step 6, all durations):
 

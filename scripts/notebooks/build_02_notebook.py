@@ -419,6 +419,11 @@ md('''
 Injuries lasting **more than 7 days** are the main data (Transfermarkt reports short injuries unevenly across
 leagues). Bands: **moderate** 8–28 days, **severe** more than 28 days. Injuries of **4–7 days** (**mild**) are kept
 in a separate file so Phase 5 can rerun the comparisons with more than 3 days as a sensitivity check.
+
+Some absences of one player overlap (a new injury recorded while the previous one is still running). Their days would
+be counted twice in "days lost", so each injury also gets **`days_merged`**: its days not already covered by an
+earlier-starting injury of the same player. Days lost in Phase 5 use `days_merged`; `days` (the injury's own length)
+still sets the severity band.
 ''')
 code('''
 def add_context(df: pd.DataFrame) -> pd.DataFrame:
@@ -434,11 +439,27 @@ mild = add_context(inj[inj.days.between(MILD_DAYS + 1, MIN_DAYS)].reset_index(dr
 n = len(inj)
 inj = add_context(inj[inj.days > MIN_DAYS].reset_index(drop=True))
 log("2.9", f"keep injuries lasting more than {MIN_DAYS} days ({len(mild):,} of 4–7 days kept separately as mild)", n, len(inj))
+
+
+def merged_days(df: pd.DataFrame) -> pd.Series:
+    """Days of each absence not covered by an earlier-starting absence of the same player (end exclusive, as `days`)."""
+    d = df.sort_values(["playerId", "start", "end"])
+    covered_until = d.groupby("playerId").end.transform(lambda e: e.cummax().shift())
+    start = d.start.where(covered_until.isna() | (d.start >= covered_until), covered_until)
+    return (d.end - start).dt.days.clip(lower=0).reindex(df.index)
+
+
+inj["days_merged"] = merged_days(inj)
+overlap = inj.days > inj.days_merged
+log("2.9b", f"days lost without double counting: {overlap.sum():,} overlapping injuries lose "
+    f"{int((inj.days - inj.days_merged).sum()):,} of {int(inj.days.sum()):,} days", len(inj), len(inj))
+assert (inj.days_merged <= inj.days).all() and (inj.days_merged >= 0).all()
 ''')
 code('''
 # Check: bands (mild kept separately), duration quantiles, and a sample row.
 display(pd.concat([inj, mild]).severity.value_counts().rename("injuries").to_frame())
-display(inj.days.describe(percentiles=[0.25, 0.5, 0.75, 0.9]).round(1).to_frame().T)
+display(inj[["days", "days_merged"]].describe(percentiles=[0.25, 0.5, 0.75, 0.9]).round(1).T)
+display(inj[overlap].sort_values("days", ascending=False)[["playerId", "start", "end", "days", "days_merged", "label"]].head(5))
 inj.head(3)
 ''')
 
@@ -473,10 +494,10 @@ md('''
 ## Step 11. Save outputs and write the report
 ''')
 code('''
-cols = ["playerId", "league", "season", "season_key", "club_id", "club", "start", "end", "days", "games_missed",
+cols = ["playerId", "league", "season", "season_key", "club_id", "club", "start", "end", "days", "days_merged", "games_missed",
         "severity", "label", "body_area", "surgery", "multi_club_season", "club_from", "tm_season"]
 inj[cols].to_parquet(OUT_DIR / "injuries_clean.parquet", index=False)
-mild[cols].to_parquet(OUT_DIR / "injuries_mild.parquet", index=False)
+mild.assign(days_merged=mild.days)[cols].to_parquet(OUT_DIR / "injuries_mild.parquet", index=False)
 non_injuries.to_parquet(OUT_DIR / "non_injuries.parquet", index=False)
 members.to_parquet(OUT_DIR / "player_club_seasons.parquet", index=False)
 log_table = pd.DataFrame(LOG)

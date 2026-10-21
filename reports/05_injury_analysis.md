@@ -4,10 +4,10 @@ Generated 2026-10-21 by `notebooks/05_injury_analysis.ipynb`, where each step is
 
 ## Key numbers
 
-- 36,525 player-club-seasons, 24,581 injuries > 7 days, 1,113,471 days lost.
-- Attacking style: injury RR CI excludes 1 for Positional possession 1.24, Counter-attack 0.90, Direct play 0.95; days RR for Positional possession 1.09; robust in every sensitivity check: Positional possession, Counter-attack.
-- Defensive style: injury RR CI excludes 1 for High press, high line 1.14, Aggressive duel press 0.93, Low block 0.94; days RR for none; robust in every sensitivity check: High press, high line, Low block.
-- Formation: injury RR CI excludes 1 for none; days RR for none; robust in every sensitivity check: none.
+- 36,525 player-club-seasons, 24,581 injuries > 7 days, 1,105,621 days lost.
+- Attacking style: injury RR CI excludes 1 for Positional possession 1.21, Counter-attack 0.91; days RR for none; robust in every sensitivity check: Positional possession, Counter-attack.
+- Defensive style: injury RR CI excludes 1 for High press, high line 1.14, Aggressive duel press 0.94, Low block 0.93; days RR for none; robust in every sensitivity check: High press, high line, Low block.
+- Formation: injury RR CI excludes 1 for none; days RR for none; robust in every sensitivity check: back three.
 
 ## 1. Injuries by style
 
@@ -15,62 +15,62 @@ Generated 2026-10-21 by `notebooks/05_injury_analysis.ipynb`, where each step is
 
 | attacking style | player-seasons | team-seasons | injuries | injuries / player-season | per 1,000 min | days lost / player-season | severe share | excess / 100 player-seasons | excess days / player-season | RR (95% CI) | days RR (95% CI) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Positional possession | 5417 | 174 | 4605 | 0.85 | 0.516 | 34.0 | 0.396 | 16.7 | 2.7 | 1.24 (1.18–1.30) | 1.09 (1.02–1.15) |
-| Build-up into the box | 11095 | 355 | 7558 | 0.681 | 0.467 | 31.0 | 0.447 | 0.5 | 0.1 | 1.01 (0.97–1.04) | 1.00 (0.96–1.05) |
-| Counter-attack | 8553 | 279 | 5113 | 0.598 | 0.442 | 29.2 | 0.474 | -6.8 | -1.3 | 0.90 (0.85–0.94) | 0.96 (0.90–1.02) |
-| Direct play | 11460 | 362 | 7305 | 0.637 | 0.482 | 29.3 | 0.461 | -3.2 | -0.4 | 0.95 (0.91–0.99) | 0.99 (0.94–1.04) |
+| Positional possession | 5417 | 174 | 4605 | 0.85 | 0.516 | 33.8 | 0.396 | 14.7 | 2.1 | 1.21 (1.11–1.32) | 1.07 (0.98–1.17) |
+| Build-up into the box | 11095 | 355 | 7558 | 0.681 | 0.467 | 30.8 | 0.447 | 0.5 | 0.2 | 1.01 (0.95–1.06) | 1.01 (0.95–1.06) |
+| Counter-attack | 8553 | 279 | 5113 | 0.598 | 0.442 | 29.0 | 0.474 | -6.0 | -1.1 | 0.91 (0.86–0.96) | 0.96 (0.91–1.02) |
+| Direct play | 11460 | 362 | 7305 | 0.637 | 0.482 | 29.0 | 0.461 | -3.0 | -0.4 | 0.96 (0.91–1.00) | 0.99 (0.94–1.04) |
 
 ### Defensive style
 
 | defensive style | player-seasons | team-seasons | injuries | injuries / player-season | per 1,000 min | days lost / player-season | severe share | excess / 100 player-seasons | excess days / player-season | RR (95% CI) | days RR (95% CI) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| High press, high line | 7548 | 245 | 5683 | 0.753 | 0.471 | 32.1 | 0.427 | 9.5 | 1.0 | 1.14 (1.09–1.20) | 1.03 (0.98–1.09) |
-| Compact mid-block | 8859 | 289 | 5839 | 0.659 | 0.44 | 27.8 | 0.414 | 1.8 | -0.8 | 1.03 (0.97–1.08) | 0.97 (0.92–1.03) |
-| Aggressive duel press | 9059 | 286 | 5754 | 0.635 | 0.473 | 29.2 | 0.457 | -4.6 | 0.0 | 0.93 (0.89–0.98) | 1.00 (0.95–1.06) |
-| Low block | 11059 | 350 | 7305 | 0.661 | 0.51 | 32.6 | 0.482 | -4.1 | -0.1 | 0.94 (0.90–0.98) | 1.00 (0.95–1.04) |
+| High press, high line | 7548 | 245 | 5683 | 0.753 | 0.471 | 31.9 | 0.427 | 9.2 | 1.2 | 1.14 (1.05–1.22) | 1.04 (0.98–1.10) |
+| Compact mid-block | 8859 | 289 | 5839 | 0.659 | 0.44 | 27.6 | 0.414 | 2.5 | -0.5 | 1.04 (0.97–1.10) | 0.98 (0.93–1.03) |
+| Aggressive duel press | 9059 | 286 | 5754 | 0.635 | 0.473 | 28.9 | 0.457 | -4.4 | -0.3 | 0.94 (0.87–1.00) | 0.99 (0.93–1.06) |
+| Low block | 11059 | 350 | 7305 | 0.661 | 0.51 | 32.4 | 0.482 | -4.7 | -0.2 | 0.93 (0.89–0.97) | 0.99 (0.95–1.04) |
 
 ### Combined style
 
 | combined style | player-seasons | team-seasons | injuries | injuries / player-season | per 1,000 min | days lost / player-season | severe share | excess / 100 player-seasons | excess days / player-season | RR (95% CI) | days RR (95% CI) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Positional possession · High press, high line | 3254 | 104 | 2803 | 0.861 | 0.511 | 34.3 | 0.396 | 18.9 | 2.7 | 1.28 (1.20–1.36) | 1.09 (1.01–1.16) |
-| Positional possession · Compact mid-block | 1745 | 57 | 1407 | 0.806 | 0.492 | 30.4 | 0.372 | 11.1 | 0.3 | 1.16 (1.07–1.26) | 1.01 (0.90–1.14) |
-| Build-up into the box · High press, high line | 2207 | 72 | 1526 | 0.691 | 0.437 | 30.7 | 0.448 | 0.8 | -1.4 | 1.01 (0.93–1.11) | 0.96 (0.87–1.04) |
-| Build-up into the box · Compact mid-block | 3580 | 117 | 2499 | 0.698 | 0.452 | 29.0 | 0.414 | 4.6 | -0.2 | 1.07 (1.00–1.14) | 0.99 (0.92–1.07) |
-| Build-up into the box · Aggressive duel press | 1890 | 59 | 1257 | 0.665 | 0.475 | 28.2 | 0.419 | -1.2 | -0.2 | 0.98 (0.89–1.07) | 0.99 (0.88–1.11) |
-| Build-up into the box · Low block | 3418 | 107 | 2276 | 0.666 | 0.504 | 34.7 | 0.499 | -3.1 | 1.5 | 0.96 (0.90–1.01) | 1.04 (0.96–1.13) |
-| Counter-attack · Compact mid-block | 1483 | 49 | 735 | 0.496 | 0.348 | 24.3 | 0.468 | -9.5 | -2.8 | 0.84 (0.71–0.97) | 0.90 (0.75–1.04) |
-| Counter-attack · Aggressive duel press | 2805 | 91 | 1639 | 0.584 | 0.431 | 28.1 | 0.473 | -7.8 | -1.3 | 0.88 (0.79–0.96) | 0.96 (0.85–1.06) |
-| Counter-attack · Low block | 3520 | 114 | 2245 | 0.638 | 0.492 | 31.4 | 0.47 | -7.0 | -1.3 | 0.90 (0.83–0.97) | 0.96 (0.87–1.04) |
-| Direct play · High press, high line | 1342 | 44 | 860 | 0.641 | 0.434 | 28.4 | 0.449 | 4.7 | 0.4 | 1.08 (0.95–1.22) | 1.01 (0.89–1.14) |
-| Direct play · Compact mid-block | 2051 | 66 | 1198 | 0.584 | 0.43 | 26.0 | 0.427 | -2.9 | -1.4 | 0.95 (0.85–1.05) | 0.95 (0.84–1.07) |
-| Direct play · Aggressive duel press | 4132 | 129 | 2622 | 0.635 | 0.484 | 29.2 | 0.464 | -5.9 | -0.0 | 0.91 (0.85–0.98) | 1.00 (0.92–1.09) |
-| Direct play · Low block | 3935 | 123 | 2625 | 0.667 | 0.527 | 31.5 | 0.476 | -3.3 | -0.5 | 0.95 (0.88–1.02) | 0.98 (0.90–1.06) |
+| Positional possession · High press, high line | 3254 | 104 | 2803 | 0.861 | 0.511 | 34.2 | 0.396 | 17.2 | 2.4 | 1.25 (1.15–1.36) | 1.08 (0.98–1.18) |
+| Positional possession · Compact mid-block | 1745 | 57 | 1407 | 0.806 | 0.492 | 30.3 | 0.372 | 9.7 | -0.0 | 1.14 (1.01–1.31) | 1.00 (0.86–1.16) |
+| Build-up into the box · High press, high line | 2207 | 72 | 1526 | 0.691 | 0.437 | 30.6 | 0.448 | 2.4 | -0.4 | 1.04 (0.92–1.14) | 0.99 (0.88–1.09) |
+| Build-up into the box · Compact mid-block | 3580 | 117 | 2499 | 0.698 | 0.452 | 28.8 | 0.414 | 5.5 | 0.2 | 1.09 (1.00–1.16) | 1.01 (0.92–1.08) |
+| Build-up into the box · Aggressive duel press | 1890 | 59 | 1257 | 0.665 | 0.475 | 28.2 | 0.419 | -2.4 | -0.3 | 0.96 (0.86–1.06) | 0.99 (0.86–1.10) |
+| Build-up into the box · Low block | 3418 | 107 | 2276 | 0.666 | 0.504 | 34.4 | 0.499 | -4.3 | 0.8 | 0.94 (0.87–1.01) | 1.02 (0.94–1.09) |
+| Counter-attack · Compact mid-block | 1483 | 49 | 735 | 0.496 | 0.348 | 24.2 | 0.468 | -7.2 | -2.2 | 0.87 (0.77–0.97) | 0.92 (0.80–1.02) |
+| Counter-attack · Aggressive duel press | 2805 | 91 | 1639 | 0.584 | 0.431 | 27.9 | 0.473 | -8.3 | -2.0 | 0.88 (0.79–0.96) | 0.93 (0.84–1.03) |
+| Counter-attack · Low block | 3520 | 114 | 2245 | 0.638 | 0.492 | 31.2 | 0.47 | -5.6 | -0.6 | 0.92 (0.85–0.99) | 0.98 (0.89–1.07) |
+| Direct play · High press, high line | 1342 | 44 | 860 | 0.641 | 0.434 | 28.2 | 0.449 | 4.4 | 0.1 | 1.07 (0.98–1.19) | 1.00 (0.88–1.13) |
+| Direct play · Compact mid-block | 2051 | 66 | 1198 | 0.584 | 0.43 | 25.8 | 0.427 | -1.8 | -0.8 | 0.97 (0.86–1.07) | 0.97 (0.87–1.06) |
+| Direct play · Aggressive duel press | 4132 | 129 | 2622 | 0.635 | 0.484 | 28.7 | 0.464 | -4.2 | 0.1 | 0.94 (0.87–1.02) | 1.01 (0.92–1.10) |
+| Direct play · Low block | 3935 | 123 | 2625 | 0.667 | 0.527 | 31.3 | 0.476 | -4.8 | -0.8 | 0.93 (0.87–0.99) | 0.97 (0.91–1.05) |
 
 ### Formation
 
 | formation | player-seasons | team-seasons | injuries | injuries / player-season | per 1,000 min | days lost / player-season | severe share | excess / 100 player-seasons | excess days / player-season | RR (95% CI) | days RR (95% CI) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| back three | 7016 | 220 | 5245 | 0.748 | 0.553 | 31.5 | 0.406 | 0.5 | -0.0 | 1.01 (0.97–1.05) | 1.00 (0.94–1.06) |
-| back four | 29509 | 950 | 19336 | 0.655 | 0.456 | 30.2 | 0.458 | -0.1 | 0.0 | 1.00 (0.97–1.02) | 1.00 (0.97–1.03) |
+| back three | 7016 | 220 | 5245 | 0.748 | 0.553 | 31.3 | 0.406 | -1.3 | -0.6 | 0.98 (0.93–1.04) | 0.98 (0.92–1.05) |
+| back four | 29509 | 950 | 19336 | 0.655 | 0.456 | 30.0 | 0.458 | 0.3 | 0.1 | 1.00 (0.96–1.05) | 1.00 (0.97–1.04) |
 
 Injury RR, attacking style (rows) × defensive style (columns):
 
 | attack \ defence | High press, high line | Compact mid-block | Aggressive duel press | Low block |
 |---|---|---|---|---|
-| Positional possession | 1.28 | 1.16 | 1.44 | 1.18 |
-| Build-up into the box | 1.01 | 1.07 | 0.98 | 0.96 |
-| Counter-attack | 1.04 | 0.84 | 0.88 | 0.9 |
-| Direct play | 1.08 | 0.95 | 0.91 | 0.95 |
+| Positional possession | 1.25 | 1.14 | 1.32 | 1.08 |
+| Build-up into the box | 1.04 | 1.09 | 0.96 | 0.94 |
+| Counter-attack | 1.05 | 0.87 | 0.88 | 0.92 |
+| Direct play | 1.07 | 0.97 | 0.94 | 0.93 |
 
 Days lost RR:
 
 | attack \ defence | High press, high line | Compact mid-block | Aggressive duel press | Low block |
 |---|---|---|---|---|
-| Positional possession | 1.09 | 1.01 | 1.58 | 1.16 |
-| Build-up into the box | 0.96 | 0.99 | 0.99 | 1.04 |
-| Counter-attack | 1.07 | 0.9 | 0.96 | 0.96 |
-| Direct play | 1.01 | 0.95 | 1.0 | 0.98 |
+| Positional possession | 1.08 | 1.0 | 1.38 | 1.06 |
+| Build-up into the box | 0.99 | 1.01 | 0.99 | 1.02 |
+| Counter-attack | 1.08 | 0.92 | 0.93 | 0.98 |
+| Direct play | 1.0 | 0.97 | 1.01 | 0.97 |
 
 ![Rates](figures/05_rates_by_style.png)
 
@@ -128,18 +128,18 @@ Days lost RR:
 
 | season | player-seasons | injuries / player-season | days lost / player-season | severe share | unknown body area |
 |---|---|---|---|---|---|
-| 2014-15 | 2939 | 0.592 | 29.1 | 0.48 | 0.157 |
-| 2015-16 | 3008 | 0.61 | 29.6 | 0.458 | 0.137 |
-| 2016-17 | 3005 | 0.707 | 33.4 | 0.47 | 0.123 |
-| 2017-18 | 2997 | 0.672 | 29.6 | 0.427 | 0.099 |
-| 2018-19 | 2944 | 0.781 | 33.0 | 0.423 | 0.138 |
-| 2019-20 | 3032 | 0.714 | 31.9 | 0.429 | 0.096 |
-| 2020-21 | 3161 | 0.655 | 26.3 | 0.396 | 0.156 |
+| 2014-15 | 2939 | 0.592 | 28.7 | 0.48 | 0.157 |
+| 2015-16 | 3008 | 0.61 | 29.1 | 0.458 | 0.137 |
+| 2016-17 | 3005 | 0.707 | 33.1 | 0.47 | 0.123 |
+| 2017-18 | 2997 | 0.672 | 29.4 | 0.427 | 0.099 |
+| 2018-19 | 2944 | 0.781 | 32.7 | 0.423 | 0.138 |
+| 2019-20 | 3032 | 0.714 | 31.8 | 0.429 | 0.096 |
+| 2020-21 | 3161 | 0.655 | 26.2 | 0.396 | 0.156 |
 | 2021-22 | 3233 | 0.594 | 25.7 | 0.445 | 0.145 |
-| 2022-23 | 3148 | 0.614 | 28.1 | 0.471 | 0.142 |
-| 2023-24 | 3144 | 0.657 | 32.5 | 0.484 | 0.14 |
-| 2024-25 | 3012 | 0.733 | 35.4 | 0.46 | 0.122 |
-| 2025-26 | 2902 | 0.758 | 32.0 | 0.433 | 0.101 |
+| 2022-23 | 3148 | 0.614 | 28.0 | 0.471 | 0.142 |
+| 2023-24 | 3144 | 0.657 | 32.3 | 0.484 | 0.14 |
+| 2024-25 | 3012 | 0.733 | 35.1 | 0.46 | 0.122 |
+| 2025-26 | 2902 | 0.758 | 31.9 | 0.433 | 0.101 |
 
 ![Trend](figures/05_season_trend.png)
 
@@ -149,54 +149,85 @@ Days lost RR:
 
 | league | player-seasons | team-seasons | injuries | injuries / player-season | per 1,000 min | days lost / player-season | severe share | excess / 100 player-seasons | excess days / player-season | RR (95% CI) | days RR (95% CI) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Premier League | 7524 | 240 | 5151 | 0.685 | 0.451 | 36.2 | 0.512 | 0.0 | 0.0 | 1.00 (0.95–1.05) | 1.00 (0.94–1.06) |
-| La Liga | 7429 | 240 | 4451 | 0.599 | 0.402 | 26.9 | 0.448 | 0.0 | 0.0 | 1.00 (0.94–1.07) | 1.00 (0.93–1.06) |
-| Serie A | 7787 | 240 | 6410 | 0.823 | 0.608 | 30.4 | 0.371 | 0.0 | 0.0 | 1.00 (0.96–1.04) | 1.00 (0.95–1.05) |
-| Bundesliga | 6616 | 216 | 5227 | 0.79 | 0.593 | 37.7 | 0.474 | 0.0 | 0.0 | 1.00 (0.96–1.04) | 1.00 (0.95–1.05) |
-| Ligue 1 | 7169 | 234 | 3342 | 0.466 | 0.334 | 21.5 | 0.452 | -0.0 | 0.0 | 1.00 (0.93–1.07) | 1.00 (0.93–1.08) |
+| Premier League | 7524 | 240 | 5151 | 0.685 | 0.451 | 36.1 | 0.512 | 0.0 | 0.0 | 1.00 (0.90–1.08) | 1.00 (0.93–1.06) |
+| La Liga | 7429 | 240 | 4451 | 0.599 | 0.402 | 26.9 | 0.448 | 0.0 | 0.0 | 1.00 (0.85–1.14) | 1.00 (0.89–1.10) |
+| Serie A | 7787 | 240 | 6410 | 0.823 | 0.608 | 30.3 | 0.371 | 0.0 | 0.0 | 1.00 (0.94–1.07) | 1.00 (0.94–1.06) |
+| Bundesliga | 6616 | 216 | 5227 | 0.79 | 0.593 | 37.1 | 0.474 | 0.0 | 0.0 | 1.00 (0.94–1.06) | 1.00 (0.95–1.05) |
+| Ligue 1 | 7169 | 234 | 3342 | 0.466 | 0.334 | 21.4 | 0.452 | 0.0 | 0.0 | 1.00 (0.87–1.13) | 1.00 (0.91–1.10) |
 
 Attacking style RR within each league:
 
 | league | Positional possession | Build-up into the box | Counter-attack | Direct play |
 |---|---|---|---|---|
-| Premier League | 1.25 | 0.94 | 0.91 | 0.93 |
-| La Liga | 1.61 | 1.01 | 0.88 | 0.89 |
-| Serie A | 1.08 | 0.98 | 0.97 | 0.99 |
-| Bundesliga | 1.08 | 1.01 | 0.95 | 1.01 |
-| Ligue 1 | 1.47 | 1.17 | 0.71 | 0.9 |
+| Premier League | 1.22 | 0.95 | 0.91 | 0.93 |
+| La Liga | 1.71 | 1.06 | 0.83 | 0.87 |
+| Serie A | 1.04 | 0.96 | 1.0 | 1.01 |
+| Bundesliga | 1.11 | 1.04 | 0.95 | 0.96 |
+| Ligue 1 | 1.22 | 1.06 | 0.83 | 0.96 |
 
 Defensive style RR within each league:
 
 | league | High press, high line | Compact mid-block | Aggressive duel press | Low block |
 |---|---|---|---|---|
-| Premier League | 1.16 | 1.03 | 1.08 | 0.9 |
-| La Liga | 1.42 | 1.12 | 0.89 | 0.5 |
-| Serie A | 0.95 | 1.08 | 0.94 | 1.02 |
-| Bundesliga | 1.06 | 1.04 | 0.97 | 0.96 |
-| Ligue 1 | 1.22 | 0.87 | 0.93 | 1.01 |
+| Premier League | 1.16 | 1.03 | 1.1 | 0.9 |
+| La Liga | 1.32 | 1.23 | 0.86 | 0.57 |
+| Serie A | 0.94 | 1.05 | 0.99 | 1.0 |
+| Bundesliga | 1.06 | 1.02 | 0.95 | 0.98 |
+| Ligue 1 | 1.27 | 0.88 | 1.03 | 0.9 |
 
 ![Within league](figures/05_style_within_league.png)
 
-## 5. Age and position
+## 5. Adjusting step by step (RR, 95% CI over clubs)
 
-| attacking style | RR, league | RR, league × age × position | days RR, league | days RR, league × age × position | mean age | Defender | Forward | Goalkeeper | Midfielder |
-|---|---|---|---|---|---|---|---|---|---|
-| Positional possession | 1.24 | 1.27 | 1.09 | 1.11 | 25.7 | 0.34 | 0.26 | 0.09 | 0.31 |
-| Build-up into the box | 1.01 | 1.02 | 1.0 | 1.01 | 25.7 | 0.34 | 0.28 | 0.08 | 0.3 |
-| Counter-attack | 0.9 | 0.88 | 0.96 | 0.95 | 26.2 | 0.34 | 0.28 | 0.09 | 0.29 |
-| Direct play | 0.95 | 0.94 | 0.99 | 0.98 | 26.0 | 0.33 | 0.29 | 0.08 | 0.3 |
+Each row adds one adjustment; per-match rows use team matches (all competitions) as exposure.
 
-| defensive style | RR, league | RR, league × age × position | days RR, league | days RR, league × age × position | mean age | Defender | Forward | Goalkeeper | Midfielder |
-|---|---|---|---|---|---|---|---|---|---|
-| High press, high line | 1.14 | 1.16 | 1.03 | 1.05 | 25.5 | 0.34 | 0.26 | 0.09 | 0.31 |
-| Compact mid-block | 1.03 | 1.03 | 0.97 | 0.98 | 25.8 | 0.34 | 0.28 | 0.09 | 0.3 |
-| Aggressive duel press | 0.93 | 0.93 | 1.0 | 1.0 | 26.1 | 0.34 | 0.28 | 0.09 | 0.3 |
-| Low block | 0.94 | 0.93 | 1.0 | 0.99 | 26.1 | 0.34 | 0.29 | 0.08 | 0.29 |
+### Attacking style
 
-| formation | RR, league | RR, league × age × position | days RR, league | days RR, league × age × position | mean age | Defender | Forward | Goalkeeper | Midfielder |
+| exposure | adjustment | Positional possession | Build-up into the box | Counter-attack | Direct play |
+|---|---|---|---|---|---|
+| per player-season | league × season | 1.21 (1.11–1.32) | 1.01 (0.95–1.06) | 0.91 (0.86–0.96) | 0.96 (0.91–1.00) |
+| per player-season | + team strength | 1.09 (1.03–1.15) | 0.98 (0.93–1.02) | 0.96 (0.91–1.01) | 1.00 (0.96–1.04) |
+| per player-season | + age × position | 1.08 (1.01–1.15) | 0.99 (0.94–1.04) | 0.96 (0.92–1.00) | 1.00 (0.95–1.04) |
+| per team match | league × season | 1.06 (0.98–1.13) | 0.98 (0.93–1.03) | 0.97 (0.91–1.02) | 1.01 (0.97–1.06) |
+| per team match | + team strength | 1.05 (1.00–1.10) | 0.98 (0.93–1.02) | 0.98 (0.93–1.03) | 1.01 (0.97–1.05) |
+
+### Defensive style
+
+| exposure | adjustment | High press, high line | Compact mid-block | Aggressive duel press | Low block |
+|---|---|---|---|---|---|
+| per player-season | league × season | 1.14 (1.05–1.22) | 1.04 (0.97–1.10) | 0.94 (0.87–1.00) | 0.93 (0.89–0.97) |
+| per player-season | + team strength | 1.05 (1.00–1.10) | 1.00 (0.95–1.05) | 0.98 (0.92–1.03) | 0.98 (0.95–1.02) |
+| per player-season | + age × position | 1.05 (0.99–1.10) | 1.00 (0.95–1.06) | 0.98 (0.93–1.03) | 0.98 (0.94–1.01) |
+| per team match | league × season | 1.02 (0.96–1.08) | 0.99 (0.94–1.05) | 0.97 (0.91–1.03) | 1.01 (0.96–1.06) |
+| per team match | + team strength | 1.02 (0.97–1.05) | 1.00 (0.94–1.05) | 0.99 (0.93–1.04) | 1.00 (0.96–1.04) |
+
+### Formation
+
+| exposure | adjustment | back three | back four |
+|---|---|---|---|
+| per player-season | league × season | 0.98 (0.93–1.04) | 1.00 (0.96–1.05) |
+| per player-season | + team strength | 0.99 (0.94–1.04) | 1.00 (0.97–1.04) |
+| per player-season | + age × position | 0.99 (0.95–1.04) | 1.00 (0.97–1.04) |
+| per team match | league × season | 0.99 (0.94–1.05) | 1.00 (0.97–1.04) |
+| per team match | + team strength | 0.99 (0.94–1.04) | 1.00 (0.97–1.03) |
+
+Attacking style: squad and team profile
+
+| attacking style | mean age | team matches | weaker third | middle third | stronger third | Defender | Forward | Goalkeeper | Midfielder |
 |---|---|---|---|---|---|---|---|---|---|
-| back three | 1.01 | 1.01 | 1.0 | 1.0 | 25.9 | 0.35 | 0.26 | 0.09 | 0.3 |
-| back four | 1.0 | 1.0 | 1.0 | 1.0 | 25.9 | 0.34 | 0.28 | 0.09 | 0.3 |
+| Positional possession | 25.7 | 51.7 | 0.02 | 0.09 | 0.88 | 0.34 | 0.26 | 0.09 | 0.31 |
+| Build-up into the box | 25.7 | 46.0 | 0.2 | 0.35 | 0.45 | 0.34 | 0.28 | 0.08 | 0.3 |
+| Counter-attack | 26.2 | 41.8 | 0.51 | 0.38 | 0.11 | 0.34 | 0.28 | 0.09 | 0.29 |
+| Direct play | 26.0 | 42.2 | 0.56 | 0.33 | 0.11 | 0.33 | 0.29 | 0.08 | 0.3 |
+
+Defensive style: squad and team profile
+
+| defensive style | mean age | team matches | weaker third | middle third | stronger third | Defender | Forward | Goalkeeper | Midfielder |
+|---|---|---|---|---|---|---|---|---|---|
+| High press, high line | 25.5 | 49.7 | 0.1 | 0.19 | 0.71 | 0.34 | 0.26 | 0.09 | 0.31 |
+| Compact mid-block | 25.8 | 46.4 | 0.19 | 0.33 | 0.49 | 0.34 | 0.28 | 0.09 | 0.3 |
+| Aggressive duel press | 26.1 | 43.0 | 0.47 | 0.36 | 0.18 | 0.34 | 0.28 | 0.09 | 0.3 |
+| Low block | 26.1 | 41.3 | 0.6 | 0.34 | 0.06 | 0.34 | 0.29 | 0.08 | 0.29 |
 
 ## 6. Team strength and workload
 
@@ -204,41 +235,41 @@ Attacking style RR within strength thirds:
 
 | strength | Positional possession | Build-up into the box | Counter-attack | Direct play |
 |---|---|---|---|---|
-| middle third | 1.1 | 0.95 | 0.92 | 0.98 |
-| stronger third | 1.25 | 1.1 | 1.0 | 1.09 |
-| weaker third | 1.42 | 0.92 | 0.86 | 0.91 |
+| weaker third | 1.49 | 1.0 | 1.0 | 0.99 |
+| middle third | 1.1 | 0.99 | 0.97 | 1.02 |
+| stronger third | 1.08 | 0.96 | 0.83 | 0.98 |
 
 Attacking style RR within congestion thirds:
 
 | congestion | Positional possession | Build-up into the box | Counter-attack | Direct play |
 |---|---|---|---|---|
-| busiest third | 1.29 | 1.05 | 1.06 | 1.16 |
-| lightest third | 1.06 | 1.0 | 0.91 | 0.91 |
-| middle third | 1.21 | 0.95 | 0.81 | 0.89 |
+| lightest third | 0.99 | 0.98 | 0.92 | 0.91 |
+| middle third | 1.13 | 0.96 | 0.83 | 0.92 |
+| busiest third | 1.28 | 1.06 | 1.02 | 1.14 |
 
 Defensive style RR within strength thirds:
 
 | strength | High press, high line | Compact mid-block | Aggressive duel press | Low block |
 |---|---|---|---|---|
-| middle third | 1.12 | 0.93 | 0.92 | 0.95 |
-| stronger third | 1.19 | 1.13 | 1.15 | 1.01 |
-| weaker third | 0.81 | 0.91 | 0.86 | 0.93 |
+| weaker third | 0.99 | 1.06 | 1.0 | 0.99 |
+| middle third | 1.18 | 1.02 | 0.93 | 0.98 |
+| stronger third | 1.03 | 0.97 | 1.01 | 0.94 |
 
 Defensive style RR within congestion thirds:
 
 | congestion | High press, high line | Compact mid-block | Aggressive duel press | Low block |
 |---|---|---|---|---|
-| busiest third | 1.23 | 1.13 | 1.13 | 0.95 |
-| lightest third | 0.94 | 0.99 | 0.86 | 0.97 |
-| middle third | 1.04 | 0.92 | 0.89 | 0.9 |
+| lightest third | 0.95 | 0.96 | 0.89 | 0.95 |
+| middle third | 1.03 | 0.97 | 0.89 | 0.9 |
+| busiest third | 1.23 | 1.14 | 1.08 | 0.96 |
 
 By congestion:
 
 | congestion | player-seasons | team-seasons | injuries | injuries / player-season | per 1,000 min | days lost / player-season | severe share | excess / 100 player-seasons | excess days / player-season | RR (95% CI) | days RR (95% CI) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| lightest third | 12400 | 397 | 8048 | 0.649 | 0.521 | 29.7 | 0.455 | -4.1 | -0.5 | 0.94 (0.91–0.98) | 0.98 (0.94–1.03) |
-| middle third | 11970 | 386 | 7200 | 0.602 | 0.437 | 28.5 | 0.459 | -5.3 | -1.6 | 0.92 (0.88–0.96) | 0.95 (0.90–1.00) |
-| busiest third | 12155 | 387 | 9333 | 0.768 | 0.469 | 33.2 | 0.431 | 9.4 | 2.1 | 1.14 (1.10–1.18) | 1.07 (1.02–1.11) |
+| lightest third | 12400 | 397 | 8048 | 0.649 | 0.521 | 29.5 | 0.455 | -4.6 | -1.0 | 0.93 (0.89–0.97) | 0.97 (0.93–1.01) |
+| middle third | 11970 | 386 | 7200 | 0.602 | 0.437 | 28.4 | 0.459 | -4.5 | -1.1 | 0.93 (0.88–0.98) | 0.96 (0.91–1.01) |
+| busiest third | 12155 | 387 | 9333 | 0.768 | 0.469 | 33.0 | 0.431 | 9.1 | 2.1 | 1.13 (1.06–1.20) | 1.07 (1.01–1.12) |
 
 ## 7. Fitness absences (Bundesliga, secondary outcome)
 
@@ -256,40 +287,116 @@ By congestion:
 | Aggressive duel press | 1198 | 136 | 11.4 |
 | Low block | 2623 | 284 | 10.8 |
 
-## 8. Sensitivity checks (injury RR)
+## 8. Sensitivity checks (injury RR against league × season)
 
 ### Attacking style
 
 | variant | Positional possession | Build-up into the box | Counter-attack | Direct play |
 |---|---|---|---|---|
-| main (> 7 days) | 1.24 | 1.01 | 0.9 | 0.95 |
-| ≥ 900 minutes only | 1.3 | 1.01 | 0.87 | 0.93 |
-| severe only (> 28 days) | 1.09 | 1.0 | 0.94 | 1.0 |
-| > 3 days (adds mild) | 1.3 | 1.01 | 0.88 | 0.93 |
-| multi-club players out | 1.27 | 1.01 | 0.89 | 0.94 |
-| COVID seasons out | 1.24 | 1.03 | 0.89 | 0.94 |
+| main (> 7 days) | 1.21 | 1.01 | 0.91 | 0.96 |
+| ≥ 900 minutes only | 1.26 | 1.02 | 0.88 | 0.93 |
+| severe only (> 28 days) | 1.07 | 1.0 | 0.95 | 1.01 |
+| > 3 days (adds mild) | 1.27 | 1.02 | 0.89 | 0.93 |
+| multi-club players out | 1.23 | 1.01 | 0.9 | 0.95 |
+| ≥ 1 appearance only | 1.23 | 1.01 | 0.9 | 0.95 |
+| COVID seasons out | 1.19 | 1.03 | 0.9 | 0.95 |
 
 ### Defensive style
 
 | variant | High press, high line | Compact mid-block | Aggressive duel press | Low block |
 |---|---|---|---|---|
-| main (> 7 days) | 1.14 | 1.03 | 0.93 | 0.94 |
-| ≥ 900 minutes only | 1.19 | 1.05 | 0.91 | 0.9 |
-| severe only (> 28 days) | 1.05 | 0.96 | 1.0 | 0.99 |
-| > 3 days (adds mild) | 1.19 | 1.04 | 0.91 | 0.92 |
-| multi-club players out | 1.16 | 1.03 | 0.94 | 0.93 |
-| COVID seasons out | 1.15 | 1.04 | 0.93 | 0.93 |
+| main (> 7 days) | 1.14 | 1.04 | 0.94 | 0.93 |
+| ≥ 900 minutes only | 1.19 | 1.06 | 0.92 | 0.89 |
+| severe only (> 28 days) | 1.05 | 0.98 | 1.0 | 0.98 |
+| > 3 days (adds mild) | 1.18 | 1.05 | 0.92 | 0.91 |
+| multi-club players out | 1.15 | 1.04 | 0.94 | 0.92 |
+| ≥ 1 appearance only | 1.15 | 1.04 | 0.93 | 0.93 |
+| COVID seasons out | 1.15 | 1.05 | 0.93 | 0.92 |
 
 ### Formation
 
 | variant | back three | back four |
 |---|---|---|
-| main (> 7 days) | 1.01 | 1.0 |
-| ≥ 900 minutes only | 1.02 | 0.99 |
-| severe only (> 28 days) | 0.97 | 1.01 |
-| > 3 days (adds mild) | 1.01 | 1.0 |
-| multi-club players out | 1.01 | 1.0 |
-| COVID seasons out | 1.02 | 0.99 |
+| main (> 7 days) | 0.98 | 1.0 |
+| ≥ 900 minutes only | 0.99 | 1.0 |
+| severe only (> 28 days) | 0.95 | 1.01 |
+| > 3 days (adds mild) | 0.99 | 1.0 |
+| multi-club players out | 0.98 | 1.0 |
+| ≥ 1 appearance only | 0.98 | 1.0 |
+| COVID seasons out | 0.99 | 1.0 |
+
+### Alternative clusterings (Phase 4)
+
+Attack:
+
+| clustering | style | team-seasons | RR | RR low | RR high |
+|---|---|---|---|---|---|
+| main (k = 4) | Build-up into the box | 355 | 1.01 | 0.95 | 1.06 |
+| main (k = 4) | Counter-attack | 279 | 0.91 | 0.86 | 0.96 |
+| main (k = 4) | Direct play | 362 | 0.96 | 0.91 | 1.0 |
+| main (k = 4) | Positional possession | 174 | 1.21 | 1.11 | 1.32 |
+| k = 3 | Counter-attack (66%) | 351 | 0.91 | 0.86 | 0.96 |
+| k = 3 | Direct play (76%) | 478 | 0.96 | 0.91 | 1.0 |
+| k = 3 | Positional possession (51%) | 341 | 1.15 | 1.08 | 1.22 |
+| relative to league-season | Build-up into the box | 310 | 1.05 | 0.99 | 1.11 |
+| relative to league-season | Counter-attack | 282 | 0.89 | 0.84 | 0.94 |
+| relative to league-season | Direct play | 391 | 0.94 | 0.9 | 0.98 |
+| relative to league-season | Positional possession | 187 | 1.21 | 1.1 | 1.34 |
+| relative, + team strength | Build-up into the box | 310 | 1.0 | 0.95 | 1.05 |
+| relative, + team strength | Counter-attack | 282 | 0.95 | 0.9 | 0.99 |
+| relative, + team strength | Direct play | 391 | 0.99 | 0.96 | 1.03 |
+| relative, + team strength | Positional possession | 187 | 1.08 | 1.0 | 1.15 |
+
+Defence:
+
+| clustering | style | team-seasons | RR | RR low | RR high |
+|---|---|---|---|---|---|
+| main (k = 4) | Aggressive duel press | 286 | 0.94 | 0.87 | 1.0 |
+| main (k = 4) | Compact mid-block | 289 | 1.04 | 0.97 | 1.1 |
+| main (k = 4) | High press, high line | 245 | 1.14 | 1.05 | 1.22 |
+| main (k = 4) | Low block | 350 | 0.93 | 0.89 | 0.97 |
+| k = 3 | Aggressive duel press (75%) | 380 | 0.96 | 0.9 | 1.03 |
+| k = 3 | High press, high line (74%) | 329 | 1.13 | 1.05 | 1.21 |
+| k = 3 | Low block (76%) | 461 | 0.94 | 0.9 | 0.98 |
+| relative to league-season | Aggressive duel press | 340 | 0.98 | 0.92 | 1.04 |
+| relative to league-season | Compact mid-block | 276 | 1.06 | 0.99 | 1.15 |
+| relative to league-season | High press, high line | 161 | 1.16 | 1.07 | 1.26 |
+| relative to league-season | Low block | 393 | 0.91 | 0.88 | 0.95 |
+| relative, + team strength | Aggressive duel press | 340 | 1.0 | 0.95 | 1.04 |
+| relative, + team strength | Compact mid-block | 276 | 1.01 | 0.95 | 1.06 |
+| relative, + team strength | High press, high line | 161 | 1.05 | 0.98 | 1.12 |
+| relative, + team strength | Low block | 393 | 0.97 | 0.93 | 1.01 |
+
+### Days lost counted three ways (days RR)
+
+Attacking style:
+
+| days lost | Positional possession | Build-up into the box | Counter-attack | Direct play |
+|---|---|---|---|---|
+| overlaps merged (main) | 1.07 | 1.01 | 0.96 | 0.99 |
+| raw (overlaps counted twice) | 1.07 | 1.01 | 0.96 | 0.99 |
+| each injury capped at 365 days | 1.07 | 1.0 | 0.96 | 0.99 |
+
+Defensive style:
+
+| days lost | High press, high line | Compact mid-block | Aggressive duel press | Low block |
+|---|---|---|---|---|
+| overlaps merged (main) | 1.04 | 0.98 | 0.99 | 0.99 |
+| raw (overlaps counted twice) | 1.04 | 0.98 | 0.99 | 1.0 |
+| each injury capped at 365 days | 1.04 | 0.99 | 0.99 | 0.99 |
+
+Median days per injury (overlaps merged):
+
+| grouping | style | median days per injury |
+|---|---|---|
+| attacking style | Positional possession | 23.0 |
+| attacking style | Build-up into the box | 25.0 |
+| attacking style | Counter-attack | 27.0 |
+| attacking style | Direct play | 26.0 |
+| defensive style | High press, high line | 24.0 |
+| defensive style | Compact mid-block | 24.0 |
+| defensive style | Aggressive duel press | 26.0 |
+| defensive style | Low block | 27.0 |
 
 ## 9. Style cards (core team-seasons)
 
@@ -311,17 +418,17 @@ Injury RR, all teams vs core teams only:
 
 | attacking style | RR, all teams | RR, core teams | days RR, all teams | days RR, core teams |
 |---|---|---|---|---|
-| Positional possession | 1.24 | 1.25 | 1.09 | 1.08 |
-| Build-up into the box | 1.01 | 1.06 | 1.0 | 1.03 |
-| Counter-attack | 0.9 | 0.88 | 0.96 | 0.94 |
-| Direct play | 0.95 | 0.93 | 0.99 | 1.0 |
+| Positional possession | 1.21 | 1.22 | 1.07 | 1.06 |
+| Build-up into the box | 1.01 | 1.05 | 1.01 | 1.03 |
+| Counter-attack | 0.91 | 0.9 | 0.96 | 0.96 |
+| Direct play | 0.96 | 0.95 | 0.99 | 1.01 |
 
 | defensive style | RR, all teams | RR, core teams | days RR, all teams | days RR, core teams |
 |---|---|---|---|---|
-| High press, high line | 1.14 | 1.17 | 1.03 | 1.08 |
-| Compact mid-block | 1.03 | 1.06 | 0.97 | 1.0 |
-| Aggressive duel press | 0.93 | 0.96 | 1.0 | 1.03 |
-| Low block | 0.94 | 0.94 | 1.0 | 0.97 |
+| High press, high line | 1.14 | 1.16 | 1.04 | 1.08 |
+| Compact mid-block | 1.04 | 1.05 | 0.98 | 0.99 |
+| Aggressive duel press | 0.94 | 0.96 | 0.99 | 1.01 |
+| Low block | 0.93 | 0.92 | 0.99 | 0.97 |
 
 ## 10. How the ways of attacking and defending changed
 
@@ -411,9 +518,9 @@ Injury RR per era (fixed league baselines):
 
 | era | Positional possession | Build-up into the box | Counter-attack | Direct play |
 |---|---|---|---|---|
-| 2014–18 | 1.18 | 1.03 | 0.9 | 0.95 |
-| 2018–22 | 1.27 | 1.0 | 0.95 | 0.97 |
-| 2022–26 | 1.25 | 1.0 | 0.83 | 0.92 |
+| 2014–18 | 1.22 | 1.09 | 0.93 | 0.99 |
+| 2018–22 | 1.26 | 0.99 | 0.93 | 0.95 |
+| 2022–26 | 1.18 | 0.99 | 0.84 | 0.9 |
 
 ### Defensive style
 
@@ -427,9 +534,9 @@ Injury RR per era (fixed league baselines):
 
 | era | High press, high line | Compact mid-block | Aggressive duel press | Low block |
 |---|---|---|---|---|
-| 2014–18 | 1.07 | 0.95 | 0.97 | 0.82 |
-| 2018–22 | 1.15 | 1.0 | 0.92 | 1.01 |
-| 2022–26 | 1.22 | 1.11 | 0.83 | 0.94 |
+| 2014–18 | 1.15 | 1.0 | 0.96 | 0.93 |
+| 2018–22 | 1.1 | 1.03 | 0.92 | 0.97 |
+| 2022–26 | 1.17 | 1.07 | 0.9 | 0.91 |
 
 ### Formation
 
@@ -443,39 +550,39 @@ Injury RR per era (fixed league baselines):
 
 | era | back three | back four |
 |---|---|---|
-| 2014–18 | 0.9 | 0.97 |
-| 2018–22 | 0.97 | 1.03 |
-| 2022–26 | 1.06 | 1.0 |
+| 2014–18 | 0.94 | 1.01 |
+| 2018–22 | 0.98 | 1.01 |
+| 2022–26 | 1.0 | 1.0 |
 
 ## 13. Where the injury trend comes from (Kitagawa decomposition)
 
-| outcome | eras | from | to | change | from style mix | within styles |
-|---|---|---|---|---|---|---|
-| injuries | 2014–18 → 2018–22 | 0.646 | 0.684 | 0.038 | 0.029 | 0.009 |
-| injuries | 2018–22 → 2022–26 | 0.684 | 0.689 | 0.006 | 0.043 | -0.037 |
-| injuries | 2014–18 → 2022–26 | 0.646 | 0.689 | 0.043 | 0.065 | -0.022 |
-| days lost | 2014–18 → 2018–22 | 30.417 | 29.116 | -1.301 | -0.061 | -1.241 |
-| days lost | 2018–22 → 2022–26 | 29.116 | 31.939 | 2.824 | 1.778 | 1.046 |
-| days lost | 2014–18 → 2022–26 | 30.417 | 31.939 | 1.522 | 2.763 | -1.241 |
-| severe injuries | 2014–18 → 2018–22 | 0.296 | 0.289 | -0.007 | -0.001 | -0.006 |
-| severe injuries | 2018–22 → 2022–26 | 0.289 | 0.318 | 0.029 | 0.017 | 0.012 |
-| severe injuries | 2014–18 → 2022–26 | 0.296 | 0.318 | 0.022 | 0.017 | 0.005 |
-| hamstring injuries | 2014–18 → 2018–22 | 0.083 | 0.082 | -0.001 | -0.0 | -0.001 |
-| hamstring injuries | 2018–22 → 2022–26 | 0.082 | 0.101 | 0.019 | 0.008 | 0.011 |
-| hamstring injuries | 2014–18 → 2022–26 | 0.083 | 0.101 | 0.018 | 0.01 | 0.008 |
-| knee injuries | 2014–18 → 2018–22 | 0.105 | 0.099 | -0.006 | -0.003 | -0.003 |
-| knee injuries | 2018–22 → 2022–26 | 0.099 | 0.094 | -0.005 | 0.007 | -0.012 |
-| knee injuries | 2014–18 → 2022–26 | 0.105 | 0.094 | -0.011 | 0.009 | -0.02 |
+| outcome | eras | from | to | change | from strength mix | from style mix | within styles | style mix, strength ignored |
+|---|---|---|---|---|---|---|---|---|
+| injuries | 2014–18 → 2018–22 | 0.646 | 0.684 | 0.038 | 0.001 | 0.014 | 0.023 | 0.029 |
+| injuries | 2018–22 → 2022–26 | 0.684 | 0.689 | 0.006 | 0.003 | 0.04 | -0.038 | 0.043 |
+| injuries | 2014–18 → 2022–26 | 0.646 | 0.689 | 0.043 | 0.008 | 0.046 | -0.011 | 0.065 |
+| days lost | 2014–18 → 2018–22 | 30.061 | 28.992 | -1.07 | -0.225 | -0.423 | -0.422 | -0.057 |
+| days lost | 2018–22 → 2022–26 | 28.992 | 31.771 | 2.779 | 0.154 | 2.5 | 0.125 | 1.811 |
+| days lost | 2014–18 → 2022–26 | 30.061 | 31.771 | 1.71 | 0.069 | 1.586 | 0.054 | 2.526 |
+| severe injuries | 2014–18 → 2018–22 | 0.296 | 0.289 | -0.007 | -0.001 | -0.004 | -0.002 | -0.001 |
+| severe injuries | 2018–22 → 2022–26 | 0.289 | 0.318 | 0.029 | 0.001 | 0.024 | 0.004 | 0.017 |
+| severe injuries | 2014–18 → 2022–26 | 0.296 | 0.318 | 0.022 | 0.001 | 0.013 | 0.007 | 0.017 |
+| hamstring injuries | 2014–18 → 2018–22 | 0.083 | 0.082 | -0.001 | -0.0 | -0.0 | -0.0 | -0.0 |
+| hamstring injuries | 2018–22 → 2022–26 | 0.082 | 0.101 | 0.019 | 0.001 | 0.007 | 0.011 | 0.008 |
+| hamstring injuries | 2014–18 → 2022–26 | 0.083 | 0.101 | 0.018 | 0.002 | 0.008 | 0.008 | 0.01 |
+| knee injuries | 2014–18 → 2018–22 | 0.105 | 0.099 | -0.006 | -0.001 | -0.003 | -0.002 | -0.003 |
+| knee injuries | 2018–22 → 2022–26 | 0.099 | 0.094 | -0.005 | 0.0 | 0.006 | -0.012 | 0.007 |
+| knee injuries | 2014–18 → 2022–26 | 0.105 | 0.094 | -0.011 | 0.0 | 0.004 | -0.016 | 0.009 |
 
 Style-mix part, 2014–18 → 2022–26, by which phase's styles are used:
 
 | outcome | attacking style | combined style | defensive style |
 |---|---|---|---|
-| injuries | 0.073 | 0.065 | 0.01 |
-| days lost | 1.421 | 2.763 | -0.176 |
-| severe injuries | 0.013 | 0.017 | -0.004 |
-| hamstring injuries | 0.015 | 0.01 | 0.002 |
-| knee injuries | 0.01 | 0.009 | 0.001 |
+| injuries | 0.038 | 0.046 | 0.007 |
+| days lost | 1.433 | 1.586 | -0.078 |
+| severe injuries | 0.013 | 0.013 | -0.003 |
+| hamstring injuries | 0.008 | 0.008 | 0.001 |
+| knee injuries | 0.006 | 0.004 | 0.001 |
 
 ![Decomposition](figures/05_trend_decomposition.png)
 
@@ -485,24 +592,24 @@ Levels:
 
 | dimension | injuries / player-season | days lost / player-season | severe share | hamstring share | knee share | muscle share |
 |---|---|---|---|---|---|---|
-| attack_possession | 0.09 | 0.01 | -0.02 | 0.08 | -0.32 | 0.43 |
-| attack_patience | 0.2 | 0.13 | -0.06 | 0.05 | -0.55 | 0.64 |
-| attack_verticality | -0.06 | -0.02 | 0.03 | 0.2 | 0.16 | -0.21 |
-| attack_directness | -0.2 | -0.11 | 0.08 | -0.13 | 0.51 | -0.66 |
-| defence_press | -0.09 | 0.04 | 0.1 | -0.06 | 0.51 | -0.49 |
-| defence_high_line | -0.06 | -0.02 | 0.05 | 0.2 | 0.18 | -0.2 |
-| defence_territory_conceded | 0.08 | 0.1 | 0.07 | 0.05 | -0.04 | 0.26 |
-| defence_aggression | -0.05 | 0.13 | 0.16 | -0.11 | 0.39 | -0.38 |
+| attack_possession | 0.09 | 0.04 | -0.02 | 0.08 | -0.32 | 0.43 |
+| attack_patience | 0.2 | 0.15 | -0.06 | 0.05 | -0.55 | 0.64 |
+| attack_verticality | -0.06 | -0.01 | 0.03 | 0.2 | 0.16 | -0.21 |
+| attack_directness | -0.2 | -0.14 | 0.08 | -0.13 | 0.51 | -0.66 |
+| defence_press | -0.09 | 0.01 | 0.1 | -0.06 | 0.51 | -0.49 |
+| defence_high_line | -0.06 | -0.01 | 0.05 | 0.2 | 0.18 | -0.2 |
+| defence_territory_conceded | 0.08 | 0.12 | 0.07 | 0.05 | -0.04 | 0.26 |
+| defence_aggression | -0.05 | 0.1 | 0.16 | -0.11 | 0.39 | -0.38 |
 
 Season-to-season changes (n = 55):
 
 | dimension | injuries / player-season | days lost / player-season | severe share | hamstring share | knee share | muscle share |
 |---|---|---|---|---|---|---|
-| attack_possession | -0.02 | 0.19 | 0.22 | 0.11 | 0.22 | -0.05 |
-| attack_patience | 0.06 | 0.0 | -0.03 | -0.23 | -0.13 | 0.06 |
+| attack_possession | -0.02 | 0.2 | 0.22 | 0.11 | 0.22 | -0.05 |
+| attack_patience | 0.06 | -0.0 | -0.03 | -0.23 | -0.13 | 0.06 |
 | attack_verticality | 0.11 | 0.15 | 0.04 | -0.05 | 0.02 | -0.1 |
 | attack_directness | -0.09 | -0.21 | -0.06 | -0.04 | -0.08 | -0.32 |
-| defence_press | 0.01 | 0.1 | 0.01 | 0.01 | 0.08 | 0.01 |
+| defence_press | 0.01 | 0.09 | 0.01 | 0.01 | 0.08 | 0.01 |
 | defence_high_line | 0.12 | 0.14 | 0.04 | -0.05 | 0.05 | -0.14 |
 | defence_territory_conceded | 0.01 | 0.31 | 0.24 | 0.14 | 0.35 | -0.03 |
 | defence_aggression | 0.04 | 0.26 | 0.13 | 0.12 | 0.02 | -0.23 |
@@ -511,15 +618,15 @@ Season-to-season changes (n = 55):
 
 ## 15. One story per league
 
-**Premier League.** From 2014–18 to 2022–26: attack Positional possession 10% → 35%, Direct play 36% → 12%; defence Low block 49% → 54%, High press, high line 31% → 25%; back-three minutes 13% → 18%. Trends: possession (attack) rising, patience (attack) rising, verticality (attack) falling, directness (attack) falling, press (defence) falling, high line (defence) falling, territory conceded (defence) rising, aggression (defence) dip. Injuries per player-season 0.56 → 0.71 (+0.15: +0.054 from the style mix, +0.098 within styles); days lost 34.4 → 38.7; hamstring injuries 0.114 → 0.139 (style mix +0.011); knee 0.113 → 0.110 (style mix +0.014).
+**Premier League.** From 2014–18 to 2022–26: attack Positional possession 10% → 35%, Direct play 36% → 12%; defence Low block 49% → 54%, High press, high line 31% → 25%; back-three minutes 13% → 18%. Trends: possession (attack) rising, patience (attack) rising, verticality (attack) falling, directness (attack) falling, press (defence) falling, high line (defence) falling, territory conceded (defence) rising, aggression (defence) dip. Injuries per player-season 0.56 → 0.71 (+0.15: +0.088 from the style mix, +0.057 within styles); days lost 34.4 → 38.5; hamstring injuries 0.114 → 0.139 (style mix +0.011); knee 0.113 → 0.110 (style mix +0.013).
 
-**La Liga.** From 2014–18 to 2022–26: attack Build-up into the box 18% → 48%, Counter-attack 48% → 16%; defence Compact mid-block 8% → 38%, Aggressive duel press 76% → 39%; back-three minutes 3% → 9%. Trends: possession (attack) rising, patience (attack) rising, verticality (attack) falling, directness (attack) falling, press (defence) falling, high line (defence) falling, territory conceded (defence) dip, aggression (defence) falling. Injuries per player-season 0.71 → 0.49 (-0.23: +0.050 from the style mix, -0.275 within styles); days lost 30.8 → 23.8; hamstring injuries 0.118 → 0.087 (style mix +0.017); knee 0.101 → 0.064 (style mix -0.004).
+**La Liga.** From 2014–18 to 2022–26: attack Build-up into the box 18% → 48%, Counter-attack 48% → 16%; defence Compact mid-block 8% → 38%, Aggressive duel press 76% → 39%; back-three minutes 3% → 9%. Trends: possession (attack) rising, patience (attack) rising, verticality (attack) falling, directness (attack) falling, press (defence) falling, high line (defence) falling, territory conceded (defence) dip, aggression (defence) falling. Injuries per player-season 0.71 → 0.49 (-0.23: -0.009 from the style mix, -0.207 within styles); days lost 30.8 → 23.7; hamstring injuries 0.118 → 0.087 (style mix +0.002); knee 0.101 → 0.064 (style mix -0.009).
 
-**Serie A.** From 2014–18 to 2022–26: attack Positional possession 8% → 28%, Direct play 48% → 30%; defence Compact mid-block 12% → 39%, Aggressive duel press 55% → 6%; back-three minutes 29% → 52%. Trends: possession (attack) peak, patience (attack) rising, verticality (attack) falling, directness (attack) falling, press (defence) falling, high line (defence) falling, territory conceded (defence) peak, aggression (defence) falling. Injuries per player-season 0.74 → 0.89 (+0.15: +0.056 from the style mix, +0.098 within styles); days lost 27.1 → 35.0; hamstring injuries 0.083 → 0.133 (style mix +0.014); knee 0.104 → 0.098 (style mix +0.010).
+**Serie A.** From 2014–18 to 2022–26: attack Positional possession 8% → 28%, Direct play 48% → 30%; defence Compact mid-block 12% → 39%, Aggressive duel press 55% → 6%; back-three minutes 29% → 52%. Trends: possession (attack) peak, patience (attack) rising, verticality (attack) falling, directness (attack) falling, press (defence) falling, high line (defence) falling, territory conceded (defence) peak, aggression (defence) falling. Injuries per player-season 0.74 → 0.89 (+0.15: +0.044 from the style mix, +0.108 within styles); days lost 26.9 → 34.8; hamstring injuries 0.083 → 0.133 (style mix +0.010); knee 0.104 → 0.098 (style mix +0.002).
 
-**Bundesliga.** From 2014–18 to 2022–26: attack Build-up into the box 14% → 51%, Direct play 44% → 6%; defence Low block 15% → 61%, Aggressive duel press 39% → 7%; back-three minutes 18% → 46%. Trends: possession (attack) rising, patience (attack) rising, verticality (attack) rising, directness (attack) falling, press (defence) falling, high line (defence) rising, territory conceded (defence) rising, aggression (defence) falling. Injuries per player-season 0.86 → 0.74 (-0.12: +0.082 from the style mix, -0.204 within styles); days lost 42.5 → 35.8; hamstring injuries 0.034 → 0.060 (style mix -0.003); knee 0.151 → 0.111 (style mix +0.005).
+**Bundesliga.** From 2014–18 to 2022–26: attack Build-up into the box 14% → 51%, Direct play 44% → 6%; defence Low block 15% → 61%, Aggressive duel press 39% → 7%; back-three minutes 18% → 46%. Trends: possession (attack) rising, patience (attack) rising, verticality (attack) rising, directness (attack) falling, press (defence) falling, high line (defence) rising, territory conceded (defence) rising, aggression (defence) falling. Injuries per player-season 0.86 → 0.74 (-0.12: +0.015 from the style mix, -0.137 within styles); days lost 40.9 → 35.6; hamstring injuries 0.034 → 0.060 (style mix +0.013); knee 0.151 → 0.111 (style mix -0.011).
 
-**Ligue 1.** From 2014–18 to 2022–26: attack Build-up into the box 12% → 41%, Counter-attack 41% → 9%; defence Low block 10% → 39%, High press, high line 38% → 20%; back-three minutes 5% → 32%. Trends: possession (attack) rising, patience (attack) rising, verticality (attack) falling, directness (attack) falling, press (defence) falling, high line (defence) falling, territory conceded (defence) rising, aggression (defence) falling. Injuries per player-season 0.37 → 0.60 (+0.23: +0.075 from the style mix, +0.152 within styles); days lost 18.4 → 26.2; hamstring injuries 0.059 → 0.079 (style mix +0.008); knee 0.060 → 0.086 (style mix +0.021).
+**Ligue 1.** From 2014–18 to 2022–26: attack Build-up into the box 12% → 41%, Counter-attack 41% → 9%; defence Low block 10% → 39%, High press, high line 38% → 20%; back-three minutes 5% → 32%. Trends: possession (attack) rising, patience (attack) rising, verticality (attack) falling, directness (attack) falling, press (defence) falling, high line (defence) falling, territory conceded (defence) rising, aggression (defence) falling. Injuries per player-season 0.37 → 0.60 (+0.23: +0.091 from the style mix, +0.106 within styles); days lost 18.4 → 26.1; hamstring injuries 0.059 → 0.079 (style mix +0.004); knee 0.060 → 0.086 (style mix +0.024).
 
 
 ## 16. Clearer results (fixed in advance, not tuned on outcomes)
@@ -530,73 +637,66 @@ Attack × defence grid, raw vs shrunk injury RR (weight on own data: 1 = kept as
 
 | attack | defence | team-seasons | RR raw | RR shrunk | RR weight on own data |
 |---|---|---|---|---|---|
-| Build-up into the box | Aggressive duel press | 59 | 0.98 | 0.99 | 0.9 |
-| Build-up into the box | Compact mid-block | 117 | 1.07 | 1.07 | 0.95 |
-| Build-up into the box | High press, high line | 72 | 1.01 | 1.01 | 0.93 |
-| Build-up into the box | Low block | 107 | 0.96 | 0.96 | 0.97 |
-| Counter-attack | Aggressive duel press | 91 | 0.88 | 0.9 | 0.91 |
-| Counter-attack | Compact mid-block | 49 | 0.84 | 0.88 | 0.79 |
-| Counter-attack | High press, high line | 25 | 1.04 | 1.04 | 0.74 |
-| Counter-attack | Low block | 114 | 0.9 | 0.91 | 0.95 |
-| Direct play | Aggressive duel press | 129 | 0.91 | 0.92 | 0.94 |
-| Direct play | Compact mid-block | 66 | 0.95 | 0.96 | 0.88 |
-| Direct play | High press, high line | 44 | 1.08 | 1.07 | 0.85 |
-| Direct play | Low block | 123 | 0.95 | 0.96 | 0.94 |
-| Positional possession | Aggressive duel press | 7 | 1.44 | 1.42 | 0.95 |
-| Positional possession | Compact mid-block | 57 | 1.16 | 1.15 | 0.94 |
-| Positional possession | High press, high line | 104 | 1.28 | 1.27 | 0.95 |
-| Positional possession | Low block | 6 | 1.18 | 1.14 | 0.72 |
+| Build-up into the box | Aggressive duel press | 59 | 0.96 | 0.97 | 0.82 |
+| Build-up into the box | Compact mid-block | 117 | 1.09 | 1.08 | 0.9 |
+| Build-up into the box | High press, high line | 72 | 1.04 | 1.03 | 0.81 |
+| Build-up into the box | Low block | 107 | 0.94 | 0.94 | 0.92 |
+| Counter-attack | Aggressive duel press | 91 | 0.88 | 0.89 | 0.87 |
+| Counter-attack | Compact mid-block | 49 | 0.87 | 0.9 | 0.8 |
+| Counter-attack | High press, high line | 25 | 1.05 | 1.04 | 0.69 |
+| Counter-attack | Low block | 114 | 0.92 | 0.93 | 0.88 |
+| Direct play | Aggressive duel press | 129 | 0.94 | 0.95 | 0.86 |
+| Direct play | Compact mid-block | 66 | 0.97 | 0.98 | 0.81 |
+| Direct play | High press, high line | 44 | 1.07 | 1.06 | 0.83 |
+| Direct play | Low block | 123 | 0.93 | 0.94 | 0.91 |
+| Positional possession | Aggressive duel press | 7 | 1.32 | 1.27 | 0.86 |
+| Positional possession | Compact mid-block | 57 | 1.14 | 1.1 | 0.75 |
+| Positional possession | High press, high line | 104 | 1.25 | 1.22 | 0.88 |
+| Positional possession | Low block | 6 | 1.08 | 1.05 | 0.58 |
 
 Attacking style RR within each league, shrunk:
 
 | league | Positional possession | Build-up into the box | Counter-attack | Direct play |
 |---|---|---|---|---|
-| Premier League | 1.23 | 0.95 | 0.93 | 0.94 |
-| La Liga | 1.5 | 1.01 | 0.91 | 0.91 |
-| Serie A | 1.08 | 0.98 | 0.98 | 1.0 |
-| Bundesliga | 1.08 | 1.01 | 0.95 | 1.01 |
-| Ligue 1 | 1.37 | 1.16 | 0.79 | 0.92 |
+| Premier League | 1.2 | 0.97 | 0.94 | 0.96 |
+| La Liga | 1.26 | 1.05 | 0.88 | 0.93 |
+| Serie A | 1.04 | 0.98 | 1.01 | 1.01 |
+| Bundesliga | 1.09 | 1.04 | 0.96 | 0.97 |
+| Ligue 1 | 1.12 | 1.05 | 0.89 | 0.98 |
 
 Defensive style RR within each league, shrunk:
 
 | league | High press, high line | Compact mid-block | Aggressive duel press | Low block |
 |---|---|---|---|---|
-| Premier League | 1.13 | 1.03 | 1.04 | 0.91 |
-| La Liga | 1.31 | 1.09 | 0.91 | 0.79 |
-| Serie A | 0.97 | 1.07 | 0.95 | 1.02 |
-| Bundesliga | 1.05 | 1.04 | 0.98 | 0.96 |
-| Ligue 1 | 1.17 | 0.9 | 0.98 | 1.01 |
+| Premier League | 1.12 | 1.02 | 1.04 | 0.91 |
+| La Liga | 1.13 | 1.12 | 0.9 | 0.84 |
+| Serie A | 0.96 | 1.03 | 0.99 | 1.0 |
+| Bundesliga | 1.04 | 1.01 | 0.96 | 0.98 |
+| Ligue 1 | 1.14 | 0.92 | 1.0 | 0.91 |
 
 ### 3-season rolling averages
 
 | season | injuries / player-season | days lost / player-season | unknown body area | injuries / player-season (3-season mean) | days lost / player-season (3-season mean) | unknown body area (3-season mean) |
 |---|---|---|---|---|---|---|
-| 2014-15 | 0.592 | 29.08 | 0.157 | 0.601 | 29.317 | 0.147 |
-| 2015-16 | 0.61 | 29.553 | 0.137 | 0.636 | 30.694 | 0.139 |
-| 2016-17 | 0.707 | 33.448 | 0.123 | 0.663 | 30.853 | 0.12 |
-| 2017-18 | 0.672 | 29.557 | 0.099 | 0.72 | 31.989 | 0.12 |
-| 2018-19 | 0.781 | 32.963 | 0.138 | 0.722 | 31.481 | 0.111 |
-| 2019-20 | 0.714 | 31.924 | 0.096 | 0.717 | 30.395 | 0.13 |
-| 2020-21 | 0.655 | 26.298 | 0.156 | 0.654 | 27.985 | 0.132 |
-| 2021-22 | 0.594 | 25.734 | 0.145 | 0.621 | 26.708 | 0.148 |
-| 2022-23 | 0.614 | 28.093 | 0.142 | 0.622 | 28.763 | 0.142 |
-| 2023-24 | 0.657 | 32.461 | 0.14 | 0.668 | 31.982 | 0.135 |
-| 2024-25 | 0.733 | 35.391 | 0.122 | 0.716 | 33.272 | 0.121 |
-| 2025-26 | 0.758 | 31.965 | 0.101 | 0.746 | 33.678 | 0.112 |
+| 2014-15 | 0.592 | 28.697 | 0.157 | 0.601 | 28.888 | 0.147 |
+| 2015-16 | 0.61 | 29.08 | 0.137 | 0.636 | 30.283 | 0.139 |
+| 2016-17 | 0.707 | 33.072 | 0.123 | 0.663 | 30.506 | 0.12 |
+| 2017-18 | 0.672 | 29.366 | 0.099 | 0.72 | 31.714 | 0.12 |
+| 2018-19 | 0.781 | 32.705 | 0.138 | 0.722 | 31.303 | 0.111 |
+| 2019-20 | 0.714 | 31.837 | 0.096 | 0.717 | 30.254 | 0.13 |
+| 2020-21 | 0.655 | 26.22 | 0.156 | 0.654 | 27.903 | 0.132 |
+| 2021-22 | 0.594 | 25.652 | 0.145 | 0.621 | 26.616 | 0.148 |
+| 2022-23 | 0.614 | 27.976 | 0.142 | 0.622 | 28.63 | 0.142 |
+| 2023-24 | 0.657 | 32.261 | 0.14 | 0.668 | 31.767 | 0.135 |
+| 2024-25 | 0.733 | 35.064 | 0.122 | 0.716 | 33.087 | 0.121 |
+| 2025-26 | 0.758 | 31.937 | 0.101 | 0.746 | 33.5 | 0.112 |
 
-### Body-area patterns surviving false-discovery-rate correction (9 of 80; Cochran–Mantel–Haenszel test within leagues, Benjamini–Hochberg q < 0.05)
+### Body-area patterns surviving false-discovery-rate correction (2 of 72; permutation test within league-seasons; Mantel–Haenszel odds ratio over league × era, Benjamini–Hochberg q < 0.05)
 
 | grouping | style | area | MH odds ratio | q (BH) | leagues above 1 |
 |---|---|---|---|---|---|
-| attacking style | Positional possession | unspecified muscle | 1.2061 | 0.0009 | 3 |
-| attacking style | Counter-attack | knee | 1.1339 | 0.041 | 5 |
-| attacking style | Counter-attack | unspecified muscle | 0.872 | 0.017 | 1 |
-| attacking style | Positional possession | knee | 0.818 | 0.0009 | 0 |
-| defensive style | Aggressive duel press | knee | 1.2336 | 0.0005 | 4 |
-| defensive style | High press, high line | knee | 0.8547 | 0.006 | 0 |
-| defensive style | Low block | hamstring | 0.8521 | 0.0068 | 1 |
-| defensive style | Aggressive duel press | unspecified muscle | 0.8425 | 0.0009 | 1 |
-| defensive style | Low block | groin/adductor/hip | 0.8081 | 0.0009 | 2 |
+| defensive style | High press, high line | knee | 0.8451 | 0.0396 | 0 |
+| defensive style | Low block | hamstring | 0.8178 | 0.0216 | 1 |
 
 ### Who carries a style's excess: RR by position and age band
 
@@ -604,37 +704,37 @@ Attacking style × position:
 
 | attacking style | Defender | Forward | Goalkeeper | Midfielder |
 |---|---|---|---|---|
-| Positional possession | 1.41 | 1.25 | 0.73 | 1.21 |
-| Build-up into the box | 1.13 | 0.98 | 0.62 | 0.99 |
-| Counter-attack | 0.98 | 0.9 | 0.58 | 0.89 |
-| Direct play | 1.07 | 0.95 | 0.58 | 0.93 |
+| Positional possession | 1.37 | 1.21 | 0.71 | 1.18 |
+| Build-up into the box | 1.13 | 0.99 | 0.62 | 0.99 |
+| Counter-attack | 0.99 | 0.91 | 0.59 | 0.91 |
+| Direct play | 1.07 | 0.96 | 0.58 | 0.93 |
 
 Attacking style × age band:
 
 | attacking style | 22–25 | 26–29 | 30+ | ≤21 |
 |---|---|---|---|---|
-| Positional possession | 1.2 | 1.47 | 1.53 | 0.62 |
-| Build-up into the box | 0.92 | 1.19 | 1.24 | 0.54 |
-| Counter-attack | 0.85 | 0.99 | 1.03 | 0.54 |
-| Direct play | 0.9 | 1.06 | 1.14 | 0.53 |
+| Positional possession | 1.16 | 1.42 | 1.49 | 0.61 |
+| Build-up into the box | 0.92 | 1.19 | 1.25 | 0.54 |
+| Counter-attack | 0.85 | 1.0 | 1.06 | 0.54 |
+| Direct play | 0.9 | 1.07 | 1.15 | 0.53 |
 
 Defensive style × position:
 
 | defensive style | Defender | Forward | Goalkeeper | Midfielder |
 |---|---|---|---|---|
-| High press, high line | 1.25 | 1.11 | 0.72 | 1.18 |
-| Compact mid-block | 1.16 | 1.03 | 0.63 | 0.99 |
-| Aggressive duel press | 1.08 | 0.87 | 0.59 | 0.92 |
-| Low block | 1.04 | 0.99 | 0.57 | 0.9 |
+| High press, high line | 1.25 | 1.11 | 0.71 | 1.17 |
+| Compact mid-block | 1.17 | 1.05 | 0.63 | 1.0 |
+| Aggressive duel press | 1.08 | 0.87 | 0.59 | 0.93 |
+| Low block | 1.03 | 0.98 | 0.56 | 0.89 |
 
 Defensive style × age band:
 
 | defensive style | 22–25 | 26–29 | 30+ | ≤21 |
 |---|---|---|---|---|
-| High press, high line | 1.11 | 1.31 | 1.43 | 0.61 |
-| Compact mid-block | 0.97 | 1.22 | 1.27 | 0.49 |
-| Aggressive duel press | 0.84 | 1.07 | 1.11 | 0.54 |
-| Low block | 0.88 | 1.05 | 1.1 | 0.57 |
+| High press, high line | 1.1 | 1.3 | 1.42 | 0.62 |
+| Compact mid-block | 0.98 | 1.23 | 1.29 | 0.49 |
+| Aggressive duel press | 0.83 | 1.06 | 1.13 | 0.54 |
+| Low block | 0.87 | 1.04 | 1.09 | 0.56 |
 
 ## 17. Outputs
 

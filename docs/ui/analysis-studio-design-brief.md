@@ -56,8 +56,8 @@ files), a log row (rows before → after, e.g. "82,075 → 24,581 injuries"), an
    /analysis/studio/phase-2/step-7, /analysis/results).
 1. **Pipeline overview / Progress** (home of Step 2). It doubles as the project's progress page shown to the
    supervisor: the research question in two sentences, key numbers (1,170 team-seasons, 24,581 injuries > 7 days,
-   4 × 4 styles), the headline as an association with its adjustments ("Positional possession: league-adjusted rate
-   ratio 1.24; 1.11 after team strength; 1.04 per match played — association, not cause") and a caveat chip
+   4 × 4 styles), the headline as an association with its adjustments ("Positional possession: rate ratio 1.21
+   vs league-season; 1.09 after team strength; 1.05 per match played — association, not cause") and a caveat chip
    ("Transfermarkt under-reports injuries; leagues record differently"), then all 7 phases as a horizontal play diagram (like set-piece arrows on a board), each
    phase a magnet showing status and its headline count (e.g. "1,170 team-seasons", "24,581 injuries > 7 days").
    Review points shown as flags on the path. Actions: Run all, Run from here, Open phase. **Run all** reruns only stale phases in order, stops at the first failed
@@ -110,8 +110,8 @@ files), a log row (rows before → after, e.g. "82,075 → 24,581 injuries"), an
      nested versions side by side (league × season → + team strength → + age × position) and an exposure switch
      (per player-season / per team match);
    - attack × defence grid (heatmap, shrunk values with raw on hover, small cells greyed);
-   - body areas (heatmap, "x/5 leagues", ★ for patterns that survive the permutation test with multiple-testing
-     correction);
+   - body areas (heatmap, "x/5 leagues", ★ for the 2 of 72 patterns that survive the permutation test with
+     multiple-testing correction);
    - who carries the excess: RR by position and age band per style (heatmap);
    - injury trend: single seasons as dots with CI band plus a 3-season rolling line, calendar events annotated
      (COVID restart, five substitutes, mid-season World Cup, new Champions League format);
@@ -155,11 +155,11 @@ All JSON over a local API (`/api/analysis/...`). Shapes, simplified:
 
 - Phase 2 funnel: 82,075 records → 82,068 parsed → 71,374 in window → 71,195 closed → 37,554 at a Big Five club →
   32,088 injuries (5,466 non-injuries) → 24,581 lasting more than 7 days (13,588 moderate, 10,993 severe).
-- Attacking styles (placeholders, being recomputed): Positional possession (174 team-seasons, injury rate ratio 1.24,
-  1.11 after strength, 1.04 per match), Build-up into
-  the box (355, 1.01), Counter-attack (279, 0.90), Direct play (362, 0.95).
-- Defensive styles: High press, high line (245, 1.14), Compact mid-block (289, 1.03), Aggressive duel press (286,
-  0.93), Low block (350, 0.94).
+- Attacking styles (placeholders, being recomputed): Positional possession (174 team-seasons, injury rate ratio 1.21,
+  1.09 after strength, 1.05 per match), Build-up into
+  the box (355, 1.01), Counter-attack (279, 0.91), Direct play (362, 0.96).
+- Defensive styles: High press, high line (245, 1.14), Compact mid-block (289, 1.04), Aggressive duel press (286,
+  0.94), Low block (350, 0.93).
 - Clustering, attack phase: k = 4, silhouette 0.22, weakest-cluster stability 0.64; defence: 0.21, 0.80.
 - Style shift 2014–18 → 2022–26: Positional possession 6% → 25%, Direct play 40% → 18%, Low block 19% → 41%.
 

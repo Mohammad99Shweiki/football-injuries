@@ -133,7 +133,52 @@ GMM BIC by k (lower is better):
 | 9 | 12669.0 | 12979.0 |
 | 10 | 12742.0 | 13045.0 |
 
-## 5. Combined styles
+## 5. Sensitivity clusterings (used in Phase 5 checks)
+
+| measure | attack | defence |
+|---|---|---|
+| k = 3 vs k = 4 (ARI) | 0.474 | 0.602 |
+| relative vs main (ARI) | 0.431 | 0.382 |
+| same name, relative vs main | 0.744 | 0.704 |
+| relative silhouette | 0.21 | 0.213 |
+
+Attack: main style (rows) vs k = 3 cluster:
+
+| attack style | Counter-attack (66%) | Direct play (76%) | Positional possession (51%) |
+|---|---|---|---|
+| Positional possession | 0 | 0 | 174 |
+| Counter-attack | 233 | 46 | 0 |
+| Direct play | 0 | 361 | 1 |
+| Build-up into the box | 118 | 71 | 166 |
+
+Attack: main style (rows) vs relative style:
+
+| attack style | Positional possession | Counter-attack | Direct play | Build-up into the box |
+|---|---|---|---|---|
+| Positional possession | 143 | 0 | 6 | 25 |
+| Counter-attack | 0 | 213 | 30 | 36 |
+| Direct play | 10 | 21 | 298 | 33 |
+| Build-up into the box | 34 | 48 | 57 | 216 |
+
+Defence: main style (rows) vs k = 3 cluster:
+
+| defence style | Aggressive duel press (75%) | High press, high line (74%) | Low block (76%) |
+|---|---|---|---|
+| High press, high line | 0 | 245 | 0 |
+| Low block | 0 | 1 | 349 |
+| Aggressive duel press | 286 | 0 | 0 |
+| Compact mid-block | 94 | 83 | 112 |
+
+Defence: main style (rows) vs relative style:
+
+| defence style | High press, high line | Low block | Aggressive duel press | Compact mid-block |
+|---|---|---|---|---|
+| High press, high line | 150 | 3 | 71 | 21 |
+| Low block | 0 | 289 | 30 | 31 |
+| Aggressive duel press | 6 | 65 | 188 | 27 |
+| Compact mid-block | 5 | 36 | 51 | 197 |
+
+## 6. Combined styles
 
 | attack \ defence | High press, high line | Low block | Aggressive duel press | Compact mid-block |
 |---|---|---|---|---|

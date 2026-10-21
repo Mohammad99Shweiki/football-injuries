@@ -28,12 +28,17 @@ style**, their combination (Phase 4) and its **formation** (back three: ≥ 50% 
 
 **Methods** (descriptive, as the course allows):
 - **Rates:** injuries per player-season, per 1,000 minutes, days lost per player-season, share severe (> 28 days).
-- **League-adjusted rate ratio (RR):** observed injuries ÷ expected at the league's 12-season average (indirect
-  standardisation), because Transfermarkt records injuries at very different rates per league. A stricter version
-  uses league × age band × position.
-- **95% CIs:** bootstrap over **team-seasons** (players of one squad are not independent), 1,000 resamples, seed 42.
-- **Tests:** chi-square (observed vs expected; body-area mix with Cramér's V). Body-area patterns are reported only
-  when they hold **within leagues** (labelling differs a lot between leagues).
+- **Rate ratio (RR):** observed injuries ÷ expected (indirect standardisation), because Transfermarkt records injuries
+  at very different rates per league and season. Expected values are **nested**: league × season (main), then
+  + team strength (thirds of points per match), then + age band × position. Two **exposures** side by side: per
+  player-season, and per team match (expected = the league-season's injuries per player-season-match × the team's
+  matches in all competitions), since stronger teams play more matches.
+- **95% CIs:** bootstrap over **clubs** (a club's seasons and players are not independent), 1,000 resamples, each
+  seeded from the table it belongs to (seed 42), so adding a table does not shift the others.
+- **Tests:** chi-square (observed vs expected; body-area mix with Cramér's V). Body-area patterns: a **permutation
+  test** (style labels shuffled among team-seasons within each league-season, 10,000 times) with Benjamini–Hochberg
+  over 72 tests; the Mantel–Haenszel odds ratio (strata league × era) as effect size.
+- **Days lost** count each day once (overlapping absences merged in Phase 2).
 - **Evolution:** eras 2014–18, 2018–22, 2022–26; trend shapes; style transitions; Kitagawa decomposition of injury
   trends into the style mix and within-style change.
 
@@ -44,7 +49,7 @@ style**, their combination (Phase 4) and its **formation** (back three: ≥ 50% 
 4. Body areas by style (within leagues)
 5. Seasons: injury trend and style shares over time
 6. Leagues: style effects within each league
-7. Age and position: is it the squad mix?
+7. Adjusting step by step: season, team strength, age and position, matches played
 8. Team strength and workload
 9. Fitness absences (secondary outcome)
 10. Sensitivity checks
@@ -64,6 +69,7 @@ style**, their combination (Phase 4) and its **formation** (back three: ≥ 50% 
 
 code('''
 import sys
+import zlib
 from datetime import date
 from pathlib import Path
 
@@ -168,7 +174,8 @@ assert len(team) == 1170
 sq = read_table("tm_squads")
 player = sq[["playerId", "position_group", "date_of_birth"]].replace("", np.nan).groupby("playerId").first()
 TEAM_COLS = ["league", "season", "club_id", "attack_style", "defence_style", "style", "style_group", "rare_style", "formation",
-             "back_three_share", "era", "points_pm", "strength"] + EXPOSURE
+             "back_three_share", "era", "points_pm", "strength", "attack_k3_style", "defence_k3_style",
+             "attack_rel_style", "defence_rel_style"] + EXPOSURE
 ps = members.merge(team[TEAM_COLS], on=["league", "season", "club_id"], how="left").join(player, on="playerId")
 dob = pd.to_datetime(ps.date_of_birth, errors="coerce")
 ps["age"] = ((pd.to_datetime((ps.season + 1).astype(str) + "-01-01") - dob).dt.days / 365.25).round(1)
@@ -176,21 +183,26 @@ ps["age_band"] = pd.cut(ps.age, AGE_BANDS, labels=AGE_LABELS)
 ps["position"] = ps.position_group.str.title()
 
 KEY = ["playerId", "club_id", "season"]
-inj = injuries.assign(severe=injuries.severity.str.startswith("severe"), surgery=injuries.surgery.astype(bool))
-agg = inj.groupby(KEY).agg(injuries=("days", "size"), days_lost=("days", "sum"), severe=("severe", "sum"), surgeries=("surgery", "sum"))
+DAYS_CAP = 365  # sensitivity: no single injury counts for more than a season
+inj = injuries.assign(severe=injuries.severity.str.startswith("severe"), surgery=injuries.surgery.astype(bool),
+                      days_capped=injuries.days_merged.clip(upper=DAYS_CAP))
+agg = inj.groupby(KEY).agg(injuries=("days", "size"), days_lost=("days_merged", "sum"), days_raw=("days", "sum"),
+                           days_capped=("days_capped", "sum"), severe=("severe", "sum"), surgeries=("surgery", "sum"))
 areas = pd.crosstab([inj.playerId, inj.club_id, inj.season], inj.body_area).add_prefix("area: ")
 mild_n = mild.groupby(KEY).size().rename("mild_injuries")
 fit_n = non_inj[non_inj.non_injury_reason == "fitness"].groupby(KEY).size().rename("fitness_absences")
 ps = ps.join(agg, on=KEY).join(areas, on=KEY).join(mild_n, on=KEY).join(fit_n, on=KEY)
-count_cols = ["injuries", "days_lost", "severe", "surgeries", "mild_injuries", "fitness_absences"] + list(areas.columns)
+count_cols = ["injuries", "days_lost", "days_raw", "days_capped", "severe", "surgeries", "mild_injuries", "fitness_absences"] + list(areas.columns)
 ps[count_cols] = ps[count_cols].fillna(0).astype(int)
 ps["team_season"] = ps.league + " " + ps.season_key + " " + ps.club_id
 
 assert ps.attack_style.notna().all() and ps.defence_style.notna().all()
 assert ps.injuries.sum() == len(injuries), (ps.injuries.sum(), len(injuries))
+assert ps.days_lost.sum() == injuries.days_merged.sum() and ps.matches_all.notna().all()
 pd.Series({
     "player-club-seasons": len(ps), "players": ps.playerId.nunique(), "team-seasons": ps.team_season.nunique(),
-    "injuries > 7 days": int(ps.injuries.sum()), "days lost": int(ps.days_lost.sum()),
+    "injuries > 7 days": int(ps.injuries.sum()), "days lost (overlaps merged)": int(ps.days_lost.sum()),
+    "days lost (raw, overlaps double)": int(ps.days_raw.sum()), "only marked injured (0 appearances)": int((ps.appearances == 0).sum()),
     "mild injuries (4–7 days)": int(ps.mild_injuries.sum()), "fitness absences": int(ps.fitness_absences.sum()),
     "in rare combinations": int(ps.rare_style.sum()), "missing age": int(ps.age.isna().sum()),
 }, name="count").to_frame()
@@ -200,8 +212,18 @@ pd.Series({
 md('''
 ## Step 2. Rate and bootstrap helpers; league baselines
 
-`summarise(df, by)` gives per group: player-seasons, injuries, the rates and the league-adjusted rate ratios
-(frequency and days lost) with bootstrap 95% CIs over team-seasons. `GROUPINGS` lists the four ways of grouping teams.
+`summarise(df, by, adjust)` gives per group: player-seasons, injuries, the rates and the rate ratios (frequency and
+days lost) against one of the expected values, with bootstrap 95% CIs over clubs. Expected values:
+
+| suffix | expected from | exposure |
+|---|---|---|
+| (none, main) | league × season | player-season |
+| `_str` | league × season × strength third | player-season |
+| `_full` | league × season × strength × age band × position | player-season |
+| `_match` | league × season | team matches (all competitions) |
+| `_match_str` | league × season × strength | team matches |
+
+`GROUPINGS` lists the four ways of grouping teams.
 ''')
 code('''
 def add_expected(df: pd.DataFrame, strata: list[str], suffix: str = "") -> pd.DataFrame:
@@ -210,15 +232,28 @@ def add_expected(df: pd.DataFrame, strata: list[str], suffix: str = "") -> pd.Da
     return df.assign(**{f"exp_inj{suffix}": means.injuries, f"exp_days{suffix}": means.days_lost})
 
 
-ps = add_expected(ps, ["league"])
-lap = add_expected(ps.dropna(subset=["age_band", "position"]).copy(), ["league", "age_band", "position"], "_lap")
-ps = ps.join(lap[["exp_inj_lap", "exp_days_lap"]])
-rng = np.random.default_rng(SEED)
+def add_expected_per_match(df: pd.DataFrame, strata: list[str], suffix: str) -> pd.DataFrame:
+    """Expected injuries and days lost from the stratum's rate per player-season-match times the team's matches."""
+    g = df.groupby(strata, observed=True)
+    per_match = df.matches_all / g.matches_all.transform("sum")
+    return df.assign(**{f"exp_inj{suffix}": g.injuries.transform("sum") * per_match,
+                        f"exp_days{suffix}": g.days_lost.transform("sum") * per_match})
 
 
-def boot_ratio(teams: pd.DataFrame, num: str, den: str) -> tuple[float, float]:
-    """95% CI of sum(num) / sum(den), resampling team-seasons."""
-    n, v_num, v_den = len(teams), teams[num].to_numpy(), teams[den].to_numpy()
+ps = add_expected(ps, ["league", "season"])
+ps = add_expected(ps, ["league", "season", "strength"], "_str")
+full = add_expected(ps.dropna(subset=["age_band", "position"]).copy(), ["league", "season", "strength", "age_band", "position"], "_full")
+ps = ps.join(full[["exp_inj_full", "exp_days_full"]])
+ps = add_expected_per_match(ps, ["league", "season"], "_match")
+ps = add_expected_per_match(ps, ["league", "season", "strength"], "_match_str")
+for suffix in ["", "_str", "_match", "_match_str"]:
+    assert np.isclose(ps[f"exp_inj{suffix}"].sum(), ps.injuries.sum()), suffix
+
+
+def boot_ratio(units: pd.DataFrame, num: str, den: str, seed_key: str) -> tuple[float, float]:
+    """95% CI of sum(num) / sum(den), resampling clubs; the generator is seeded from the table and group."""
+    rng = np.random.default_rng([SEED, zlib.crc32(seed_key.encode())])
+    n, v_num, v_den = len(units), units[num].to_numpy(), units[den].to_numpy()
     idx = rng.integers(0, n, (N_BOOT, n))
     return tuple(np.percentile(v_num[idx].sum(axis=1) / v_den[idx].sum(axis=1), [2.5, 97.5]))
 
@@ -226,14 +261,18 @@ def boot_ratio(teams: pd.DataFrame, num: str, den: str) -> tuple[float, float]:
 def summarise(df: pd.DataFrame, by: str | list[str], adjust: str = "") -> pd.DataFrame:
     by = [by] if isinstance(by, str) else by
     cols = ["injuries", "days_lost", "severe", "minutes", f"exp_inj{adjust}", f"exp_days{adjust}"]
-    teams = df.assign(ps=1).groupby(by + ["team_season"], observed=True)[cols + ["ps"]].sum().reset_index()
+    clubs = df.assign(ps=1).groupby(by + ["club_id"], observed=True)[cols + ["ps"]].sum().reset_index()
+    n_teams = df.groupby(by, observed=True).team_season.nunique()
     rows = []
-    for key, t in teams.groupby(by, observed=True):
-        rr_lo, rr_hi = boot_ratio(t, "injuries", f"exp_inj{adjust}")
-        dr_lo, dr_hi = boot_ratio(t, "days_lost", f"exp_days{adjust}")
+    for key, t in clubs.groupby(by, observed=True):
+        key = key if isinstance(key, tuple) else (key,)
+        seed_key = f"{by}|{key}|{adjust}"
+        rr_lo, rr_hi = boot_ratio(t, "injuries", f"exp_inj{adjust}", seed_key + "|inj")
+        dr_lo, dr_hi = boot_ratio(t, "days_lost", f"exp_days{adjust}", seed_key + "|days")
         tot = t[cols + ["ps"]].sum()
-        rows.append(dict(zip(by, key if isinstance(key, tuple) else (key,))) | {
-            "player-seasons": int(tot.ps), "team-seasons": len(t), "injuries": int(tot.injuries),
+        rows.append(dict(zip(by, key)) | {
+            "player-seasons": int(tot.ps), "team-seasons": int(n_teams.loc[key[0] if len(key) == 1 else key]),
+            "clubs": len(t), "injuries": int(tot.injuries),
             "injuries / player-season": tot.injuries / tot.ps, "per 1,000 min": 1000 * tot.injuries / tot.minutes,
             "days lost / player-season": tot.days_lost / tot.ps,
             "severe share": tot.severe / tot.injuries if tot.injuries else np.nan,
@@ -267,7 +306,7 @@ GROUPINGS = {"attacking style": ("attack_style", ATTACK), "defensive style": ("d
 COLS = ["player-seasons", "team-seasons", "injuries", "injuries / player-season", "per 1,000 min",
         "days lost / player-season", "severe share", "excess / 100 player-seasons", "excess days / player-season",
         "RR (95% CI)", "days RR (95% CI)"]
-baseline = ps.groupby("league")[["injuries", "days_lost"]].mean().round(3)
+baseline = ps.groupby("league")[["injuries", "days_lost", "matches_all"]].mean().round(3)
 baseline
 ''')
 
@@ -275,7 +314,7 @@ baseline
 md('''
 ## Step 3. Injuries by attacking style, defensive style, combination and formation
 
-League-adjusted RRs with 95% CIs for each grouping. The attack × defence grid then shows whether a difference belongs
+Rate ratios against league × season (main) with 95% CIs for each grouping; Step 7 adds the stricter adjustments. The attack × defence grid then shows whether a difference belongs
 to the attacking or the defensive phase: reading **along a row** changes only the defensive style, **down a column**
 only the attacking style.
 ''')
@@ -479,21 +518,38 @@ league_fig = save(fig, "05_style_within_league.png")
 
 # ---- step 7
 md('''
-## Step 7. Age and position
+## Step 7. Adjusting step by step: season, team strength, age and position, matches played
 
-If style differences were only squad make-up, they would shrink when expected injuries come from **league × age
-band × position** instead of league alone.
+Possession and pressing styles are more common among **strong teams**, which also play **more matches** (European
+football). If a style's excess were only strength, squad make-up or match load, it would shrink as each is added to
+the expected value. Each row adds one adjustment to the one above; the per-match rows change the exposure from
+player-seasons to team matches. Read the **last row of each exposure** as the style's own association.
 ''')
 code('''
-adjusted = {}
+LADDER = [("per player-season", "league × season", ""), ("per player-season", "+ team strength", "_str"),
+          ("per player-season", "+ age × position", "_full"), ("per team match", "league × season", "_match"),
+          ("per team match", "+ team strength", "_match_str")]
+ladder_rows, adjusted = [], {}
 for name in ["attacking style", "defensive style", "formation"]:
     col, order = GROUPINGS[name]
-    lap_t = summarise(ps.dropna(subset=["exp_inj_lap"]), col, "_lap").loc[order]
-    mix = pd.concat([ps.groupby(col).age.mean().round(1).rename("mean age"),
-                     pd.crosstab(ps[col], ps.position, normalize="index").round(2)], axis=1).loc[order]
-    adjusted[name] = pd.DataFrame({"RR, league": results[name]["RR"], "RR, league × age × position": lap_t["RR"],
-                                   "days RR, league": results[name]["days RR"], "days RR, league × age × position": lap_t["days RR"]}).round(2).join(mix)
+    for exposure, adjustment, suffix in LADDER:
+        t = summarise(ps.dropna(subset=[f"exp_inj{suffix}"]), col, suffix).loc[order]
+        for style, r in t.iterrows():
+            ladder_rows.append({"grouping": name, "style": style, "exposure": exposure, "adjustment": adjustment,
+                                **r[["RR", "RR low", "RR high", "days RR", "days RR low", "days RR high",
+                                     "excess / 100 player-seasons"]].to_dict()})
+ladder = pd.DataFrame(ladder_rows)
+for name in ["attacking style", "defensive style", "formation"]:
+    t = ladder[ladder.grouping == name].assign(
+        rr=lambda d: d.apply(lambda r: f"{r['RR']:.2f} ({r['RR low']:.2f}–{r['RR high']:.2f})", axis=1))
+    adjusted[name] = t.pivot_table(index=["exposure", "adjustment"], columns="style", values="rr", aggfunc="first", sort=False)[GROUPINGS[name][1]]
     display(adjusted[name])
+mix = {name: pd.concat([ps.groupby(GROUPINGS[name][0]).age.mean().round(1).rename("mean age"),
+                        ps.groupby(GROUPINGS[name][0]).matches_all.mean().round(1).rename("team matches"),
+                        pd.crosstab(ps[GROUPINGS[name][0]], ps.strength, normalize="index").round(2),
+                        pd.crosstab(ps[GROUPINGS[name][0]], ps.position, normalize="index").round(2)], axis=1).loc[GROUPINGS[name][1]]
+       for name in ["attacking style", "defensive style"]}
+display(*mix.values())
 display(fmt(summarise(ps.dropna(subset=["age_band"]), "age_band"))[["player-seasons", "injuries / player-season", "days lost / player-season", "severe share"]])
 fmt(summarise(ps.dropna(subset=["position"]), "position"))[["player-seasons", "injuries / player-season", "days lost / player-season", "severe share"]]
 ''')
@@ -503,7 +559,8 @@ md('''
 ## Step 8. Team strength and workload
 
 Styles follow team strength partly (Phase 4: eta² 0.39 attack, 0.34 defence). **Strength:** style RRs within each
-third of teams by points per match. **Workload:** player-seasons in the busiest third (share of matches on < 4 days'
+third of teams by points per match, against teams **of the same strength third** (expected from league × season ×
+strength), so a strong possession team is compared with other strong teams. **Workload:** player-seasons in the busiest third (share of matches on < 4 days'
 rest) vs the rest, overall and within each style.
 ''')
 code('''
@@ -512,8 +569,8 @@ by_congestion = summarise(ps, "congestion")
 strength_rr, congestion_rr = {}, {}
 for name in ["attacking style", "defensive style"]:
     col, order = GROUPINGS[name]
-    strength_rr[name] = summarise(ps, ["strength", col])["RR"].unstack().reindex(columns=order)
-    congestion_rr[name] = summarise(ps, ["congestion", col])["RR"].unstack().reindex(columns=order)
+    strength_rr[name] = summarise(ps, ["strength", col], "_str")["RR"].unstack().reindex(index=["weaker third", "middle third", "stronger third"], columns=order)
+    congestion_rr[name] = summarise(ps, ["congestion", col])["RR"].unstack().reindex(index=["lightest third", "middle third", "busiest third"], columns=order)
     display(strength_rr[name].round(2))
     display(congestion_rr[name].round(2))
 fmt(by_congestion)[COLS]
@@ -541,11 +598,13 @@ for name in ["attacking style", "defensive style"]:
 md('''
 ## Step 10. Sensitivity checks
 
-The league-adjusted RR per style under each variation; a finding is robust if its direction holds in every row.
+The RR per style (against league × season) under each variation; a finding is robust if its direction holds in every
+row. Then the same RRs for the two **alternative clusterings** of Phase 4 (k = 3; style relative to the
+league-season), and days lost counted three ways.
 ''')
 code('''
 def rr_variant(df: pd.DataFrame, col: str, order: list[str], count: str = "injuries") -> pd.Series:
-    d = add_expected(df.assign(injuries=df[count]), ["league"])
+    d = add_expected(df.assign(injuries=df[count]), ["league", "season"])
     return summarise(d, col)["RR"].reindex(order)
 
 
@@ -555,6 +614,7 @@ VARIANTS = {
     "severe only (> 28 days)": lambda d: (d, "severe"),
     "> 3 days (adds mild)": lambda d: (d.assign(more=d.injuries + d.mild_injuries), "more"),
     "multi-club players out": lambda d: (d[d.clubs_in_season == 1], "injuries"),
+    "≥ 1 appearance only": lambda d: (d[d.appearances > 0], "injuries"),
     "COVID seasons out": lambda d: (d[~d.season_key.isin(COVID_SEASONS)], "injuries"),
 }
 sensitivity, robust = {}, {}
@@ -566,6 +626,27 @@ for name in ["attacking style", "defensive style", "formation"]:
     robust[name] = [s for s in order if signs[s].nunique() == 1 and signs[s].iloc[0] != 0]
     display(sensitivity[name])
     print("same direction in every variant:", robust[name])
+''')
+code('''
+alt_clusterings = {}
+for ph, col in [("attack", "attack_style"), ("defence", "defence_style")]:
+    rows = {"main (k = 4)": summarise(ps, col)[["team-seasons", "RR", "RR low", "RR high"]],
+            "k = 3": summarise(ps, f"{ph}_k3_style")[["team-seasons", "RR", "RR low", "RR high"]],
+            "relative to league-season": summarise(ps, f"{ph}_rel_style")[["team-seasons", "RR", "RR low", "RR high"]],
+            "relative, + team strength": summarise(ps, f"{ph}_rel_style", "_str")[["team-seasons", "RR", "RR low", "RR high"]]}
+    alt_clusterings[ph] = pd.concat(rows, names=["clustering", "style"]).round(2)
+    display(alt_clusterings[ph])
+days_sensitivity = {}
+for name in ["attacking style", "defensive style"]:
+    col, order = GROUPINGS[name]
+    days_sensitivity[name] = pd.DataFrame({
+        label: summarise(add_expected(ps.assign(days_lost=ps[c]), ["league", "season"]), col)["days RR"].reindex(order)
+        for label, c in [("overlaps merged (main)", "days_lost"), ("raw (overlaps counted twice)", "days_raw"),
+                         (f"each injury capped at {DAYS_CAP} days", "days_capped")]}).T.round(2)
+    display(days_sensitivity[name])
+median_days = pd.concat({name: inj.merge(ps[KEY + [GROUPINGS[name][0]]], on=KEY).groupby(GROUPINGS[name][0]).days_merged.median()
+                         .reindex(GROUPINGS[name][1]) for name in ["attacking style", "defensive style"]}).rename("median days per injury")
+median_days.to_frame()
 ''')
 
 # ---- step 11
@@ -734,9 +815,11 @@ md('''
 
 **Kitagawa decomposition.** The overall rate is the share-weighted sum of cell rates; between two eras its change
 splits exactly into **style mix** (cell shares changed × average rate) and **within styles** (cell rates changed ×
-average share). Cells are league × combined style (attack × defence), so both phases count. The same is done with
-attacking style only and defensive style only, to see which phase's shift matters more. Outcomes per player-season:
-injuries, days lost, severe injuries, hamstring injuries, knee injuries.
+average share). Cells are league × **strength third** × combined style (attack × defence), so both phases count, and
+the part due to teams' strength mix changing (cells league × strength only) is taken out of the style mix: total
+change = strength mix + **style mix beyond strength** + within styles. The style mix ignoring strength is kept for
+comparison. The same is done with attacking style only and defensive style only, to see which phase's shift matters
+more. Outcomes per player-season: injuries, days lost, severe injuries, hamstring injuries, knee injuries.
 ''')
 code('''
 OUTCOMES = {"injuries": "injuries", "days lost": "days_lost", "severe injuries": "severe",
@@ -759,16 +842,29 @@ def decompose(df: pd.DataFrame, outcome: str, e0: str, e1: str, cells: list[str]
     return {"from": (j.w0 * j.rate0).sum(), "to": (j.w1 * j.rate1).sum(), "change": total, "from style mix": mix, "within styles": within}
 
 
+def decompose_with_strength(df: pd.DataFrame, outcome: str, e0: str, e1: str, cells: list[str], base: list[str]) -> dict:
+    """Style mix net of the strength mix: cells base × strength × style minus cells base × strength."""
+    full = decompose(df, outcome, e0, e1, base + ["strength"] + cells)
+    strength = decompose(df, outcome, e0, e1, base + ["strength"])
+    plain = decompose(df, outcome, e0, e1, base + cells)
+    out = {"from": full["from"], "to": full["to"], "change": full["change"],
+           "from strength mix": strength["from style mix"],
+           "from style mix": full["from style mix"] - strength["from style mix"],
+           "within styles": full["within styles"], "style mix, strength ignored": plain["from style mix"]}
+    assert abs(out["change"] - out["from strength mix"] - out["from style mix"] - out["within styles"]) < 1e-9
+    return out
+
+
 CELLS = {"combined style": ["style_group"], "attacking style": ["attack_style"], "defensive style": ["defence_style"]}
 rows = []
 for label, col in OUTCOMES.items():
     for e0, e1 in PAIRS:
         for by, cells in CELLS.items():
             rows.append({"outcome": label, "eras": f"{e0} → {e1}", "scope": "all leagues", "styles": by,
-                         **decompose(ps, col, e0, e1, ["league"] + cells)})
+                         **decompose_with_strength(ps, col, e0, e1, cells, ["league"])})
             for lg in LEAGUES:
                 rows.append({"outcome": label, "eras": f"{e0} → {e1}", "scope": lg, "styles": by,
-                             **decompose(ps[ps.league == lg], col, e0, e1, cells)})
+                             **decompose_with_strength(ps[ps.league == lg], col, e0, e1, cells, [])})
 decomposition = pd.DataFrame(rows)
 main_dec = decomposition[(decomposition.scope == "all leagues") & (decomposition.styles == "combined style")]
 phase_dec = decomposition[(decomposition.scope == "all leagues") & (decomposition.eras == FIRST_LAST)].pivot(
@@ -781,8 +877,9 @@ code('''
 d = decomposition[(decomposition.eras == FIRST_LAST) & (decomposition.outcome == "injuries") & (decomposition.styles == "combined style")].set_index("scope").loc[["all leagues"] + LEAGUES]
 fig, ax = plt.subplots(figsize=(10, 4))
 y = np.arange(len(d))[::-1]
-ax.barh(y + 0.18, d["from style mix"], height=0.34, color=SERIES[0], label="from the style mix changing")
-ax.barh(y - 0.18, d["within styles"], height=0.34, color=SERIES[1], label="within styles")
+ax.barh(y + 0.27, d["from strength mix"], height=0.25, color=SERIES[2], label="from the strength mix changing")
+ax.barh(y, d["from style mix"], height=0.25, color=SERIES[0], label="from the style mix changing (beyond strength)")
+ax.barh(y - 0.27, d["within styles"], height=0.25, color=SERIES[1], label="within styles")
 ax.scatter(d.change, y, color=INK, zorder=3, s=30, label="total change")
 ax.axvline(0, color=MUTED, linewidth=1)
 ax.set_yticks(y, d.index)
@@ -888,10 +985,15 @@ Four standard treatments, fixed in advance and not tuned on the injury outcomes:
   precise cells barely move; tiny ones move most.
 - **Rolling averages:** 3-season centred rolling means of the season series, next to the raw values, to show the
   trend without the season-to-season noise.
-- **Multiple testing (FDR):** each style × body-area pattern is tested within leagues (Cochran–Mantel–Haenszel test,
-  stratified by league, with the Mantel–Haenszel odds ratio as effect size), and the p-values are corrected with
-  Benjamini–Hochberg; only patterns with q < 0.05 count as findings.
-- **Breakdowns:** each style's league-adjusted RR by position and by age band, to see who carries a style's excess.
+- **Multiple testing (FDR):** each style × body-area pattern is tested by **permutation**: within each league-season,
+  team-seasons' style labels are shuffled (10,000 times, seed 42) and the style's excess of injuries in that area
+  (observed minus expected at the league-season's area share, among injuries with a known area) is compared with
+  its shuffled distribution. Shuffling whole team-seasons keeps injuries of one squad together, which a per-injury
+  test does not. Formation is tested once (back three; back four is its mirror), so 72 tests, corrected with
+  Benjamini–Hochberg; only q < 0.05 counts as a finding. The Mantel–Haenszel odds ratio (strata league × era) is the
+  effect size.
+- **Breakdowns:** each style's RR (against league × season) by position and by age band, to see who carries a
+  style's excess.
 ''')
 code('''
 def shrink(t: pd.DataFrame, rr: str = "RR") -> pd.DataFrame:
@@ -925,25 +1027,23 @@ display(trend.join(trend_rolling).round(3))
 league_rolling.round(3)
 ''')
 code('''
-def cmh(data: pd.DataFrame, col: str, style: str, area: str) -> tuple[float, float]:
-    """Cochran–Mantel–Haenszel test of 'injury in this area' vs 'this style' stratified by league: (MH odds ratio, p)."""
-    num = den = a_sum = e_sum = var = 0.0
-    for _, d in data.groupby("league"):
+N_PERM = 10_000  # p resolution 1e-4; BH over 72 tests needs p below 0.05 / 72 ≈ 7e-4 for the strongest pattern
+
+
+def mh_odds_ratio(data: pd.DataFrame, col: str, style: str, area: str, strata: list[str]) -> float:
+    """Mantel–Haenszel odds ratio of 'injury in this area' for 'this style' vs the rest (known areas only)."""
+    num = den = 0.0
+    for _, d in data.groupby(strata, observed=True):
         known = d.injuries - d["area: unknown"]
         a = d.loc[d[col] == style, f"area: {area}"].sum()
         b = known[d[col] == style].sum() - a
         c = d.loc[d[col] != style, f"area: {area}"].sum()
         dd = known[d[col] != style].sum() - c
         n = a + b + c + dd
-        if n < 2:
-            continue
-        num += a * dd / n
-        den += b * c / n
-        a_sum += a
-        e_sum += (a + b) * (a + c) / n
-        var += (a + b) * (c + dd) * (a + c) * (b + dd) / (n ** 2 * (n - 1))
-    stat = (abs(a_sum - e_sum) - 0.5) ** 2 / var
-    return num / den, chi2.sf(stat, 1)
+        if n > 0:
+            num += a * dd / n
+            den += b * c / n
+    return num / den
 
 
 def benjamini_hochberg(p: pd.Series) -> pd.Series:
@@ -952,19 +1052,44 @@ def benjamini_hochberg(p: pd.Series) -> pd.Series:
     return q.reindex(p.index)
 
 
+# Team-season table: known-area injuries and injuries per area; excess over the league-season's area share.
+area_cols = [f"area: {a}" for a in AREAS]
+teams_t = ps.groupby("team_season").agg(league=("league", "first"), season=("season", "first"),
+                                        attack_style=("attack_style", "first"), defence_style=("defence_style", "first"),
+                                        formation=("formation", "first"), injuries=("injuries", "sum"),
+                                        unknown=("area: unknown", "sum"), **{c: (c, "sum") for c in area_cols})
+teams_t["known"] = teams_t.injuries - teams_t.unknown
+ls_share = teams_t.groupby(["league", "season"])[area_cols].transform("sum").div(
+    teams_t.groupby(["league", "season"]).known.transform("sum"), axis=0)
+excess = (teams_t[area_cols] - ls_share.mul(teams_t.known, axis=0)).to_numpy()
+perm_rng = np.random.default_rng(SEED)
+groups = list(teams_t.reset_index().groupby(["league", "season"]).indices.values())  # positions per league-season
+perm_idx = np.tile(np.arange(len(teams_t), dtype=np.int32), (N_PERM, 1))
+for b in range(N_PERM):
+    for g in groups:
+        perm_idx[b, g] = perm_rng.permutation(g)
+
+TESTS = {"attacking style": ATTACK, "defensive style": DEFENCE, "formation": ["back three"]}
 fdr_rows = []
-for name in ["attacking style", "defensive style", "formation"]:
-    col, order = GROUPINGS[name]
-    for style in order:
-        for area in AREAS:
-            odds, p = cmh(ps, col, style, area)
-            fdr_rows.append({"grouping": name, "style": style, "area": area, "MH odds ratio": odds, "p": p,
+for name, styles in TESTS.items():
+    col = GROUPINGS[name][0]
+    labels = teams_t[col].to_numpy()
+    for style in styles:
+        member = labels == style
+        observed = excess[member].sum(axis=0)
+        shuffled = np.stack([excess[member[perm_idx[b]]].sum(axis=0) for b in range(N_PERM)])
+        p_perm = (1 + (np.abs(shuffled) >= np.abs(observed)).sum(axis=0)) / (N_PERM + 1)
+        for i, area in enumerate(AREAS):
+            fdr_rows.append({"grouping": name, "style": style, "area": area,
+                             "MH odds ratio": mh_odds_ratio(ps, col, style, area, ["league", "era"]),
+                             "excess injuries": observed[i], "p": p_perm[i],
                              "leagues above 1": int(body[name]["above"].loc[style, area])})
 body_fdr = pd.DataFrame(fdr_rows)
+assert len(body_fdr) == 72, len(body_fdr)
 body_fdr["q (BH)"] = benjamini_hochberg(body_fdr.p)
 body_fdr["finding"] = body_fdr["q (BH)"] < 0.05
 body_findings = body_fdr[body_fdr.finding].sort_values(["grouping", "MH odds ratio"], ascending=[True, False])
-print(f"{body_fdr.finding.sum()} of {len(body_fdr)} style × body-area patterns survive FDR (q < 0.05)")
+print(f"{body_fdr.finding.sum()} of {len(body_fdr)} style × body-area patterns survive FDR (permutation, q < 0.05)")
 body_findings.round(4)
 ''')
 code('''
@@ -1011,6 +1136,9 @@ trend.join(trend_rolling).to_csv(TABLES / "season_trend_rolling.csv")
 league_rolling.to_csv(TABLES / "season_league_rolling.csv")
 body_fdr.to_csv(TABLES / "body_areas_fdr.csv", index=False)
 breakdown.to_csv(TABLES / "breakdown_position_age.csv", index=False)
+ladder.to_csv(TABLES / "rr_adjustment_ladder.csv", index=False)
+pd.concat(alt_clusterings, names=["phase"]).to_csv(TABLES / "rr_alternative_clusterings.csv")
+pd.concat(days_sensitivity, names=["grouping"]).to_csv(TABLES / "days_sensitivity.csv")
 
 
 def sig_list(t: pd.DataFrame, rr: str = "RR") -> str:
@@ -1043,9 +1171,12 @@ text += [f"![Body areas](figures/{area_fig})", "", "## 3. Seasons", "",
          md_table(fmt(by_league)[COLS].rename_axis("league")), ""]
 for name, (rr, n) in within.items():
     text += [f"{name.capitalize()} RR within each league:", "", md_table(rr.round(2).rename_axis("league")), ""]
-text += [f"![Within league](figures/{league_fig})", "", "## 5. Age and position", ""]
+text += [f"![Within league](figures/{league_fig})", "", "## 5. Adjusting step by step (RR, 95% CI over clubs)", "",
+         "Each row adds one adjustment; per-match rows use team matches (all competitions) as exposure.", ""]
 for name, t in adjusted.items():
-    text += [md_table(t.rename_axis(name)), ""]
+    text += [f"### {name.capitalize()}", "", md_table(t.reset_index(), index=False), ""]
+for name, m in mix.items():
+    text += [f"{name.capitalize()}: squad and team profile", "", md_table(m.rename_axis(name)), ""]
 text += ["## 6. Team strength and workload", ""]
 for name in strength_rr:
     text += [f"{name.capitalize()} RR within strength thirds:", "", md_table(strength_rr[name].round(2).rename_axis("strength")), "",
@@ -1054,9 +1185,16 @@ text += ["By congestion:", "", md_table(fmt(by_congestion)[COLS].rename_axis("co
          "## 7. Fitness absences (Bundesliga, secondary outcome)", ""]
 for name, f in fitness.items():
     text += [md_table(f.rename_axis(name)), ""]
-text += ["## 8. Sensitivity checks (injury RR)", ""]
+text += ["## 8. Sensitivity checks (injury RR against league × season)", ""]
 for name, t in sensitivity.items():
     text += [f"### {name.capitalize()}", "", md_table(t.rename_axis("variant")), ""]
+text += ["### Alternative clusterings (Phase 4)", ""]
+for ph, t in alt_clusterings.items():
+    text += [f"{ph.capitalize()}:", "", md_table(t.reset_index(), index=False), ""]
+text += ["### Days lost counted three ways (days RR)", ""]
+for name, t in days_sensitivity.items():
+    text += [f"{name.capitalize()}:", "", md_table(t.rename_axis("days lost")), ""]
+text += ["Median days per injury (overlaps merged):", "", md_table(median_days.round(1).to_frame().rename_axis(["grouping", "style"])), ""]
 text += ["## 9. Style cards (core team-seasons)", ""]
 for ph, title in [("attack", "Attacking styles"), ("defence", "Defensive styles")]:
     text += [f"### {title}", ""]
@@ -1094,8 +1232,8 @@ text += ["## 13. Where the injury trend comes from (Kitagawa decomposition)", ""
          *[x for name, t in within_shrunk.items() for x in (f"{name.capitalize()} RR within each league, shrunk:", "",
            md_table(t["RR shrunk"].unstack().reindex(index=LEAGUES, columns=GROUPINGS[name][1]).round(2).rename_axis("league")), "")],
          "### 3-season rolling averages", "", md_table(trend.join(trend_rolling).round(3).rename_axis("season")), "",
-         f"### Body-area patterns surviving false-discovery-rate correction ({int(body_fdr.finding.sum())} of {len(body_fdr)}; "
-         "Cochran–Mantel–Haenszel test within leagues, Benjamini–Hochberg q < 0.05)", "",
+         f"### Body-area patterns surviving false-discovery-rate correction ({int(body_fdr.finding.sum())} of {len(body_fdr)}; permutation test within league-seasons; "
+         "Mantel–Haenszel odds ratio over league × era, Benjamini–Hochberg q < 0.05)", "",
          md_table(body_findings[["grouping", "style", "area", "MH odds ratio", "q (BH)", "leagues above 1"]].round(4), index=False), "",
          "### Who carries a style's excess: RR by position and age band", "",
          *[x for name in ["attacking style", "defensive style"] for by in ["position", "age_band"] for x in (

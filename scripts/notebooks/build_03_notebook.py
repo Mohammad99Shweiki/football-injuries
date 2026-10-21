@@ -401,6 +401,11 @@ suffered describe the opponent more than the team and are left out.
 | defence | high line | conceded fast-attack share (+) | line height, exposure to counters |
 | defence | territory conceded | deep completions against (+), corners against (+) | deep block vs defending forward |
 | defence | aggression | fouls (+), cards (+) | duel-based, physical defending |
+
+**Relative dimensions (sensitivity only).** Global scaling keeps change over time visible (decided), but then part of a
+style is simply "the season it was played in" (the whole Big Five drifted towards possession). For a sensitivity
+clustering in Phase 4, each dimension is also centred within its league-season and re-standardised: how a team played
+**relative to its league that season**.
 ''')
 code('''
 PHASE_DIMS = {
@@ -419,10 +424,18 @@ for phase, dims_ in PHASE_DIMS.items():
 dims = pd.concat(frames, axis=1)
 style_dims = features[["league", "season", "season_key", "tm_club_id", "club", "back_three_share"]].join(dims)
 style_dims.to_parquet(OUT_DIR / "style_dimensions.parquet", index=False)
+rel = dims.groupby([features.league, features.season]).transform(lambda c: c - c.mean())
+rel = (rel - rel.mean()) / rel.std(ddof=0)
+style_dims_relative = features[["league", "season", "season_key", "tm_club_id", "club"]].join(rel)
+style_dims_relative.to_parquet(OUT_DIR / "style_dimensions_relative.parquet", index=False)
+assert style_dims_relative.notna().all().all()
 log("3.11", f"{len(used)} style features combined into 4 attacking + 4 defensive dimensions (back-three share kept as structure)",
     len(features), len(style_dims))
 dim_corr = dims.corr().round(2)
-dim_corr
+display(dim_corr)
+# How much of each dimension is season-and-league level (share of variance between league-seasons).
+between = dims.groupby([features.league, features.season]).transform("mean").var() / dims.var()
+between.round(2).rename("variance between league-seasons").to_frame()
 ''')
 
 # ---- step 10
