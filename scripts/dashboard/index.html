@@ -46,6 +46,12 @@
 .fx-stories b { font-weight: var(--cds-font-weight-medium); }
 .fx-fail { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: inherit; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
 .fx-fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+.fx-chip { font: inherit; font-size: var(--cds-font-size-caption); color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 999px; padding: 2px var(--cds-pad-sm); cursor: pointer; }
+.fx-legend button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.fx-legend button[aria-pressed="false"] { opacity: .45; }
+.fx-style { cursor: pointer; transition: opacity var(--cds-dur-slow); }
+.fx-style.dim { opacity: .45; }
+.fx-style.sel { box-shadow: 0 0 0 2px var(--color-fg); }
 [data-dash-source-state=empty] { color: transparent; }
 [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
 </style>
@@ -76,13 +82,14 @@
         <button data-phase="defence">Defensive styles</button>
       </div>
       <label for="fx-league">League <select id="fx-league"></select></label>
+      <button class="fx-chip" id="fx-picked" hidden></button>
     </div>
   </nav>
 
   <section class="fx-page" id="styles" role="tabpanel" aria-labelledby="tab-styles">
     <div class="fx-card" id="map-card">
       <h2 id="map-title">Cluster map</h2>
-      <p class="fx-note">Each dot is one team-season, placed by its style dimensions (PCA, for drawing only; the clustering uses all four dimensions of the phase). Colour is the K-means cluster. Hover a dot for the team.</p>
+      <p class="fx-note">Each dot is one team-season, placed by its style dimensions (PCA, for drawing only; the clustering uses all four dimensions of the phase). Colour is the K-means style; a fainter dot belongs to it less clearly (fuzzy membership). Hover a dot for the team; click a style in the legend or a card to follow it through every page.</p>
       <div class="fx-legend" id="map-legend" data-source="cluster_map"></div>
       <div class="fx-chart tall" id="map" data-source="cluster_map"></div>
     </div>
@@ -106,27 +113,37 @@
   <section class="fx-page" id="injuries" role="tabpanel" aria-labelledby="tab-injuries" hidden>
     <div class="fx-card" id="rr-card">
       <h2 id="rr-title">Injuries and days lost by style</h2>
-      <p class="fx-note">League-adjusted rate ratio with 95% confidence interval (bootstrap over team-seasons): 1 is the league average, 1.2 means 20% more. Injuries lasting more than 7 days.</p>
+      <p class="fx-note">Rate ratio against the league-season average with 95% confidence interval (bootstrap over clubs): 1 is the average, 1.2 means 20% more. Injuries lasting more than 7 days. Association, not cause: see the next card.</p>
       <div class="fx-chart" id="rr" data-source="injury_rr"></div>
+    </div>
+    <div class="fx-card" id="ladder-card">
+      <h2>Style or schedule? Adjusting step by step</h2>
+      <p class="fx-note">The same rate ratio as each adjustment is added: team strength (thirds of points per match), then age and position; and per team match played instead of per player-season. Possession and pressing teams are mostly strong teams with ~10 more matches a season, so most of their excess disappears; what is left is the style's own association. Hover for the 95% CI.</p>
+      <div class="fx-chart" id="ladder" data-source="rr_ladder"></div>
     </div>
     <div class="fx-grid">
       <div class="fx-card" id="grid-card">
         <h2>Attacking × defensive style</h2>
-        <p class="fx-note">Injury rate ratio for each combination; across a row only the defensive style changes, down a column only the attacking style. Grey: fewer than 40 team-seasons.</p>
+        <p class="fx-note">Injury rate ratio for each combination, shrunk towards the overall average in proportion to its uncertainty (empirical Bayes; hover for the raw value). Across a row only the defensive style changes, down a column only the attacking style. Grey: fewer than 40 team-seasons.</p>
         <div class="fx-chart" id="grid" data-source="grid"></div>
       </div>
       <div class="fx-card" id="body-card">
         <h2 id="body-title">Where players get hurt</h2>
-        <p class="fx-note">Share of injuries in each body area relative to the league's share (median over the five leagues); the small number is how many leagues are above 1. Bold: holds in at least 4 of 5 leagues.</p>
+        <p class="fx-note">Share of injuries in each body area relative to the league's share (median over the five leagues); x/5 is how many leagues are above 1. ★ and bold: a pattern that survives a within-league test after correcting for testing 80 patterns at once (Benjamini–Hochberg, q < 0.05).</p>
         <div class="fx-chart" id="body" data-source="body_areas"></div>
       </div>
+    </div>
+    <div class="fx-card" id="breakdown-card">
+      <h2 id="breakdown-title">Who carries the excess: position and age</h2>
+      <p class="fx-note">Injury rate ratio by position and age band within each style (1 = the league average for all players). Pick a style to see only its row.</p>
+      <div class="fx-chart" id="breakdown" data-source="breakdown"></div>
     </div>
   </section>
 
   <section class="fx-page" id="trends" role="tabpanel" aria-labelledby="tab-trends" hidden>
     <div class="fx-card" id="trend-card">
       <h2>Injury frequency by season</h2>
-      <p class="fx-note">Injuries lasting more than 7 days per player-season, all five leagues, with 95% confidence band. Raw Transfermarkt records also reflect recording changes (Premier League 2018-19).</p>
+      <p class="fx-note">Injuries lasting more than 7 days per player-season, all five leagues: the line is the 3-season rolling mean, dots and band the single seasons with their 95% confidence interval. Raw Transfermarkt records also reflect recording changes (Premier League 2018-19).</p>
       <div class="fx-chart" id="trend" data-source="season_trend"></div>
     </div>
     <div class="fx-card" id="decomp-card">
@@ -154,6 +171,9 @@ window.FX = {
   phase() { return dash.params().phase || 'attack'; },
   league() { return dash.params().league || 'All leagues'; },
   outcome() { return dash.params().outcome || 'injuries'; },
+  style() { return dash.params().style || null; },
+  on(style) { const s = this.style(); return !s || s === style; },
+  pick(style) { dash.setParams({ style: this.style() === style ? null : style }); },
   color(i) { return dash.colors[i % dash.colors.length]; },
   fmt2: d3.format('.2f'),
   pct: d3.format('.0%'),
@@ -226,7 +246,9 @@ dash.calc('headline', {
     window.dispatchEvent(new Event('fx-redraw'));
   };
   tabs.forEach((b) => b.addEventListener('click', () => show(b.dataset.page)));
-  document.querySelectorAll('[data-phase]').forEach((b) => b.addEventListener('click', () => dash.setParams({ phase: b.dataset.phase })));
+  document.querySelectorAll('[data-phase]').forEach((b) => b.addEventListener('click', () => dash.setParams({ phase: b.dataset.phase, style: null })));
+  const picked = document.getElementById('fx-picked');
+  picked.addEventListener('click', () => dash.setParams({ style: null }));
   const sel = document.getElementById('fx-league');
   sel.replaceChildren(...FX.LEAGUES.map((l) => new Option(l, l)));
   sel.addEventListener('change', () => dash.setParams({ league: sel.value }));
@@ -236,6 +258,8 @@ dash.calc('headline', {
     document.querySelectorAll('[data-phase]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.phase === FX.phase())));
     out.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.outcome === FX.outcome())));
     sel.value = FX.league();
+    picked.hidden = !FX.style();
+    picked.textContent = FX.style() ? `${FX.style()} ×` : '';
   });
   const start = location.hash.slice(1);
   show(['styles', 'evolution', 'injuries', 'trends'].includes(start) ? start : 'styles');
@@ -284,7 +308,8 @@ dash.onData(() => {
     svg.append('text').attr('x', width - m.r).attr('y', height - 4).attr('text-anchor', 'end').text('first principal component');
     const dots = svg.append('g').selectAll('circle').data(pts).join('circle')
       .attr('cx', (d) => x(d.pc1)).attr('cy', (d) => y(d.pc2)).attr('r', 3.2)
-      .attr('fill', (d) => FX.color(order.indexOf(d.style))).attr('fill-opacity', 0.7)
+      .attr('fill', (d) => (FX.on(d.style) ? FX.color(order.indexOf(d.style)) : 'var(--cds-chart-muted)'))
+      .attr('fill-opacity', (d) => (FX.on(d.style) ? 0.2 + 0.75 * d.membership : 0.15))
       .attr('stroke', 'var(--color-panel)').attr('stroke-width', 0.6);
     const ring = svg.append('circle').attr('r', 6).attr('fill', 'none').attr('stroke-width', 2).attr('visibility', 'hidden');
     const delaunay = d3.Delaunay.from(pts, (d) => x(d.pc1), (d) => y(d.pc2));
@@ -294,7 +319,7 @@ dash.onData(() => {
       const d = pts[delaunay.find(mx, my)];
       if (!d) return;
       ring.attr('cx', x(d.pc1)).attr('cy', y(d.pc2)).attr('stroke', FX.color(order.indexOf(d.style))).attr('visibility', 'visible');
-      FX.lines(tip, `${d.club} ${d.season}`, [d.style, d.league]);
+      FX.lines(tip, `${d.club} ${d.season}`, [`${d.style} (membership ${FX.pct(d.membership)})`, `next: ${d.second_style} (${FX.pct(d.second_membership)})`, d.league]);
       FX.place(tip, box, x(d.pc1) * box.clientWidth / width, y(d.pc2) * box.clientHeight / height);
     }).on('pointerleave', () => { tip.hidden = true; ring.attr('visibility', 'hidden'); });
     if (!hasDrawn && matchMedia('(prefers-reduced-motion: no-preference)').matches) {
@@ -304,8 +329,8 @@ dash.onData(() => {
     const legend = document.getElementById('map-legend');
     legend.replaceChildren(...order.map((s, i) => {
       const n = pts.filter((p) => p.style === s).length;
-      const span = document.createElement('span'); const dot = document.createElement('i'); dot.style.background = FX.color(i);
-      span.append(dot, `${s} (${n})`); return span;
+      const b = document.createElement('button'); const dot = document.createElement('i'); dot.style.background = FX.color(i);
+      b.append(dot, `${s} (${n})`); b.setAttribute('aria-pressed', String(FX.on(s))); b.addEventListener('click', () => FX.pick(s)); return b;
     }));
   };
   const cards = document.getElementById('cards');
@@ -320,13 +345,18 @@ dash.onData(() => {
       const where = `phase=${enc(r.phase)}&style=${enc(r.style)}`;
       const mark = (el, field) => { el.dataset.source = 'styles'; el.dataset.field = field; el.dataset.where = where; return el; };
       const card = document.createElement('article'); card.className = 'fx-style'; card.style.borderTopColor = FX.color(order.indexOf(r.style));
+      card.classList.toggle('dim', !FX.on(r.style)); card.classList.toggle('sel', FX.style() === r.style);
+      card.tabIndex = 0; card.setAttribute('role', 'button'); card.setAttribute('aria-pressed', String(FX.style() === r.style));
+      card.addEventListener('click', () => FX.pick(r.style));
+      card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); FX.pick(r.style); } });
       const h = mark(document.createElement('h3'), 'style'); h.textContent = r.style;
       const how = mark(document.createElement('div'), 'how'); how.className = 'how'; how.textContent = r.how;
       const num = mark(document.createElement('div'), 'numbers'); num.className = 'num'; num.textContent = r.numbers;
       const dl = document.createElement('dl');
       const row = (label, field, text) => { const dt = document.createElement('dt'); dt.textContent = label; const dd = mark(document.createElement('dd'), field); dd.textContent = text; dl.append(dt, dd); };
       row('Team-seasons', 'team_seasons', d3.format(',')(r.team_seasons));
-      row('Core teams', 'core', r.core);
+      row('Clear members', 'core', r.core);
+      row('Excess injuries', 'excess_per_100', `${r.excess_per_100 > 0 ? '+' : ''}${r.excess_per_100.toFixed(1)} per 100 player-seasons`);
       row('Points/match', 'points', FX.fmt2(r.points));
       row('Back-three minutes', 'back_three', r.back_three);
       row('Most often with', 'paired_with', r.paired_with);
@@ -366,7 +396,8 @@ dash.onData(() => {
     const x = d3.scalePoint(seasons, [m.l, width - m.r]);
     const y = d3.scaleLinear([0, 1], [height - m.b, m.t]);
     svg.append('g').selectAll('path').data(series).join('path')
-      .attr('fill', (d) => FX.color(order.indexOf(d.key))).attr('stroke', 'var(--color-panel)').attr('stroke-width', 1)
+      .attr('fill', (d) => FX.color(order.indexOf(d.key))).attr('fill-opacity', (d) => (FX.on(d.key) ? 1 : 0.2))
+      .attr('stroke', 'var(--color-panel)').attr('stroke-width', 1)
       .attr('d', d3.area().x((d) => x(d.data.season)).y0((d) => y(d[0])).y1((d) => y(d[1])));
     const step = width < 520 ? 3 : width < 800 ? 2 : 1;
     FX.axis(svg.append('g').attr('transform', `translate(0,${height - m.b})`).call(d3.axisBottom(x).tickValues(seasons.filter((s, i) => i % step === 0)).tickFormat((s) => s.slice(2))));
@@ -447,10 +478,14 @@ dash.onData(() => {
       rows.forEach((r, i) => {
         const yy = 32 + i * rowH + (i >= order.length ? 8 : 0);
         const c = r.grouping === 'formation' ? 'var(--cds-chart-muted)' : FX.color(order.indexOf(r.style));
+        const op = r.grouping === 'formation' || FX.on(r.style) ? 1 : 0.25;
         if (p === 0 || !two) g.append('text').attr('class', 'lbl').attr('x', left - 8).attr('y', yy + 4).attr('text-anchor', 'end').text(r.style);
-        g.append('line').attr('x1', x(r[l])).attr('x2', x(r[h])).attr('y1', yy).attr('y2', yy).attr('stroke', c).attr('stroke-width', 3).attr('stroke-linecap', 'round');
-        g.append('circle').attr('cx', x(r[k])).attr('cy', yy).attr('r', 5.5).attr('fill', c).attr('stroke', 'var(--color-panel)').attr('stroke-width', 1.5)
-          .on('pointerenter', () => { FX.lines(tip, r.style, [`${name} rate ratio ${FX.fmt2(r[k])} (${FX.fmt2(r[l])}–${FX.fmt2(r[h])})`, `${r.injuries_per_ps.toFixed(2)} injuries and ${r.days_per_ps.toFixed(1)} days lost per player-season`, `${d3.format(',')(r.player_seasons)} player-seasons`]); FX.place(tip, rrBox, (ox + x(r[k])) * rrBox.clientWidth / width, (oy + yy) * rrBox.clientHeight / height); })
+        g.append('line').attr('x1', x(r[l])).attr('x2', x(r[h])).attr('y1', yy).attr('y2', yy).attr('stroke', c).attr('stroke-width', 3).attr('stroke-linecap', 'round').attr('opacity', op);
+        const excess = k === 'rr' ? `${r.excess_per_100 > 0 ? '+' : ''}${r.excess_per_100.toFixed(1)} injuries per 100 player-seasons vs league average` : `${r.excess_days > 0 ? '+' : ''}${r.excess_days.toFixed(1)} days lost per player-season vs league average`;
+        g.append('circle').attr('cx', x(r[k])).attr('cy', yy).attr('r', 5.5).attr('fill', c).attr('stroke', 'var(--color-panel)').attr('stroke-width', 1.5).attr('opacity', op)
+          .style('cursor', r.grouping === 'formation' ? null : 'pointer')
+          .on('click', () => { if (r.grouping !== 'formation') FX.pick(r.style); })
+          .on('pointerenter', () => { FX.lines(tip, r.style, [`${name} rate ratio ${FX.fmt2(r[k])} (${FX.fmt2(r[l])}–${FX.fmt2(r[h])})`, excess, `${r.injuries_per_ps.toFixed(2)} injuries and ${r.days_per_ps.toFixed(1)} days lost per player-season`, `${d3.format(',')(r.player_seasons)} player-seasons`]); FX.place(tip, rrBox, (ox + x(r[k])) * rrBox.clientWidth / width, (oy + yy) * rrBox.clientHeight / height); })
           .on('pointerleave', () => { tip.hidden = true; });
         g.append('text').attr('class', 'lbl').attr('x', x(r[h]) + 6).attr('y', yy + 4).text(FX.fmt2(r[k]));
       });
@@ -469,16 +504,23 @@ dash.onData(() => {
     svg.append('g').selectAll('rect').data(rows).join('rect')
       .attr('x', (d) => x(d.x)).attr('y', (d) => y(d.y)).attr('width', x.bandwidth()).attr('height', y.bandwidth()).attr('rx', 4)
       .attr('fill', (d) => (d.muted ? 'var(--cds-chart-grid)' : d.v < 1 ? dash.colors[0] : dash.colors[1]))
-      .attr('fill-opacity', (d) => (d.muted ? 1 : 0.1 + 0.75 * Math.min(1, Math.abs(Math.log2(d.v)) / 0.5)));
+      .attr('fill-opacity', (d) => (d.muted ? 1 : 0.1 + 0.75 * Math.min(1, Math.abs(Math.log2(d.v)) / 0.5)) * (d.dim ? 0.3 : 1))
+      .style('cursor', (d) => (d.pick ? 'pointer' : null))
+      .on('click', (event, d) => { if (d.pick) FX.pick(d.pick); })
+      .on('pointerenter', (event, d) => { if (!d.tip) return; const t = FX.tip(box); FX.lines(t, d.tip[0], d.tip.slice(1)); FX.place(t, box, (x(d.x) + x.bandwidth() / 2) * box.clientWidth / width, y(d.y) * box.clientHeight / height); })
+      .on('pointerleave', () => { const t = box.querySelector('.fx-tip'); if (t) t.hidden = true; });
     svg.append('g').selectAll('text').data(rows).join('text')
       .attr('x', (d) => x(d.x) + x.bandwidth() / 2).attr('y', (d) => y(d.y) + y.bandwidth() / 2 + 4).attr('text-anchor', 'middle')
-      .attr('class', 'lbl').attr('font-weight', (d) => (d.bold ? 600 : 400)).text((d) => label(d));
+      .attr('class', 'lbl').attr('font-weight', (d) => (d.bold ? 600 : 400)).attr('opacity', (d) => (d.dim ? 0.4 : 1)).attr('pointer-events', 'none').text((d) => label(d));
     ys.forEach((s) => svg.append('text').attr('class', 'lbl').attr('x', lw - 8).attr('y', y(s) + y.bandwidth() / 2 + 4).attr('text-anchor', 'end').text(s));
     xs.forEach((s) => svg.append('text').attr('transform', `translate(${x(s) + x.bandwidth() / 2},${height - bottom + 22}) rotate(35)`).attr('text-anchor', 'start').text(s));
   };
   const drawGrid = () => {
     if (FX.page !== 'injuries' || FX.failed(gridBox, 'grid')) return;
-    const rows = dash.data('grid').data.map((r) => ({ x: r.defence, y: r.attack, v: r.rr, n: r.team_seasons, muted: r.team_seasons < 40 }));
+    const ph = FX.phase();
+    const rows = dash.data('grid').data.map((r) => ({ x: r.defence, y: r.attack, v: r.rr_shrunk, n: r.team_seasons, muted: r.team_seasons < 40,
+      dim: !FX.on(ph === 'attack' ? r.attack : r.defence), pick: ph === 'attack' ? r.attack : r.defence,
+      tip: [`${r.attack} · ${r.defence}`, `rate ratio ${FX.fmt2(r.rr_shrunk)} shrunk, ${FX.fmt2(r.rr)} raw (${FX.pct(r.weight_own_data)} weight on own data)`, `days lost ${FX.fmt2(r.days_rr_shrunk)} shrunk, ${FX.fmt2(r.days_rr)} raw`, `${r.team_seasons} team-seasons`] }));
     heat(gridBox, rows, FX.DEFENCE, FX.ATTACK, (d) => FX.fmt2(d.v), 120);
   };
   const drawBody = () => {
@@ -487,11 +529,35 @@ dash.onData(() => {
     document.getElementById('body-title').textContent = `Where players get hurt: ${phase === 'attack' ? 'attacking' : 'defensive'} styles`;
     const data = dash.data('body_areas').data.filter((r) => r.phase === phase);
     const areas = [...new Set(data.map((r) => r.area))];
-    const rows = data.map((r) => ({ x: r.area, y: r.style, v: r.relative, k: r.leagues_above, bold: r.leagues_above >= 4 || r.leagues_above <= 1 }));
-    heat(bodyBox, rows, areas, order, (d) => `${FX.fmt2(d.v)} ${d.k}/5`, 140);
+    const rows = data.map((r) => ({ x: r.area, y: r.style, v: r.relative, k: r.leagues_above, bold: r.finding, dim: !FX.on(r.style), pick: r.style,
+      tip: [`${r.style}: ${r.area}`, `${FX.fmt2(r.relative)} × the league's share (median); above 1 in ${r.leagues_above} of 5 leagues`, `within-league odds ratio ${FX.fmt2(r.odds_ratio)}, q = ${r.q < 0.001 ? '< 0.001' : r.q.toFixed(3)}${r.finding ? ' (finding)' : ''}`] }));
+    heat(bodyBox, rows, areas, order, (d) => `${d.bold ? '★ ' : ''}${FX.fmt2(d.v)} ${d.k}/5`, 140);
   };
-  dash.onData(() => { drawRR(); drawGrid(); drawBody(); });
-  window.addEventListener('fx-redraw', () => { drawRR(); drawGrid(); drawBody(); });
+  const bdBox = document.getElementById('breakdown');
+  const drawBreakdown = () => {
+    if (FX.page !== 'injuries' || FX.failed(bdBox, 'breakdown')) return;
+    const phase = FX.phase(), order = FX.order(phase), picked = FX.style();
+    const groups = ['Defender', 'Midfielder', 'Forward', 'Goalkeeper', '≤21', '22–25', '26–29', '30+'];
+    const styles = picked ? [picked] : order;
+    document.getElementById('breakdown-title').textContent = `Who carries the excess: position and age${picked ? ` (${picked})` : ''}`;
+    const rows = dash.data('breakdown').data.filter((r) => r.phase === phase && styles.includes(r.style)).map((r) => ({
+      x: r.group, y: r.style, v: r.rr, pick: r.style,
+      tip: [`${r.style}: ${r.group}`, `rate ratio ${FX.fmt2(r.rr)} (${FX.fmt2(r.rr_low)}–${FX.fmt2(r.rr_high)})`, `${r.excess_per_100 > 0 ? '+' : ''}${r.excess_per_100.toFixed(1)} injuries per 100 player-seasons`, `${d3.format(',')(r.player_seasons)} player-seasons`] }));
+    heat(bdBox, rows, groups, styles, (d) => FX.fmt2(d.v), 110);
+  };
+  const ladderBox = document.getElementById('ladder');
+  const drawLadder = () => {
+    if (FX.page !== 'injuries' || FX.failed(ladderBox, 'rr_ladder')) return;
+    const phase = FX.phase(), order = FX.order(phase);
+    const label = (r) => `${r.exposure === 'per team match' ? 'per match' : 'per player-season'}: ${r.adjustment}`;
+    const data = dash.data('rr_ladder').data.filter((r) => r.grouping === phase);
+    const steps = [...new Set(data.map(label))];
+    const rows = data.map((r) => ({ x: r.style, y: label(r), v: r.rr, dim: !FX.on(r.style), pick: r.style,
+      tip: [`${r.style}`, `${label(r)}: rate ratio ${FX.fmt2(r.rr)} (${FX.fmt2(r.rr_low)}–${FX.fmt2(r.rr_high)})`, `days lost ${FX.fmt2(r.days_rr)}`] }));
+    heat(ladderBox, rows, order, steps, (d) => FX.fmt2(d.v), 120);
+  };
+  dash.onData(() => { drawRR(); drawLadder(); drawGrid(); drawBody(); drawBreakdown(); });
+  window.addEventListener('fx-redraw', () => { drawRR(); drawLadder(); drawGrid(); drawBody(); drawBreakdown(); });
 })();
 </script>
 
@@ -516,15 +582,15 @@ dash.onData(() => {
       if (width >= 560) svg.append('text').attr('x', x(s) + 4).attr('y', i % 2 ? 22 : 10).text(label);
     });
     svg.append('path').datum(rows).attr('fill', dash.colors[0]).attr('fill-opacity', 0.14).attr('d', d3.area().x((r) => x(r.season)).y0((r) => y(r.low)).y1((r) => y(r.high)));
-    svg.append('path').datum(rows).attr('fill', 'none').attr('stroke', FX.color(0)).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('d', d3.line().x((r) => x(r.season)).y((r) => y(r.injuries_per_ps)));
-    svg.append('g').selectAll('circle').data(rows).join('circle').attr('cx', (r) => x(r.season)).attr('cy', (r) => y(r.injuries_per_ps)).attr('r', 3.5).attr('fill', FX.color(0));
+    svg.append('path').datum(rows).attr('fill', 'none').attr('stroke', FX.color(0)).attr('stroke-width', 2.5).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round').attr('d', d3.line().x((r) => x(r.season)).y((r) => y(r.injuries_rolling)));
+    svg.append('g').selectAll('circle').data(rows).join('circle').attr('cx', (r) => x(r.season)).attr('cy', (r) => y(r.injuries_per_ps)).attr('r', 3.5).attr('fill', 'var(--color-panel)').attr('stroke', FX.color(0)).attr('stroke-width', 1.5);
     const tip = FX.tip(trendBox);
     const dot = svg.append('circle').attr('r', 6).attr('fill', 'none').attr('stroke', FX.color(0)).attr('stroke-width', 2).attr('visibility', 'hidden');
     svg.on('pointermove', (event) => {
       const [mx] = d3.pointer(event);
       const r = rows.reduce((a, b) => (Math.abs(x(b.season) - mx) < Math.abs(x(a.season) - mx) ? b : a));
       dot.attr('cx', x(r.season)).attr('cy', y(r.injuries_per_ps)).attr('visibility', 'visible');
-      FX.lines(tip, r.season, [`${r.injuries_per_ps.toFixed(3)} injuries per player-season (${r.low.toFixed(2)}–${r.high.toFixed(2)})`, `${r.days_per_ps.toFixed(1)} days lost per player-season`, `${FX.pct(r.unknown_area_share)} without a known body area`]);
+      FX.lines(tip, r.season, [`${r.injuries_per_ps.toFixed(3)} injuries per player-season (${r.low.toFixed(2)}–${r.high.toFixed(2)})`, `3-season mean ${r.injuries_rolling.toFixed(3)}`, `${r.days_per_ps.toFixed(1)} days lost per player-season`, `${FX.pct(r.unknown_area_share)} without a known body area`]);
       FX.place(tip, trendBox, x(r.season) * trendBox.clientWidth / width, y(r.injuries_per_ps) * trendBox.clientHeight / height);
     }).on('pointerleave', () => { tip.hidden = true; dot.attr('visibility', 'hidden'); });
   };

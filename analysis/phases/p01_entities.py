@@ -1,47 +1,29 @@
-"""Writes notebooks/01_entities.ipynb: Phase 1 as a sequence of steps, each with notes, code and a check."""
+"""Phase 01: Entity resolution. Cells in the percent format; run with `python -m analysis.run 01`, notebook built by `scripts/notebooks/build_notebook.py`."""
 
-import json
-import sys
-from pathlib import Path
+# %% [markdown]
+# # Phase 1: Entity resolution (data integration)
+#
+# **Goal:** one identity per club across Transfermarkt (TM), Football-Data (FD) and Understat (US), so team-season
+# features (Phase 3) and injuries (Phase 2, TM) can be joined. Plus one season key across sources.
+#
+# **Steps**
+# 1. List each source's team-seasons
+# 2. Normalise names (for comparison only)
+# 3. Score a pair of names
+# 4. Match teams within each league-season (exact → normalised → fuzzy, one-to-one)
+# 5. Collapse to one row per club: the proposed team map
+# 6. Load the reviewed map (`mappings/team_map.csv`)
+# 7. Build the team-season table and check it is complete
+# 8. Put each source's league matches in one format
+# 9. Verify the map on fixtures (independent of names)
+# 10. Check season labels against match dates
+# 11. Write the report
+#
+# **Inputs:** `data/tables/` (`tm_clubs`, `fd_matches`, `us_team_matches`, `us_matches`, `tm_fixtures`).
+# **Outputs:** `mappings/team_map.csv` (reviewed, in git), `data/01_entities/`, `reports/01_entities.md`.
+# Each step is logged in `docs/PREPROCESSING_LOG.md`; choices in `docs/DECISIONS.md`.
 
-ROOT = Path(sys.argv[1])
-cells = []
-
-
-def md(text: str) -> None:
-    cells.append({"cell_type": "markdown", "metadata": {}, "source": text.strip("\n").splitlines(keepends=True)})
-
-
-def code(text: str) -> None:
-    cells.append({"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [],
-                  "source": text.strip("\n").splitlines(keepends=True)})
-
-
-md('''
-# Phase 1: Entity resolution (data integration)
-
-**Goal:** one identity per club across Transfermarkt (TM), Football-Data (FD) and Understat (US), so team-season
-features (Phase 3) and injuries (Phase 2, TM) can be joined. Plus one season key across sources.
-
-**Steps**
-1. List each source's team-seasons
-2. Normalise names (for comparison only)
-3. Score a pair of names
-4. Match teams within each league-season (exact → normalised → fuzzy, one-to-one)
-5. Collapse to one row per club: the proposed team map
-6. Load the reviewed map (`mappings/team_map.csv`)
-7. Build the team-season table and check it is complete
-8. Put each source's league matches in one format
-9. Verify the map on fixtures (independent of names)
-10. Check season labels against match dates
-11. Write the report
-
-**Inputs:** `data/tables/` (`tm_clubs`, `fd_matches`, `us_team_matches`, `us_matches`, `tm_fixtures`).
-**Outputs:** `mappings/team_map.csv` (reviewed, in git), `data/01_entities/`, `reports/01_entities.md`.
-Each step is logged in `docs/PREPROCESSING_LOG.md`; choices in `docs/DECISIONS.md`.
-''')
-
-code('''
+# %%
 import re
 import sys
 import unicodedata
@@ -63,17 +45,15 @@ pd.set_option("display.width", 200)
 PHASE = "01_entities"
 OUT_DIR = phase_dir(PHASE)
 TEAM_MAP = MAPPINGS_DIR / "team_map.csv"
-''')
 
-# ---- step 1
-md('''
-## Step 1. Team-seasons per source
+# %% [markdown]
+# ## Step 1. Team-seasons per source
+#
+# One row per team per league-season from each source. TM is the master list: its club id is the key and its name
+# becomes the one club name, `club`. Football-Data has no club table, so its names come from the home and away columns;
+# its season code `"1415"` becomes start year 2014 (TM and Understat already use start years).
 
-One row per team per league-season from each source. TM is the master list: its club id is the key and its name
-becomes the one club name, `club`. Football-Data has no club table, so its names come from the home and away columns;
-its season code `"1415"` becomes start year 2014 (TM and Understat already use start years).
-''')
-code('''
+# %%
 def tm_team_seasons() -> pd.DataFrame:
     cl = read_table("tm_clubs")
     return pd.DataFrame({
@@ -104,8 +84,8 @@ def us_team_seasons() -> pd.DataFrame:
 
 
 tm, fd, us = tm_team_seasons(), fd_team_seasons(), us_team_seasons()
-''')
-code('''
+
+# %%
 # Check: the same number of team-seasons in every source and in every league-season.
 sizes = pd.DataFrame({
     "TM": tm.groupby(["league", "season"]).size(),
@@ -116,17 +96,15 @@ assert (sizes.nunique(axis=1) == 1).all(), sizes[sizes.nunique(axis=1) > 1]
 pd.DataFrame({"team-seasons": [len(tm), len(fd), len(us)],
               "distinct clubs": [tm.tm_club_id.nunique(), fd.fd_name.nunique(), us.us_team_id.nunique()]},
              index=["Transfermarkt", "Football-Data", "Understat"])
-''')
 
-# ---- step 2
-md('''
-## Step 2. Normalise names
+# %% [markdown]
+# ## Step 2. Normalise names
+#
+# Reduces a name to the words that identify the club, **for comparison only** (original names are kept):
+# accents removed, lower case, punctuation removed, Football-Data abbreviations expanded, legal forms and
+# sport-club prefixes (FC, SC, Calcio, …) and founding years dropped.
 
-Reduces a name to the words that identify the club, **for comparison only** (original names are kept):
-accents removed, lower case, punctuation removed, Football-Data abbreviations expanded, legal forms and
-sport-club prefixes (FC, SC, Calcio, …) and founding years dropped.
-''')
-code('''
+# %%
 # Words that say nothing about which club it is: legal forms, sport-club prefixes, articles.
 STOPWORDS = {
     "fc", "cf", "afc", "ac", "as", "ss", "ssc", "sc", "us", "rc", "rcd", "ud", "cd", "sd", "ca", "sv", "vfb", "vfl",
@@ -146,30 +124,28 @@ def normalise(name: str) -> str:
     # NFKD splits "ö" into "o" + a combining mark; encoding to ASCII drops the mark.
     text = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
     tokens = []
-    for token in re.split(r"[\\s\\-/]+", text):
+    for token in re.split(r"[\s\-/]+", text):
         token = ABBREVIATIONS.get(token, token)
         for part in re.sub(r"[^a-z0-9 ]", " ", token).split():
             if part not in STOPWORDS and not part.isdigit():
                 tokens.append(part)
     return " ".join(tokens)
-''')
-code('''
+
+# %%
 # Check: examples from each source.
 examples = ["1.FC Köln", "FC Koln", "FC Cologne", "Nott'm Forest", "Nottingham Forest", "Ath Madrid",
             "Atlético de Madrid", "Paris Saint-Germain", "Paris SG", "Paris FC", "Borussia Mönchengladbach", "M'gladbach"]
 pd.DataFrame({"name": examples, "normalised": [normalise(n) for n in examples]})
-''')
 
-# ---- step 3
-md('''
-## Step 3. Score a pair of names
+# %% [markdown]
+# ## Step 3. Score a pair of names
+#
+# Returns a similarity from 0 to 100 and how it was reached: `exact` (same name, ignoring case), `normalised`
+# (equal after step 2) or `fuzzy`. The fuzzy score is the mean of rapidfuzz's token-set and token-sort ratios:
+# token-set alone gives 100 when one name is contained in another ("paris" in "paris saint germain"), which once
+# mapped PSG to Paris FC.
 
-Returns a similarity from 0 to 100 and how it was reached: `exact` (same name, ignoring case), `normalised`
-(equal after step 2) or `fuzzy`. The fuzzy score is the mean of rapidfuzz's token-set and token-sort ratios:
-token-set alone gives 100 when one name is contained in another ("paris" in "paris saint germain"), which once
-mapped PSG to Paris FC.
-''')
-code('''
+# %%
 METHOD_RANK = {"exact": 0, "normalised": 1, "fuzzy": 2}
 
 
@@ -182,24 +158,22 @@ def name_score(a: str, b: str) -> tuple[float, str]:
         return 100.0, "normalised"
     # Mean of set and sort ratios: a name contained in a longer one is not a full match.
     return (fuzz.token_set_ratio(na, nb) + fuzz.token_sort_ratio(na, nb)) / 2, "fuzzy"
-''')
-code('''
+
+# %%
 # Check: the PSG / Paris FC case and a few typical pairs.
 pairs = [("Paris Saint-Germain", "Paris SG"), ("Paris Saint-Germain", "Paris FC"), ("Paris FC", "Paris FC"),
          ("1.FC Köln", "FC Koln"), ("1.FC Köln", "FC Cologne"), ("Leicester City", "Leicester")]
 pd.DataFrame([(a, b, *name_score(a, b)) for a, b in pairs], columns=["TM name", "source name", "score", "method"]).round(1)
-''')
 
-# ---- step 4
-md('''
-## Step 4. Match teams within each league-season
+# %% [markdown]
+# ## Step 4. Match teams within each league-season
+#
+# A club is only compared with the ~20 clubs in the same league-season. Within each:
+# 1. Fix **exact** pairs, then **normalised** pairs, each only when it is the single such candidate on both sides.
+# 2. Match the rest with the **Hungarian algorithm** (`linear_sum_assignment`): the one-to-one pairing with the
+#    highest total score, so two TM clubs can never take the same name.
 
-A club is only compared with the ~20 clubs in the same league-season. Within each:
-1. Fix **exact** pairs, then **normalised** pairs, each only when it is the single such candidate on both sides.
-2. Match the rest with the **Hungarian algorithm** (`linear_sum_assignment`): the one-to-one pairing with the
-   highest total score, so two TM clubs can never take the same name.
-''')
-code('''
+# %%
 def assign(tm: pd.DataFrame, other: pd.DataFrame, key: str, name: str) -> pd.DataFrame:
     """One-to-one TM club for each `other` team within every league-season, maximising the summed name score."""
     rows = []
@@ -230,28 +204,26 @@ def assign(tm: pd.DataFrame, other: pd.DataFrame, key: str, name: str) -> pd.Dat
 
 fd_match = assign(tm, fd, "fd_name", "fd_name")
 us_match = assign(tm, us, "us_team_id", "us_name")
-''')
-code('''
+
+# %%
 # Check: every team-season matched, and how (team-season level).
 assert len(fd_match) == len(fd) and len(us_match) == len(us)
 pd.DataFrame({"Football-Data": fd_match.fd_name_method.value_counts(),
               "Understat": us_match.us_team_id_method.value_counts()}).reindex(list(METHOD_RANK))
-''')
-code('''
+
+# %%
 # Check: the weakest fuzzy matches (lowest scores first).
 weakest = fd_match.merge(tm, on=["league", "season", "tm_club_id"]).nsmallest(8, "fd_name_score")
 weakest[["league", "season", "club", "fd_name", "fd_name_score"]].round(1)
-''')
 
-# ---- step 5
-md('''
-## Step 5. One row per club: the proposed team map
+# %% [markdown]
+# ## Step 5. One row per club: the proposed team map
+#
+# The 1,170 team-season matches collapse to one row per club, keeping the worst method and score over its seasons.
+# A club gets two rows only if a source uses two names or ids for it. Rows are flagged for review when the name
+# score is below `REVIEW_BELOW` or the club has two rows.
 
-The 1,170 team-season matches collapse to one row per club, keeping the worst method and score over its seasons.
-A club gets two rows only if a source uses two names or ids for it. Rows are flagged for review when the name
-score is below `REVIEW_BELOW` or the club has two rows.
-''')
-code('''
+# %%
 REVIEW_BELOW = 75  # name score under which a match is listed for manual review (short forms like "Leicester" score 80-90)
 
 
@@ -287,8 +259,8 @@ def propose_team_map(tm: pd.DataFrame, us: pd.DataFrame, fd_match: pd.DataFrame,
 
 proposal = propose_team_map(tm, us, fd_match, us_match)
 proposal.to_csv(OUT_DIR / "team_map_proposed.csv", index=False)
-''')
-code('''
+
+# %%
 # Check: club rows by method, and the rows flagged for review.
 methods = pd.DataFrame({"Football-Data": proposal.fd_method.value_counts(),
                         "Understat": proposal.us_method.value_counts()}).reindex(list(METHOD_RANK)).fillna(0).astype(int)
@@ -296,17 +268,15 @@ methods = methods.rename_axis("method (worst over seasons)")
 review = proposal[proposal.review][["tm_club_id", "club", "fd_name", "fd_score", "us_name", "us_score", "leagues", "n_seasons"]]
 print(len(proposal), "club rows for", proposal.tm_club_id.nunique(), "clubs")
 display(methods, review)
-''')
 
-# ---- step 6
-md('''
-## Step 6. Load the reviewed map
+# %% [markdown]
+# ## Step 6. Load the reviewed map
+#
+# `mappings/team_map.csv` is the reviewed mapping, tracked in git. The first run creates it from the proposal; after
+# that it is never overwritten, so manual edits stick. Any difference between the reviewed map and a fresh proposal
+# is shown here and in the report.
 
-`mappings/team_map.csv` is the reviewed mapping, tracked in git. The first run creates it from the proposal; after
-that it is never overwritten, so manual edits stick. Any difference between the reviewed map and a fresh proposal
-is shown here and in the report.
-''')
-code('''
+# %%
 def load_reviewed_map(proposal: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, bool]:
     """The reviewed map (created from the proposal on the first run) and rows where it differs from the proposal."""
     created = not TEAM_MAP.exists()
@@ -315,24 +285,29 @@ def load_reviewed_map(proposal: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFram
         proposal.to_csv(TEAM_MAP, index=False)
     reviewed = pd.read_csv(TEAM_MAP, dtype=str, keep_default_na=False)
     key = ["tm_club_id", "fd_name", "us_team_id"]
-    diff = proposal[key].astype(str).merge(reviewed[key], how="outer", indicator=True)
-    diff = diff[diff._merge != "both"].replace({"_merge": {"left_only": "proposal only", "right_only": "reviewed only"}})
-    return reviewed, diff.rename(columns={"_merge": "in"}), created
+    blank = (reviewed[key] == "").any(axis=1)
+    if blank.any():
+        raise ValueError(
+            f"{TEAM_MAP.name}: {blank.sum()} of {len(reviewed)} rows have no tm_club_id, fd_name or us_team_id. "
+            "Restore it from git (git checkout -- mappings/team_map.csv) or delete it to recreate it from the proposal."
+        )
+    diff = proposal[key].astype(str).merge(reviewed[key], how="outer", indicator="in")
+    diff = diff[diff["in"] != "both"]
+    diff = diff.assign(**{"in": diff["in"].astype(str).map({"left_only": "proposal only", "right_only": "reviewed only"})})
+    return reviewed, diff, created
 
 
 team_map, diff, created = load_reviewed_map(proposal)
 print("created from proposal" if created else "reviewed file used as is", "|", len(diff), "differences from the proposal")
 diff
-''')
 
-# ---- step 7
-md('''
-## Step 7. Team-season table
+# %% [markdown]
+# ## Step 7. Team-season table
+#
+# One row per TM team-season with its Football-Data name and Understat id, built from the **reviewed** map. This is
+# the join key for Phase 3. The checks below must all be zero.
 
-One row per TM team-season with its Football-Data name and Understat id, built from the **reviewed** map. This is
-the join key for Phase 3. The checks below must all be zero.
-''')
-code('''
+# %%
 def build_team_seasons(team_map: pd.DataFrame, tm: pd.DataFrame, fd: pd.DataFrame, us: pd.DataFrame) -> pd.DataFrame:
     """One row per TM team-season with its Football-Data and Understat identity, from the reviewed map."""
     fd_ids = team_map[["fd_name", "tm_club_id"]].drop_duplicates()
@@ -348,8 +323,8 @@ def build_team_seasons(team_map: pd.DataFrame, tm: pd.DataFrame, fd: pd.DataFram
 
 ts = build_team_seasons(team_map, tm, fd, us)
 ts.to_csv(OUT_DIR / "team_seasons.csv", index=False)
-''')
-code('''
+
+# %%
 # Check: completeness and uniqueness (all must be 0).
 checks = {
     "FD names tied to 2+ clubs": team_map.groupby("fd_name").tm_club_id.nunique().gt(1).sum(),
@@ -363,19 +338,17 @@ checks = {
 assert not any(checks.values()), checks
 print(len(ts), "team-seasons")
 pd.Series(checks, name="count").to_frame()
-''')
 
-# ---- step 8
-md('''
-## Step 8. League matches in one format
+# %% [markdown]
+# ## Step 8. League matches in one format
+#
+# Each source's league matches as `league, season, date, home, away, hg, ag`:
+# - **TM:** Big Five league games only. Every game appears once per club, so duplicates on `game_id` are removed and
+#   the home side is put first.
+# - **FD:** two date formats (`dd/mm/yyyy` and `dd/mm/yy`).
+# - **Understat:** unplayed fixtures (`isResult = false`, the cancelled Ligue 1 2019-20 games) dropped.
 
-Each source's league matches as `league, season, date, home, away, hg, ag`:
-- **TM:** Big Five league games only. Every game appears once per club, so duplicates on `game_id` are removed and
-  the home side is put first.
-- **FD:** two date formats (`dd/mm/yyyy` and `dd/mm/yy`).
-- **Understat:** unplayed fixtures (`isResult = false`, the cancelled Ligue 1 2019-20 games) dropped.
-''')
-code('''
+# %%
 def tm_league_matches() -> pd.DataFrame:
     """TM league matches (Big Five competitions only), one row per game, home side first."""
     fx = read_table("tm_fixtures")
@@ -426,23 +399,21 @@ def us_league_matches() -> pd.DataFrame:
 
 
 tm_m, fd_m, us_m = tm_league_matches(), fd_league_matches(), us_league_matches()
-''')
-code('''
+
+# %%
 # Check: the same number of league matches in every source, and no missing dates.
 assert len(tm_m) == len(fd_m) == len(us_m)
 assert not (tm_m.date.isna().any() or fd_m.date.isna().any() or us_m.date.isna().any())
 pd.DataFrame({"matches": [len(tm_m), len(fd_m), len(us_m)]}, index=["Transfermarkt", "Football-Data", "Understat"])
-''')
 
-# ---- step 9
-md('''
-## Step 9. Verify the map on fixtures
+# %% [markdown]
+# ## Step 9. Verify the map on fixtures
+#
+# Independent of names: each FD and Understat match is translated to TM club ids through the map and looked up in
+# TM by league, season, home and away club. A wrong mapping would leave matches unfound. Scores and dates are compared
+# too; a one-day gap is TM's UTC kick-off time.
 
-Independent of names: each FD and Understat match is translated to TM club ids through the map and looked up in
-TM by league, season, home and away club. A wrong mapping would leave matches unfound. Scores and dates are compared
-too; a one-day gap is TM's UTC kick-off time.
-''')
-code('''
+# %%
 def verify_fixtures(matches: pd.DataFrame, ids: pd.DataFrame, key: str, tm: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     """Translate a source's matches to TM club ids and look each one up in TM (same league-season, home and away)."""
     to_tm = ids.set_index(key).tm_club_id
@@ -470,8 +441,8 @@ bad = pd.concat([fd_bad.assign(source="Football-Data"), us_bad.assign(source="Un
 bad.to_csv(OUT_DIR / "fixture_mismatches.csv", index=False)
 fixtures = pd.DataFrame({"Football-Data": fd_sum, "Understat": us_sum}).T.rename_axis("source")
 fixtures
-''')
-code('''
+
+# %%
 # Check: matches whose score differs (all are awarded results: one source has the score on the pitch).
 clubs = tm.drop_duplicates("tm_club_id").set_index("tm_club_id").club
 diff_score = bad[(bad.hg != bad.hg_tm) | (bad.ag != bad.ag_tm)]
@@ -482,16 +453,14 @@ score_diff = pd.DataFrame({
     "TM score": diff_score.hg_tm.astype(int).astype(str) + "-" + diff_score.ag_tm.astype(int).astype(str),
 }).sort_values(["date", "source"])
 score_diff
-''')
 
-# ---- step 10
-md('''
-## Step 10. Season labels vs match dates
+# %% [markdown]
+# ## Step 10. Season labels vs match dates
+#
+# The date rule (1 July – 30 June) is what Phase 2 would use for injuries. Here it is compared with each source's
+# own season label for league matches.
 
-The date rule (1 July – 30 June) is what Phase 2 would use for injuries. Here it is compared with each source's
-own season label for league matches.
-''')
-code('''
+# %%
 def season_label_check(matches: dict[str, pd.DataFrame]) -> pd.DataFrame:
     """Per source: league matches whose 1 July – 30 June date season differs from the source's season label."""
     rows = []
@@ -505,15 +474,13 @@ def season_label_check(matches: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
 seasons = season_label_check({"Transfermarkt": tm_m, "Football-Data": fd_m, "Understat": us_m})
 seasons
-''')
 
-# ---- step 11
-md('''
-## Step 11. Report
+# %% [markdown]
+# ## Step 11. Report
+#
+# Writes `reports/01_entities.md` from the results above.
 
-Writes `reports/01_entities.md` from the results above.
-''')
-code('''
+# %%
 renamed = proposal[proposal.tm_club_id.duplicated(keep=False)]
 fixture_ok = fd_sum["found_in_tm"] == fd_sum["matches"] and us_sum["found_in_tm"] == us_sum["matches"]
 n_awarded = score_diff[["date", "home"]].drop_duplicates().shape[0]
@@ -532,7 +499,7 @@ out = [
     f"Scores differ only for {n_awarded} awarded results.",
     f"- **Names:** {proposal.review.sum()} club rows score below {REVIEW_BELOW} on names alone or have two rows, and are listed below for review; "
     "the fixture check is the stronger evidence for them.",
-    "- **Seasons:** canonical key `\\"2014-15\\"`. League matches played after 30 June are labelled with the earlier season by every source "
+    "- **Seasons:** canonical key `\"2014-15\"`. League matches played after 30 June are labelled with the earlier season by every source "
     "(the 2019-20 COVID restart ran into July and August 2020), so the date rule (1 July – 30 June) and the season label disagree there. "
     "Phase 2 must attribute injuries to club-seasons by squad membership, not by the date rule alone.",
     "",
@@ -590,7 +557,7 @@ out = [
     "",
     "## 3. Seasons",
     "",
-    "One key across sources, `season = \\"2014-15\\"` … `\\"2025-26\\"` (`analysis.load.season_key`): Football-Data `season_code` 1415, "
+    "One key across sources, `season = \"2014-15\"` … `\"2025-26\"` (`analysis.load.season_key`): Football-Data `season_code` 1415, "
     "Understat and TM start year 2014. TM's injury `seasonId` agrees with the date season for 98.3% of in-window injuries (Phase 0).",
     "",
     "League matches whose date season (1 July – 30 June) differs from the source's own label:",
@@ -607,13 +574,5 @@ out = [
 ]
 if len(diff):
     out += ["### Reviewed map vs proposal", "", md_table(diff, index=False), ""]
-(REPORTS_DIR / "01_entities.md").write_text("\\n".join(out), encoding="utf-8")
+(REPORTS_DIR / "01_entities.md").write_text("\n".join(out), encoding="utf-8")
 print("wrote", REPORTS_DIR / "01_entities.md")
-''')
-
-for i, cell in enumerate(cells):
-    cell["id"] = f"entities-{i:02d}"
-old = json.loads((ROOT / "notebooks/01_entities.ipynb").read_text())
-nb = {"cells": cells, "metadata": old["metadata"], "nbformat": 4, "nbformat_minor": 5}
-(ROOT / "notebooks/01_entities.ipynb").write_text(json.dumps(nb, indent=1, ensure_ascii=False) + "\n")
-print(len(cells), "cells")

@@ -1,16 +1,20 @@
 """
-Local dashboard server: serves the built React app (dashboard/dist) and the run API, on 127.0.0.1 only.
+Local dashboard server: serves the built React app (app/dist) and the APIs, on 127.0.0.1 only.
 
+Step 1, scraping:
   GET  /api/status       live run status (polled every second)
   GET  /api/validation   validation report (computed after each run, cached)
   POST /api/control      {"action": "start" | "smoke_test" | "pause" | "resume" | "requeue",
                           "flags": {"dry_run": bool, "limit": int | null}, "ids": [...]}
+Step 2, analysis: /api/analysis/* (see analysis/api.py), loaded on first use; 503 if the analysis package can't load.
 
 No auth: it never listens beyond localhost.
 """
 
+import importlib
 import json
 import os
+import sys
 import threading
 import traceback
 from http import HTTPStatus
@@ -27,7 +31,14 @@ from validate import build_report
 # 127.0.0.1 by default. The Docker image sets 0.0.0.0 and publishes the port to the host's 127.0.0.1 only.
 HOST = os.environ.get("DASHBOARD_HOST", "127.0.0.1")
 PORT = int(os.environ.get("DASHBOARD_PORT", "8765"))
-DIST = SCRAPER_DIR / "dashboard" / "dist"
+DIST = ROOT / "app" / "dist"
+
+
+def _analysis_api():
+    """analysis/api.py, imported on first use (the Docker image ships only the scraper)."""
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    return importlib.import_module("analysis.api")
 
 
 class Busy(Exception):
@@ -123,8 +134,30 @@ def make_handler(controller: RunController) -> type[SimpleHTTPRequestHandler]:
             self.end_headers()
             self.wfile.write(body)
 
+        def _analysis(self, method: str) -> None:
+            path, _, query = self.path.partition("?")
+            try:
+                api = _analysis_api()
+            except Exception as exc:  # noqa: BLE001 - e.g. the analysis package is not in this image
+                return self._json({"error": f"analysis API unavailable: {exc}"}, HTTPStatus.SERVICE_UNAVAILABLE)
+            body = {}
+            if method == "POST":
+                try:
+                    body = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
+                except ValueError:
+                    return self._json({"error": "invalid JSON"}, HTTPStatus.BAD_REQUEST)
+            status, ctype, data = api.handle(method, path, query, body, scrape_busy=controller.busy)
+            self.send_response(status)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
         def do_GET(self) -> None:
             path = self.path.split("?", 1)[0]
+            if path.startswith("/api/analysis/"):
+                return self._analysis("GET")
             if path == "/api/status":
                 return self._json(controller.status.snapshot())
             if path == "/api/validation":
@@ -136,6 +169,8 @@ def make_handler(controller: RunController) -> type[SimpleHTTPRequestHandler]:
             return super().do_GET()
 
         def do_POST(self) -> None:
+            if self.path.startswith("/api/analysis/"):
+                return self._analysis("POST")
             if self.path != "/api/control":
                 return self._json({"error": "not found"}, HTTPStatus.NOT_FOUND)
             try:
@@ -167,7 +202,7 @@ def make_handler(controller: RunController) -> type[SimpleHTTPRequestHandler]:
 def serve(controller: RunController) -> ThreadingHTTPServer:
     """Start the server in a background thread and return it."""
     if not (DIST / "index.html").exists():
-        log("serve", "dashboard/dist is missing: run `npm run build` in dashboard/ (the API still works)")
+        log("serve", "app/dist is missing: run `npm run build` in app/ (the API still works)")
     server = ThreadingHTTPServer((HOST, PORT), make_handler(controller))
     threading.Thread(target=server.serve_forever, daemon=True, name="http").start()
     StatusFlusher(controller.status).start()

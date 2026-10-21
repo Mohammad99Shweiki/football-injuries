@@ -4,11 +4,12 @@ Work one phase at a time. At the end of each phase, give a short summary (what w
 
 Structure:
 ```
-analysis/       # code shared across phases: config.py (paths, leagues), load.py, report.py
-notebooks/      # 00_audit … 06_report, one per phase: each step as note + code + check, run top to bottom
+analysis/phases/  # p00_audit.py … p06_report.py: each phase's steps as `# %%` cells (note + code + check), source of truth
+analysis/         # run.py (runner, run records, staleness), api.py (dashboard API), steps.py, shared config/load/report
+notebooks/        # 00_audit … 06_report, generated from analysis/phases/, run top to bottom
 mappings/       # hand-reviewed CSVs (tracked in git): team_map, injury_label_map, non-injury labels
 data/raw/, data/tables/          # scraper output, read only
-data/01_entities/ … data/05_injury_analysis/   # each phase's output (analysis.config.phase_dir)
+data/00_audit/ … data/06_report/   # each phase's output (analysis.config.phase_dir) and its run record _run.json
 reports/        # NN_*.md per phase, figures/NN_*.png
 docs/DECISIONS.md, docs/PREPROCESSING_LOG.md
 ```
@@ -89,7 +90,11 @@ Shooting volume (shots on target) was dropped on 2026-10-21; `rest_mean` was dro
   - injuries > 3 days (adding the mild 4–7 day band)
   - core team-seasons only (clear members of their style)
 - **Secondary outcome:** *Fitness* absences (non-injuries, mostly reconditioning) per cluster, read mainly within the Bundesliga where they are recorded.
-- **Output:** `data/05_injury_analysis/player_seasons.parquet`, `reports/05_injury_analysis.md` and figures.
+- **Added after the methods review (2026-10-21):** nested expected values (league × season → + team strength → + age ×
+  position) and per-team-match exposure; bootstrap over clubs; same club with and without each style, and style
+  switches; body areas by permutation test with Benjamini–Hochberg; Kitagawa cells league × strength × style;
+  sensitivity clusterings (k = 3, style relative to the league-season); days lost with overlapping absences merged.
+- **Output:** `data/05_injury_analysis/player_seasons.parquet`, `data/05_injury_analysis/tables/`, `reports/05_injury_analysis.md` and figures.
 
 ## Phase 6: Report material
 - **Key figures:**
@@ -99,4 +104,9 @@ Shooting volume (shots on target) was dropped on 2026-10-21; `rest_mean` was dro
   - injury trend with calendar events annotated
   - league comparison
 - **Limitations:** Transfermarkt under-reporting, proxies for physical load, league-only style data from Understat, no training exposure data, and association rather than causation.
-- **Output:** `reports/summary.md`, plus figures ready for the course report.
+- **Output:** `reports/summary.md` (checked against the data by `p06_report.py`), figures ready for the course report, and
+  the results files for the dashboard (`data/06_report/dashboard/`).
+
+## Status (2026-10-22)
+All phases done and reviewed; framing: "style or schedule?" (possession's excess is mostly team strength and match
+load). Remaining: the analysis screens of the dashboard (step 2 in `app/`), from `docs/ui/analysis-studio-design-brief.md`.

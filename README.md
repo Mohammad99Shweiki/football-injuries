@@ -8,20 +8,39 @@ and compares injuries across clusters, seasons and leagues; see `docs/ANALYSIS_P
 ## Repository layout
 
 ```
-docs/          ANALYSIS_PLAN.md, DECISIONS.md, scraper/ (scraper-spec.md, dashboard-handoff/)
-scraper/       stage 1, data collection (finished): collect/, parse/, validate.py, dashboard/, Docker files
-analysis/      stage 2, code shared across phases: config.py (paths, leagues), load.py, report.py
-notebooks/     one notebook per phase, its steps in order (note, code, check): 00_audit.ipynb, 01_entities.ipynb, ...
-mappings/      hand-reviewed inputs (team map, injury label map), tracked in git
+docs/          ANALYSIS_PLAN.md, DECISIONS.md, PREPROCESSING_LOG.md, scraper/ (spec, dashboard handoff), ui/ (design brief)
+scraper/       step 1, data collection (finished): collect/, parse/, validate.py, serve.py, Docker files
+app/           the dashboard (React): step 1 scraping (run console, validation); step 2 analysis (to be designed)
+analysis/      step 2, analysis:
+  phases/        p00_audit.py … p06_report.py: one script per phase, cells in the `# %%` format (source of truth)
+  run.py         runs phases step by step, records checks/log rows/outputs in data/NN_*/_run.json, staleness
+  api.py         /api/analysis/* for the dashboard (mounted by scraper/serve.py)
+  steps.py       reads phase scripts into steps; builds notebooks
+  config.py load.py report.py audit.py   shared code
+notebooks/     one notebook per phase, generated from analysis/phases/ (scripts/notebooks/build_notebook.py)
+mappings/      hand-reviewed inputs (team map, injury label map, approvals.json), tracked in git
 data/          git-ignored, all generated:
   raw/           scraper downloads (read only)
   scraper_run/   scraper run state: manifest, live status, last run, smoke test
   tables/        parsed tables (python -m parse)
-  01_entities/ … 05_injury_analysis/   output of each analysis phase
-reports/       NN_*.md per phase, figures/NN_*.png
+  00_audit/ … 06_report/   output of each analysis phase, with its run record _run.json
+reports/       NN_*.md per phase, summary.md (course report text), figures/NN_*.png
 ```
 
-Data flows one way: `raw → tables → 01 → 02 → … → reports`. Phase N writes only to `data/NN_*/`.
+Data flows one way: `raw → tables → 00 → 01 → … → 06 → reports`. Phase N writes only to `data/NN_*/` and `reports/`.
+
+## Analysis
+
+```sh
+uv sync --group analysis
+uv run --group analysis python -m analysis.run status      # each phase: last run, stale or up to date (and why)
+uv run --group analysis python -m analysis.run all         # rerun stale phases in order, stop at the first failure
+uv run --group analysis python -m analysis.run 05 --until 7   # one phase, up to a step
+uv run --group analysis python scripts/notebooks/build_notebook.py   # regenerate notebooks from analysis/phases/
+```
+
+Rebuild everything from the raw data: `cd scraper && uv run python -m parse && cd .. && uv run --group analysis python -m analysis.run all --force`.
+Every random step is seeded (`analysis.config.SEED`); each run record keeps the git commit, seed and input hashes.
 
 Academic use only. Raw data and tables (`data/`) are git-ignored and must not be redistributed.
 
@@ -54,7 +73,7 @@ Scraper commands run from `scraper/`:
 
 ```sh
 cd scraper
-(cd dashboard && npm install && npm run build)   # once: build the dashboard (needs Node.js)
+(cd ../app && npm install && npm run build)    # once: build the dashboard (needs Node.js)
 uv run python run_all.py                     # dashboard at http://127.0.0.1:8765; start runs from there
 uv run python run_all.py --start             # dashboard + start a full run right away
 uv run python run_all.py --headless          # no dashboard: collect -> retry -> parse -> validate in the terminal
@@ -73,8 +92,8 @@ Re-running is cheap: every stored response is reused, and only missing ones are 
 
 ## Dashboard
 
-React + Vite (TypeScript) in `dashboard/`, built from the design handoff in `docs/scraper/dashboard-handoff/` (`HANDOFF.md`, `design/`); design tokens are in `dashboard/src/styles/tokens.css`.
-`serve.py` (standard library, bound to 127.0.0.1 only) serves `dashboard/dist` plus the API:
+React + Vite (TypeScript) in `app/`, built from the design handoff in `docs/scraper/dashboard-handoff/` (`HANDOFF.md`, `design/`); design tokens are in `app/src/styles/tokens.css`.
+`scraper/serve.py` (standard library, bound to 127.0.0.1 only) serves `app/dist` plus the API (the analysis routes `/api/analysis/*` are listed in `analysis/api.py`; start the server with `uv run --group analysis python run_all.py` for table pages):
 
 | Route | What |
 |---|---|
@@ -93,7 +112,7 @@ Differences from the handoff, agreed during the build:
 - Live totals replace the fixed estimates.
 - Extras: an ETA, the progress % in the browser tab title, a fixtures check in Team sheets, an FD/Understat toggle on the Results sheet, and hover details on the coverage magnets and tempo bars.
 
-Development: run `uv run python run_all.py` and `npm run dev` in `dashboard/`; Vite proxies `/api` to the server.
+Development: run `uv run python run_all.py` and `npm run dev` in `app/`; Vite proxies `/api` to the server.
 
 Screenshot checks against fake data use your installed Chrome through playwright-core:
 ```sh
@@ -115,8 +134,7 @@ scraper/
   parse/               one TableBuilder per table; python -m parse writes data/tables/*.csv
   validate.py          validation report (one Check class per check)
   run_all.py           orchestration
-  serve.py             dashboard server
-  dashboard/           React app
+  serve.py             dashboard server (app/dist, scraping API, mounts analysis/api.py)
 data/raw/{football_data,understat,transfermarkt}/
 data/tables/
 data/scraper_run/    manifest.csv (source, url, local_path, status, http_status, bytes, fetched_at, error; network requests only), status.json, last_run.json, smoke.json
