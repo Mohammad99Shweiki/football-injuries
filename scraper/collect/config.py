@@ -9,8 +9,9 @@ SCRAPER_DIR = Path(__file__).resolve().parent.parent
 ROOT = SCRAPER_DIR.parent
 RAW_DIR = ROOT / "data" / "raw"
 TABLES_DIR = ROOT / "data" / "tables"
-# Overridable so the Docker image can keep it on the mounted data volume.
-MANIFEST_PATH = Path(os.environ.get("MANIFEST_PATH", ROOT / "manifest.csv"))
+# Run state (manifest, live status, last run, smoke test) lives together, on the data volume in Docker too.
+RUN_DIR = ROOT / "data" / "scraper_run"
+MANIFEST_PATH = Path(os.environ.get("MANIFEST_PATH", RUN_DIR / "manifest.csv"))
 
 USER_AGENT = "football-injuries-research/0.1 (academic coursework)"
 

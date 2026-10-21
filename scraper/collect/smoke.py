@@ -2,7 +2,7 @@
 Smoke-test findings (spec section 5, "Order and smoke test"), computed from the raw Transfermarkt store.
 
 Each finding is {key, state: confirmed|verify|failed, title, detail}. They are shown in the dashboard's
-"Scouting notes" and saved to `data/smoke.json` so they survive restarts.
+"Scouting notes" and saved to `data/scraper_run/smoke.json` so they survive restarts.
 """
 
 import json
@@ -10,11 +10,11 @@ from collections import Counter, defaultdict
 from collections.abc import Callable
 from pathlib import Path
 
-from collect.config import ROOT
+from collect.config import RUN_DIR
 from collect.fs import atomic_write
 from collect.transfermarkt import OUT_DIR
 
-SMOKE_PATH = ROOT / "data" / "smoke.json"
+SMOKE_PATH = RUN_DIR / "smoke.json"
 SMOKE_LEAGUE, SMOKE_SEASON, SMOKE_PLAYERS = "EPL", 2016, 20
 LEAGUE_MATCHES = 38  # Premier League, 20 clubs
 

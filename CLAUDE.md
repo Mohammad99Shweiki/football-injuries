@@ -13,6 +13,7 @@ Run analysis code with the `analysis` dependency group (kept out of the Docker i
 - Work phase by phase as laid out in `docs/ANALYSIS_PLAN.md`. Stop at the end of each phase for my review.
 - Ask before any choice that changes results. Defaults are in "Open decisions" below.
 - Log every decision in `docs/DECISIONS.md` (date, decision, reason).
+- Log every cleaning and preprocessing step in `docs/PREPROCESSING_LOG.md` as it is done (type, input, operation, rows affected, output, code), with exact counts.
 
 ## Hard rules
 - **Never modify anything in `data/raw/`.** Raw data is a course requirement. Each analysis phase writes only to its own `data/NN_<phase>/` folder (`analysis.config.phase_dir`) and to `reports/`. Hand-reviewed CSVs go in `mappings/`.
@@ -32,10 +33,10 @@ Run analysis code with the `analysis` dependency group (kept out of the Docker i
 
 ## Repository layout
 - `scraper/`: data collection (finished): `collect/`, `parse/`, `validate.py`, `dashboard/`, Docker files. Run its commands from `scraper/`.
-- `analysis/`: analysis package. `config.py` holds paths, leagues, seasons and `phase_dir`; `load.py` loads tables; add one module per phase.
-- `notebooks/`: one thin notebook per phase (`00_audit.ipynb`, `01_entities.ipynb`, …).
+- `analysis/`: code shared across phases only. `config.py` holds paths, leagues, seasons and `phase_dir`; `load.py` loads tables; `report.py` has markdown helpers.
+- `notebooks/`: one notebook per phase (`00_audit.ipynb`, `01_entities.ipynb`, …) holding that phase's steps in order: for each step a short note (what and why), the code, and a check cell showing the intermediate result. The notebook runs top to bottom from the tables and writes the phase report.
 - `mappings/`: hand-reviewed inputs (team map, injury label map), tracked in git.
-- `data/`: git-ignored, all generated: `raw/`, `tables/`, then `01_entities/` … `05_injury_analysis/`.
+- `data/`: git-ignored, all generated, folders only (no loose files): `raw/`, `tables/`, `scraper_run/` (scraper manifest and run state), then `01_entities/` … `05_injury_analysis/`.
 - `reports/`: `NN_*.md` per phase, `figures/NN_*.png`.
 - `docs/`: `ANALYSIS_PLAN.md`, `DECISIONS.md`, `scraper/` (spec and dashboard handoff).
 

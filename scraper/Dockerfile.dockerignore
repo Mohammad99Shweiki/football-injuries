@@ -3,7 +3,6 @@
 .venv
 **/__pycache__
 data
-manifest.csv
 scraper/dashboard/node_modules
 scraper/dashboard/dist
 analysis

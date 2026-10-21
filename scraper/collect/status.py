@@ -3,7 +3,7 @@ Live run status for the dashboard.
 
 Collectors report through the `StatusReporter` protocol; `NullReporter` is used on the command line, `RunStatus`
 when the dashboard is running. `RunStatus` is thread-safe: collectors run in a worker thread, the HTTP server reads
-snapshots from its own threads, and a flusher writes `data/status.json` (atomically) at most once per second.
+snapshots from its own threads, and a flusher writes `data/scraper_run/status.json` (atomically) at most once per second.
 """
 
 import json
@@ -15,9 +15,9 @@ from datetime import UTC, datetime
 from typing import Any, Protocol
 
 from collect.fs import atomic_write
-from collect.config import LEAGUES, ROOT, SEASONS, League
+from collect.config import LEAGUES, RUN_DIR, SEASONS, League
 
-STATUS_PATH = ROOT / "data" / "status.json"
+STATUS_PATH = RUN_DIR / "status.json"
 SOURCES = ("fd", "us", "tm")
 TAIL_SIZE = 50
 HISTORY_MINUTES = 30
@@ -310,7 +310,7 @@ def iso(ts: float | None) -> str | None:
 
 
 class StatusFlusher(threading.Thread):
-    """Writes `data/status.json` at most once per second while the process runs."""
+    """Writes `data/scraper_run/status.json` at most once per second while the process runs."""
 
     def __init__(self, status: RunStatus, interval: float = 1.0) -> None:
         super().__init__(daemon=True, name="status-flusher")

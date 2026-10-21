@@ -133,6 +133,7 @@ class Manifest:
         if status is FetchStatus.DRY_RUN:
             return
         is_new = not self.path.exists()
+        self.path.parent.mkdir(parents=True, exist_ok=True)
         # One synchronous write per row: safe between asyncio tasks, and append-atomic between processes.
         with self.path.open("a", newline="", encoding="utf-8") as fh:
             writer = csv.writer(fh)

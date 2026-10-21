@@ -11,7 +11,6 @@ wheels/
 
 # Collected data: academic use only, never redistributed (raw responses and tables derived from them)
 /data/
-/manifest.csv
 *.part
 .DS_Store
 
