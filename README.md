@@ -2,7 +2,25 @@
 
 Collects **raw** data from Football-Data.co.uk, Understat and Transfermarkt for the Premier League, La Liga,
 Serie A, Bundesliga and Ligue 1, stores every upstream response unmodified, then parses it into tables that keep
-the original values.
+the original values (`scraper/`). The analysis (`analysis/`, `notebooks/`) clusters team-seasons by playing style
+and compares injuries across clusters, seasons and leagues; see `docs/ANALYSIS_PLAN.md`.
+
+## Repository layout
+
+```
+docs/          ANALYSIS_PLAN.md, DECISIONS.md, scraper/ (scraper-spec.md, dashboard-handoff/)
+scraper/       stage 1, data collection (finished): collect/, parse/, validate.py, dashboard/, Docker files
+analysis/      stage 2, analysis code: config.py (paths, leagues), load.py, then one module per phase
+notebooks/     one thin notebook per phase: 00_audit.ipynb, 01_entities.ipynb, ...
+mappings/      hand-reviewed inputs (team map, injury label map), tracked in git
+data/          git-ignored, all generated:
+  raw/           scraper downloads (read only)
+  tables/        parsed tables (python -m parse)
+  01_entities/ … 05_injury_analysis/   output of each analysis phase
+reports/       NN_*.md per phase, figures/NN_*.png
+```
+
+Data flows one way: `raw → tables → 01 → 02 → … → reports`. Phase N writes only to `data/NN_*/`.
 
 Academic use only. Raw data and tables (`data/`, `manifest.csv`) are git-ignored and must not be redistributed.
 
@@ -18,19 +36,23 @@ uv sync                  # Python 3.13 + dependencies (transfermarkt-api pinned 
 Needs only Docker Desktop. One image (~176 MB, Python 3.13 on Alpine) holds the collectors, parsers and the built dashboard.
 
 ```sh
+cd scraper
 docker compose up --build -d                  # dashboard at http://127.0.0.1:8765
 docker compose logs -f                        # collector logs
 docker compose stop                           # stop; progress is kept, `up -d` continues
 docker compose run --rm app --headless --limit 2   # terminal-only run, any run_all.py flags
 ```
 
-- **Data:** `./data` is mounted into the container. Raw files, tables and run state stay on your machine and survive rebuilds. Local and Docker runs share them.
+- **Data:** the repository's `data/` is mounted into the container. Raw files, tables and run state stay on your machine and survive rebuilds. Local and Docker runs share them.
 - **Manifest:** in Docker the manifest is written to `data/manifest.csv` (`MANIFEST_PATH`); local runs use `./manifest.csv`.
 - **Localhost only:** the port is published to `127.0.0.1` only, because the dashboard has no login.
 
 ## Usage
 
+Scraper commands run from `scraper/`:
+
 ```sh
+cd scraper
 (cd dashboard && npm install && npm run build)   # once: build the dashboard (needs Node.js)
 uv run python run_all.py                     # dashboard at http://127.0.0.1:8765; start runs from there
 uv run python run_all.py --start             # dashboard + start a full run right away
@@ -50,7 +72,7 @@ Re-running is cheap: every stored response is reused, and only missing ones are 
 
 ## Dashboard
 
-React + Vite (TypeScript) in `dashboard/`, built from the design handoff in `ui-handoff/` (`HANDOFF.md`, `tokens.css`).
+React + Vite (TypeScript) in `dashboard/`, built from the design handoff in `docs/scraper/dashboard-handoff/` (`HANDOFF.md`, `design/`); design tokens are in `dashboard/src/styles/tokens.css`.
 `serve.py` (standard library, bound to 127.0.0.1 only) serves `dashboard/dist` plus the API:
 
 | Route | What |
@@ -79,18 +101,21 @@ node scripts/screens.mjs <outDir>
 ```
 The script covers widths 375/768/1280/1440 and all 7 Chalky states.
 
-## Layout
+## Scraper layout
 
 ```
-collect/
-  config.py          leagues, seasons, paths, expected counts
-  common.py          Selection/CLI, Collector interface, Manifest, RateLimiter, AdaptiveThrottle, RetryPolicy, FileFetcher
-  football_data.py   FootballDataCollector
-  understat.py       UnderstatCollector
-  transfermarkt.py   ResponseStore + RecordReplayTransport (httpx) + TransfermarktCollector (T1-T4)
-parse/               one TableBuilder per table; python -m parse writes data/tables/*.csv
-validate.py          validation report (one Check class per check)
-run_all.py           orchestration
+scraper/
+  collect/
+    config.py          leagues, seasons, paths, expected counts
+    common.py          Selection/CLI, Collector interface, Manifest, RateLimiter, AdaptiveThrottle, RetryPolicy, FileFetcher
+    football_data.py   FootballDataCollector
+    understat.py       UnderstatCollector
+    transfermarkt.py   ResponseStore + RecordReplayTransport (httpx) + TransfermarktCollector (T1-T4)
+  parse/               one TableBuilder per table; python -m parse writes data/tables/*.csv
+  validate.py          validation report (one Check class per check)
+  run_all.py           orchestration
+  serve.py             dashboard server
+  dashboard/           React app
 data/raw/{football_data,understat,transfermarkt}/
 data/tables/
 manifest.csv         source, url, local_path, status, http_status, bytes, fetched_at, error (network requests only)

@@ -1,7 +1,7 @@
 [project]
 name = "football-injuries"
 version = "0.1.0"
-description = "Raw data collection for Big Five leagues: playing style x injuries (2014/15-2025/26)"
+description = "Big Five leagues: playing style x injuries (2014/15-2025/26). Data collection (scraper/) and analysis (analysis/)."
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "httpx>=0.28.1",

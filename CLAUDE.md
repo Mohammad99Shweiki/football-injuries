@@ -2,20 +2,20 @@
 
 Master's data mining course project (An-Najah National University). **Solo project.** The scraping is done; next come preprocessing, clustering and analysis.
 
-Read `ANALYSIS_PLAN.md` for the step-by-step plan. `ui-handoff/scraper-spec.md` describes how the raw data was collected.
+Read `docs/ANALYSIS_PLAN.md` for the step-by-step plan. `docs/scraper/scraper-spec.md` describes how the raw data was collected.
 
 Run analysis code with the `analysis` dependency group (kept out of the Docker image):
-`uv run --group analysis python -c "from src import audit; audit.run()"`, or execute a notebook with
+`uv run --group analysis python -c "from analysis import audit; audit.run()"`, or execute a notebook with
 `cd notebooks && uv run --group analysis jupyter nbconvert --to notebook --execute --inplace 00_audit.ipynb`.
 
 ## Working style
 - Keep answers short and precise. Explain decisions briefly, without long write-ups.
-- Work phase by phase as laid out in `ANALYSIS_PLAN.md`. Stop at the end of each phase for my review.
+- Work phase by phase as laid out in `docs/ANALYSIS_PLAN.md`. Stop at the end of each phase for my review.
 - Ask before any choice that changes results. Defaults are in "Open decisions" below.
-- Log every decision in `DECISIONS.md` (date, decision, reason).
+- Log every decision in `docs/DECISIONS.md` (date, decision, reason).
 
 ## Hard rules
-- **Never modify anything in `data/raw/`.** Raw data is a course requirement. All outputs go to `data/interim/`, `data/processed/` or `reports/`.
+- **Never modify anything in `data/raw/`.** Raw data is a course requirement. Each analysis phase writes only to its own `data/NN_<phase>/` folder (`analysis.config.phase_dir`) and to `reports/`. Hand-reviewed CSVs go in `mappings/`.
 - **Clustering is the only data mining algorithm** (course constraint). Descriptive statistics, rates, confidence intervals and simple significance tests are fine for comparing groups. No classification or regression models as the main method.
 - Reproducible: fixed random seeds; every step is a script or notebook that can be re-run from the raw data.
 
@@ -30,14 +30,23 @@ Run analysis code with the `analysis` dependency group (kept out of the Docker i
 | Injury scope | Injuries keeping a player out **more than 7 days** |
 | Sources | Understat (style: PPDA, deep, xG), Football-Data.co.uk (shots, fouls, cards, corners, dates), Transfermarkt (injuries, squads, minutes, fixtures, age, position) |
 
+## Repository layout
+- `scraper/`: data collection (finished): `collect/`, `parse/`, `validate.py`, `dashboard/`, Docker files. Run its commands from `scraper/`.
+- `analysis/`: analysis package. `config.py` holds paths, leagues, seasons and `phase_dir`; `load.py` loads tables; add one module per phase.
+- `notebooks/`: one thin notebook per phase (`00_audit.ipynb`, `01_entities.ipynb`, …).
+- `mappings/`: hand-reviewed inputs (team map, injury label map), tracked in git.
+- `data/`: git-ignored, all generated: `raw/`, `tables/`, then `01_entities/` … `05_injury_analysis/`.
+- `reports/`: `NN_*.md` per phase, `figures/NN_*.png`.
+- `docs/`: `ANALYSIS_PLAN.md`, `DECISIONS.md`, `scraper/` (spec and dashboard handoff).
+
 ## Data (verified in Phase 0, 2026-10-21; details in `reports/00_data_audit.md`)
-`data/` is git-ignored. Re-create with the scraper (`docker compose up`, see README) then `python -m parse`.
+`data/` is git-ignored. Re-create with the scraper (`cd scraper && docker compose up`, see README) then `python -m parse` (from `scraper/`).
 - `data/raw/` (read only, ~17 GB, 27,197 files, all fetched OK):
   - `football_data/{1415…2526}/{E0,SP1,I1,D1,F1}.csv`: 60 CSVs (utf-8-sig).
   - `understat/{EPL,La_liga,Serie_A,Bundesliga,Ligue_1}/{2014…2025}.json`: 60 getLeagueData payloads.
   - `transfermarkt/competition/{GB1,ES1,IT1,L1,FR1}/club__season=YYYY.json` (60), `club/{id}/squad__season=YYYY.json` (1,170),
     `player/{id}/{injury,performance-game}.json` (25,696, for 12,848 players), plus `clubs__*`/`players__*` lookups.
-- `data/tables/*.csv`: parsed, every value as original text; every row has `source_file`. Load with `src.load.read_table`.
+- `data/tables/*.csv`: parsed, every value as original text; every row has `source_file`. Load with `analysis.load.read_table`.
 
 | Table | Rows | Grain / key |
 |---|---|---|
@@ -51,8 +60,7 @@ Run analysis code with the `analysis` dependency group (kept out of the Docker i
 | `tm_player_stats` | 632,170 | `player_id, season_id, competition_id, club_id`: appearances, minutes, all competitions, whole careers |
 | `tm_fixtures` | 52,275 | `club_id, game_id`: all competitions of collected club-seasons (built from squad players' games) |
 
-Season keys differ per source: FD `season_code` "1415", Understat/TM start year "2014"; canonical key `"2014-15"` (`src.load.season_key`).
-`scraper-spec.md` is at `ui-handoff/scraper-spec.md`.
+Season keys differ per source: FD `season_code` "1415", Understat/TM start year "2014"; canonical key `"2014-15"` (`analysis.load.season_key`).
 
 ## Known data caveats
 - **Serie A** shot counts on Football-Data appear to include blocked shots from 2018/19 onwards → prefer shots on target.
