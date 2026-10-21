@@ -1,6 +1,6 @@
 # Phase 5: Injury analysis
 
-Generated 2026-10-21 by `notebooks/05_injury_analysis.ipynb`, where each step is shown with its checks.
+Generated 2026-10-22 by `notebooks/05_injury_analysis.ipynb`, where each step is shown with its checks.
 
 ## Key numbers
 

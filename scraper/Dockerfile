@@ -3,10 +3,10 @@
 
 # ---- 1. Build the dashboard (Node is only needed here) ----------------------------------------------------------
 FROM node:22-alpine AS dashboard
-WORKDIR /app/scraper/dashboard
-COPY scraper/dashboard/package.json scraper/dashboard/package-lock.json ./
+WORKDIR /app/app
+COPY app/package.json app/package-lock.json ./
 RUN npm ci --no-audit --no-fund
-COPY scraper/dashboard/ ./
+COPY app/ ./
 RUN npm run build
 
 # ---- 2. Runtime: Python 3.13 + the collectors, parsers and server ------------------------------------------------
@@ -25,7 +25,7 @@ COPY README.md ./
 COPY scraper/collect/ scraper/collect/
 COPY scraper/parse/ scraper/parse/
 COPY scraper/pipeline.py scraper/serve.py scraper/run_all.py scraper/validate.py scraper/
-COPY --from=dashboard /app/scraper/dashboard/dist scraper/dashboard/dist
+COPY --from=dashboard /app/app/dist app/dist
 
 RUN adduser -D -u 1000 app && mkdir -p data && chown app:app data
 USER app

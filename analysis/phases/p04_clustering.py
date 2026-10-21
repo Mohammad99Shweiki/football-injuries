@@ -1,48 +1,30 @@
-"""Writes notebooks/04_clustering.ipynb: Phase 4 as a sequence of steps, each with notes, code and a check."""
+"""Phase 04: Clustering. Cells in the percent format; run with `python -m analysis.run 04`, notebook built by `scripts/notebooks/build_notebook.py`."""
 
-import json
-import sys
-from pathlib import Path
+# %% [markdown]
+# # Phase 4: Clustering (data mining)
+#
+# **Goal:** describe each team-season's **playing style per phase of play**, as football analysis does: how it
+# **attacks** (in possession) and how it **defends** (out of possession) (Fernandez-Navarro et al. 2016; Demir et al.).
+# Each phase is clustered with **K-means** on its four dimensions from Phase 3 (k chosen by elbow, silhouette,
+# Davies–Bouldin, Calinski–Harabasz, stability and interpretability) and compared with **hierarchical clustering
+# (Ward)**. A team-season's style is the pair, e.g. *Positional possession · High press, high line*. Formation (back
+# three) is reported per style, not clustered. Team strength and workload are shown, not clustered.
+#
+# **Steps**
+# 1. Phase dimensions
+# 2. K-means for k = 2…10 per phase: quality measures, stability (bootstrap ARI and per-cluster Jaccard), Ward
+# 3. Profiles at k = 4 per phase: centroids, typical teams, strength, workload, formation, leagues
+# 4. Names (by rule) and the combined style; saved clusters
+# 5. Soft memberships (Gaussian mixture) and consensus clustering
+# 6. Sensitivity clusterings: k = 3, and style relative to the league-season
+# 7. How the attacking and defensive styles combine
+# 8. 2-D views (PCA, for visualisation only)
+# 9. Report
+#
+# **Input:** `data/03_features/` (phase dimensions, features), `us_team_matches` (points, strength check only).
+# **Outputs:** `data/04_clusters/`, `reports/04_clustering.md`, `reports/figures/04_*.png`.
 
-ROOT = Path(sys.argv[1])
-cells = []
-
-
-def md(text: str) -> None:
-    cells.append({"cell_type": "markdown", "metadata": {}, "source": text.strip("\n").splitlines(keepends=True)})
-
-
-def code(text: str) -> None:
-    cells.append({"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [],
-                  "source": text.strip("\n").splitlines(keepends=True)})
-
-
-md('''
-# Phase 4: Clustering (data mining)
-
-**Goal:** describe each team-season's **playing style per phase of play**, as football analysis does: how it
-**attacks** (in possession) and how it **defends** (out of possession) (Fernandez-Navarro et al. 2016; Demir et al.).
-Each phase is clustered with **K-means** on its four dimensions from Phase 3 (k chosen by elbow, silhouette,
-Davies–Bouldin, Calinski–Harabasz, stability and interpretability) and compared with **hierarchical clustering
-(Ward)**. A team-season's style is the pair, e.g. *Positional possession · High press, high line*. Formation (back
-three) is reported per style, not clustered. Team strength and workload are shown, not clustered.
-
-**Steps**
-1. Phase dimensions
-2. K-means for k = 2…10 per phase: quality measures, stability (bootstrap ARI and per-cluster Jaccard), Ward
-3. Profiles at k = 4 per phase: centroids, typical teams, strength, workload, formation, leagues
-4. Names (by rule) and the combined style; saved clusters
-5. Soft memberships (Gaussian mixture) and consensus clustering
-6. Sensitivity clusterings: k = 3, and style relative to the league-season
-7. How the attacking and defensive styles combine
-8. 2-D views (PCA, for visualisation only)
-9. Report
-
-**Input:** `data/03_features/` (phase dimensions, features), `us_team_matches` (points, strength check only).
-**Outputs:** `data/04_clusters/`, `reports/04_clustering.md`, `reports/figures/04_*.png`.
-''')
-
-code('''
+# %%
 import sys
 from datetime import date
 from pathlib import Path
@@ -105,16 +87,14 @@ def save(fig, name: str) -> str:
     plt.close(fig)
     display(Image(filename=str(path)))
     return name
-''')
 
-# ---- step 1
-md('''
-## Step 1. Phase dimensions
+# %% [markdown]
+# ## Step 1. Phase dimensions
+#
+# Four attacking (possession, patience, verticality, directness) and four defensive (press, high line, territory
+# conceded, aggression) dimensions from Phase 3, each standardised.
 
-Four attacking (possession, patience, verticality, directness) and four defensive (press, high line, territory
-conceded, aggression) dimensions from Phase 3, each standardised.
-''')
-code('''
+# %%
 style_dims = pd.read_parquet(DATA_DIR / "03_features" / "style_dimensions.parquet")
 features = pd.read_parquet(DATA_DIR / "03_features" / "team_season_features.parquet")
 assert (style_dims[["season", "tm_club_id"]].to_numpy() == features[["season", "tm_club_id"]].to_numpy()).all()
@@ -122,19 +102,17 @@ DIMS = {ph: [c for c in style_dims.columns if c.startswith(f"{ph}_")] for ph in 
 X = {ph: style_dims[cols].to_numpy() for ph, cols in DIMS.items()}
 assert not any(np.isnan(x).any() for x in X.values())
 style_dims[DIMS["attack"] + DIMS["defence"]].describe().round(2).T
-''')
 
-# ---- step 2
-md('''
-## Step 2. Choosing k per phase
+# %% [markdown]
+# ## Step 2. Choosing k per phase
+#
+# For each phase and k: K-means with 50 starts (fixed seed), inertia (elbow), silhouette (higher better),
+# Davies–Bouldin (lower better), Calinski–Harabasz (higher better); **stability** by refitting on 50 bootstrap samples:
+# overall adjusted Rand index (ARI) and the **per-cluster Jaccard** (Hennig 2007: < 0.5 dissolves, ≥ 0.6 a pattern,
+# ≥ 0.75 stable); and agreement with **Ward** (ARI). A k is usable when every cluster reaches Jaccard 0.6 and none is
+# under 3% of team-seasons.
 
-For each phase and k: K-means with 50 starts (fixed seed), inertia (elbow), silhouette (higher better),
-Davies–Bouldin (lower better), Calinski–Harabasz (higher better); **stability** by refitting on 50 bootstrap samples:
-overall adjusted Rand index (ARI) and the **per-cluster Jaccard** (Hennig 2007: < 0.5 dissolves, ≥ 0.6 a pattern,
-≥ 0.75 stable); and agreement with **Ward** (ARI). A k is usable when every cluster reaches Jaccard 0.6 and none is
-under 3% of team-seasons.
-''')
-code('''
+# %%
 rng = np.random.default_rng(SEED)
 boot_idx = [rng.integers(0, len(style_dims), len(style_dims)) for _ in range(N_BOOT)]
 kmeans, summary_rows, jaccard = {}, [], {}
@@ -170,8 +148,8 @@ summary["usable"] = (summary["min cluster Jaccard"] >= MIN_JACCARD) & (summary["
 for ph in PHASES:
     assert summary.query("phase == @ph and k == @MAIN_K[@ph]").usable.all(), f"k = {MAIN_K[ph]} not usable for {ph}"
 summary.round(3)
-''')
-code('''
+
+# %%
 fig, axes = plt.subplots(2, 5, figsize=(19, 6.4), sharex=True)
 measures = [("inertia", "Inertia (elbow)"), ("silhouette", "Silhouette ↑"), ("davies_bouldin", "Davies–Bouldin ↓"),
             ("calinski_harabasz", "Calinski–Harabasz ↑"), ("min cluster Jaccard", "Weakest cluster (Jaccard) ↑")]
@@ -197,16 +175,14 @@ for ax, ph in zip(axes, PHASES):
     ax.grid(axis="x", visible=False)
 fig.tight_layout()
 dendro_fig = save(fig, "04_dendrograms.png")
-''')
 
-# ---- step 3
-md('''
-## Step 3. Profiles at k = 4 per phase
+# %% [markdown]
+# ## Step 3. Profiles at k = 4 per phase
+#
+# For each phase: centroids, per-cluster stability, the team-seasons closest to each centroid, team strength (points
+# and npxG per match), workload, the share of minutes in a back three and the league mix.
 
-For each phase: centroids, per-cluster stability, the team-seasons closest to each centroid, team strength (points
-and npxG per match), workload, the share of minutes in a back three and the league mix.
-''')
-code('''
+# %%
 um = read_table("us_team_matches")
 points = (um.assign(league=um.league.map(league_from_understat), season=um.season.astype(int), pts=um.pts.astype(float))
           .groupby(["league", "season", "team_id"]).pts.mean().rename("points_pm").reset_index().rename(columns={"team_id": "us_team_id"}))
@@ -243,31 +219,29 @@ for ph in PHASES:
         "eta2_points": eta_squared(df.points_pm, df.cluster),
     }
 for ph, p in profiles.items():
-    print(f"\\n==================== {ph}, k = {MAIN_K[ph]} (points eta² = {p['eta2_points']:.2f}) ====================")
+    print(f"\n==================== {ph}, k = {MAIN_K[ph]} (points eta² = {p['eta2_points']:.2f}) ====================")
     display(p["centroid"].round(2))
     display(pd.concat([p["context"], p["examples"].rename("closest to centroid")], axis=1))
     display(p["leagues"])
-''')
 
-# ---- step 4
-md('''
-## Step 4. Names and the combined style
+# %% [markdown]
+# ## Step 4. Names and the combined style
+#
+# Names come from football analysis vocabulary and are given **by rule** (applied in order, each picking among the
+# clusters not yet named), so they stay with the right cluster if K-means numbers them differently.
+#
+# | Phase | Name | Rule | Meaning |
+# |---|---|---|---|
+# | attack | Positional possession | highest possession | dominates the ball, patient build-up |
+# | attack | Counter-attack | highest verticality | little of the ball, fast vertical attacks |
+# | attack | Direct play | highest directness | long-range shots and set plays, low possession |
+# | attack | Build-up into the box | the rest | moderate possession, works the ball into the box |
+# | defence | High press, high line | highest high line | presses high, line exposed to counters |
+# | defence | Low block | most territory conceded | sits deep, lets the opponent near the box |
+# | defence | Aggressive duel press | highest aggression | presses through fouls and duels |
+# | defence | Compact mid-block | the rest | medium press, low line, concedes little |
 
-Names come from football analysis vocabulary and are given **by rule** (applied in order, each picking among the
-clusters not yet named), so they stay with the right cluster if K-means numbers them differently.
-
-| Phase | Name | Rule | Meaning |
-|---|---|---|---|
-| attack | Positional possession | highest possession | dominates the ball, patient build-up |
-| attack | Counter-attack | highest verticality | little of the ball, fast vertical attacks |
-| attack | Direct play | highest directness | long-range shots and set plays, low possession |
-| attack | Build-up into the box | the rest | moderate possession, works the ball into the box |
-| defence | High press, high line | highest high line | presses high, line exposed to counters |
-| defence | Low block | most territory conceded | sits deep, lets the opponent near the box |
-| defence | Aggressive duel press | highest aggression | presses through fouls and duels |
-| defence | Compact mid-block | the rest | medium press, low line, concedes little |
-''')
-code('''
+# %%
 NAMING = {
     "attack": [("Positional possession", "possession", "max"), ("Counter-attack", "verticality", "max"),
                ("Direct play", "directness", "max"), ("Build-up into the box", None, None)],
@@ -306,29 +280,27 @@ for ph in PHASES:
     display(pd.Series(NAMES[ph], name=f"{ph} style").to_frame())
 print(f"saved {len(out)} team-seasons; {(~out.rare_style).sum()} in {counts[counts >= RARE_COMBINATION].size} combined styles "
       f"with ≥ {RARE_COMBINATION} team-seasons, {out.rare_style.sum()} in rare ones")
-''')
 
-# ---- step 5 (soft memberships and consensus)
-md('''
-## Step 5. Soft memberships (Gaussian mixture) and consensus clustering
+# %% [markdown]
+# ## Step 5. Soft memberships (Gaussian mixture) and consensus clustering
+#
+# K-means gives every team-season one style, but many sit between two. Two further clustering methods, both still
+# clustering, check and refine that:
+# - **Gaussian mixture model (GMM)** per phase, k = 2…10 (full covariance, 10 starts, fixed seed): its BIC is a
+#   model-based second opinion on k, and at k = 4 it gives each team-season a **membership probability** for every
+#   style. Its groups only partly match K-means, so it serves as a robustness check, not as the membership measure.
+# - **Fuzzy membership** (fuzzy c-means memberships from the K-means centroids, fuzziness m = 2; Bezdek 1981): each
+#   team-season's degree of belonging (0–1, summing to 1) to every style, consistent with the K-means clusters. A
+#   team-season with membership ≥ 0.5 in its own style is a **clear member** (used in Phase 5); its second style and
+#   membership show what it borders on.
+# - **Consensus clustering**: 50 bootstrap K-means fits, 50 bootstrap GMM fits and Ward are combined into how often each
+#   pair of team-seasons ends up together (co-association), and that matrix is clustered (average linkage, k = 4).
+#
+# K-means stays the main assignment. Ward and GMM are the **independent** checks (different methods); the consensus is
+# built half from bootstrap K-means, so its high agreement with K-means is expected: it is a **stability summary**, not
+# an independent validation.
 
-K-means gives every team-season one style, but many sit between two. Two further clustering methods, both still
-clustering, check and refine that:
-- **Gaussian mixture model (GMM)** per phase, k = 2…10 (full covariance, 10 starts, fixed seed): its BIC is a
-  model-based second opinion on k, and at k = 4 it gives each team-season a **membership probability** for every
-  style. Its groups only partly match K-means, so it serves as a robustness check, not as the membership measure.
-- **Fuzzy membership** (fuzzy c-means memberships from the K-means centroids, fuzziness m = 2; Bezdek 1981): each
-  team-season's degree of belonging (0–1, summing to 1) to every style, consistent with the K-means clusters. A
-  team-season with membership ≥ 0.5 in its own style is a **clear member** (used in Phase 5); its second style and
-  membership show what it borders on.
-- **Consensus clustering**: 50 bootstrap K-means fits, 50 bootstrap GMM fits and Ward are combined into how often each
-  pair of team-seasons ends up together (co-association), and that matrix is clustered (average linkage, k = 4).
-
-K-means stays the main assignment. Ward and GMM are the **independent** checks (different methods); the consensus is
-built half from bootstrap K-means, so its high agreement with K-means is expected: it is a **stability summary**, not
-an independent validation.
-''')
-code('''
+# %%
 def align(reference: np.ndarray, labels: np.ndarray, k: int) -> np.ndarray:
     """Relabel `labels` (0..k-1) to the K-means cluster (0..k-1) they overlap most, one-to-one."""
     both = np.zeros((k, k))
@@ -395,8 +367,8 @@ out.to_parquet(OUT_DIR / "team_season_clusters.parquet", index=False)
 gmm_summary.to_csv(OUT_DIR / "gmm_selection.csv", index=False)
 display(gmm_summary.pivot(index="k", columns="phase", values=["BIC", "GMM vs K-means (ARI)"]).round(3))
 agreement.round(3).T
-''')
-code('''
+
+# %%
 # Fuzzy membership of each team-season's own style, per style (how clear each cluster is), with GMM for comparison.
 agreement["clear members (fuzzy ≥ 0.5)"] = [(out[f"{ph}_membership"] >= 0.5).mean() for ph in agreement.index]
 clarity = pd.concat({ph: pd.DataFrame({
@@ -407,20 +379,18 @@ clarity = pd.concat({ph: pd.DataFrame({
 }).loc[ORDER[ph]] for ph in PHASES})
 display(agreement.round(3).T)
 clarity.round(2)
-''')
 
-# ---- step 6 (sensitivity clusterings)
-md('''
-## Step 6. Sensitivity clusterings
+# %% [markdown]
+# ## Step 6. Sensitivity clusterings
+#
+# Two alternative clusterings, used in Phase 5 only to check that the injury results do not depend on these choices:
+# - **k = 3** per phase (the attacking k = 4 is borderline: weakest-cluster Jaccard 0.64, and silhouette favours fewer
+#   clusters). Each k = 3 cluster is labelled by the k = 4 style most of its team-seasons have.
+# - **Relative style:** K-means k = 4 on the league-season-centred dimensions (Phase 3): how a team played compared
+#   with its league that season, so the drift of the whole Big Five does not define the clusters. Named by the same
+#   rules as the main clustering.
 
-Two alternative clusterings, used in Phase 5 only to check that the injury results do not depend on these choices:
-- **k = 3** per phase (the attacking k = 4 is borderline: weakest-cluster Jaccard 0.64, and silhouette favours fewer
-  clusters). Each k = 3 cluster is labelled by the k = 4 style most of its team-seasons have.
-- **Relative style:** K-means k = 4 on the league-season-centred dimensions (Phase 3): how a team played compared
-  with its league that season, so the drift of the whole Big Five does not define the clusters. Named by the same
-  rules as the main clustering.
-''')
-code('''
+# %%
 rel_dims = pd.read_parquet(DATA_DIR / "03_features" / "style_dimensions_relative.parquet")
 assert (rel_dims.tm_club_id.to_numpy() == out.tm_club_id.to_numpy()).all() and (rel_dims.season.to_numpy() == out.season.to_numpy()).all()
 sens_rows = []
@@ -444,16 +414,14 @@ for ph in PHASES:
     display(pd.crosstab(out[f"{ph}_style"], out[f"{ph}_k3_style"]).loc[ORDER[ph]])
     display(pd.crosstab(out[f"{ph}_style"], out[f"{ph}_rel_style"]).loc[ORDER[ph], ORDER[ph]])
 sensitivity_clusters.round(3)
-''')
 
-# ---- step 5
-md('''
-## Step 7. How the attacking and defensive styles combine
+# %% [markdown]
+# ## Step 7. How the attacking and defensive styles combine
+#
+# Team-seasons, points per match and back-three minutes per combination. Typical teams are the ones closest to the
+# combination's centre in both phases.
 
-Team-seasons, points per match and back-three minutes per combination. Typical teams are the ones closest to the
-combination's centre in both phases.
-''')
-code('''
+# %%
 combo = pd.crosstab(out.attack_style, out.defence_style).loc[ORDER["attack"], ORDER["defence"]]
 both = np.hstack([X["attack"], X["defence"]])
 combo_rows = []
@@ -467,8 +435,8 @@ for style, g in out.groupby("style"):
 combos = pd.DataFrame(combo_rows).sort_values("team-seasons", ascending=False).set_index("style")
 display(combo)
 combos
-''')
-code('''
+
+# %%
 # Figure: centroid heatmaps per phase (rows named), side by side.
 fig, axes = plt.subplots(1, 2, figsize=(15, 3.6))
 for ax, ph in zip(axes, PHASES):
@@ -482,16 +450,14 @@ for ax, ph in zip(axes, PHASES):
     ax.set_title(f"{ph.title()} styles: centroids (z)", loc="left")
 fig.tight_layout()
 heat_fig = save(fig, "04_centroids.png")
-''')
 
-# ---- step 6
-md('''
-## Step 8. 2-D views
+# %% [markdown]
+# ## Step 8. 2-D views
+#
+# PCA of each phase's four dimensions, **only to draw** the clusters. Marker shapes and labels carry identity
+# alongside colour.
 
-PCA of each phase's four dimensions, **only to draw** the clusters. Marker shapes and labels carry identity
-alongside colour.
-''')
-code('''
+# %%
 fig, axes = plt.subplots(1, 2, figsize=(16, 6.5))
 for ax, ph in zip(axes, PHASES):
     pca = PCA(n_components=2, random_state=SEED).fit(X[ph])
@@ -511,13 +477,11 @@ for ax, ph in zip(axes, PHASES):
     ax.legend(frameon=False, fontsize=8, markerscale=1.5, loc="best")
 fig.tight_layout()
 pca_fig = save(fig, "04_pca.png")
-''')
 
-# ---- step 7
-md('''
-## Step 9. Report
-''')
-code('''
+# %% [markdown]
+# ## Step 9. Report
+
+# %%
 cols = ["phase", "k", "silhouette", "davies_bouldin", "calinski_harabasz", "stability (mean ARI)", "min cluster Jaccard",
         "Ward vs K-means (ARI)", "smallest cluster", "usable"]
 text = [
@@ -563,15 +527,7 @@ text += ["## 5. Sensitivity clusterings (used in Phase 5 checks)", "",
            md_table(pd.crosstab(out[f"{ph}_style"], out[f"{ph}_k3_style"]).loc[ORDER[ph]].rename_axis(f"{ph} style")), "",
            f"{ph.capitalize()}: main style (rows) vs relative style:", "",
            md_table(pd.crosstab(out[f"{ph}_style"], out[f"{ph}_rel_style"]).loc[ORDER[ph], ORDER[ph]].rename_axis(f"{ph} style")), "")]]
-text += ["## 6. Combined styles", "", md_table(combo.rename_axis("attack \\\\ defence")), "",
+text += ["## 6. Combined styles", "", md_table(combo.rename_axis("attack \\ defence")), "",
          md_table(combos.rename_axis("style")), "", f"![Centroids](figures/{heat_fig})", "", f"![PCA](figures/{pca_fig})", ""]
-(REPORTS_DIR / "04_clustering.md").write_text("\\n".join(text), encoding="utf-8")
+(REPORTS_DIR / "04_clustering.md").write_text("\n".join(text), encoding="utf-8")
 print("wrote", REPORTS_DIR / "04_clustering.md")
-''')
-
-for i, cell in enumerate(cells):
-    cell["id"] = f"clustering-{i:02d}"
-meta = json.loads((ROOT / "notebooks/01_entities.ipynb").read_text())["metadata"]
-nb = {"cells": cells, "metadata": meta, "nbformat": 4, "nbformat_minor": 5}
-(ROOT / "notebooks/04_clustering.ipynb").write_text(json.dumps(nb, indent=1, ensure_ascii=False) + "\n")
-print(len(cells), "cells")

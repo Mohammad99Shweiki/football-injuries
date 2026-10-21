@@ -1,6 +1,6 @@
 # Phase 1: Entity resolution
 
-Generated 2026-10-21 by `notebooks/01_entities.ipynb`, where each step is shown with its checks.
+Generated 2026-10-22 by `notebooks/01_entities.ipynb`, where each step is shown with its checks.
 
 ## Key findings
 

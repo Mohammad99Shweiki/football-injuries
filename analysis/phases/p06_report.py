@@ -1,36 +1,19 @@
-"""Writes notebooks/06_report.ipynb: checks that reports/summary.md agrees with the data and that its figures exist."""
+"""Phase 06: Report. Cells in the percent format; run with `python -m analysis.run 06`, notebook built by `scripts/notebooks/build_notebook.py`."""
 
-import json
-import sys
-from pathlib import Path
+# %% [markdown]
+# # Phase 6: Report material
+#
+# `reports/summary.md` is the text for the course report. This notebook keeps it honest: it recomputes the headline
+# numbers from the phase outputs and checks them against the values written in the summary, and it checks that every
+# figure the summary cites exists.
+#
+# **Steps**
+# 1. Headline numbers recomputed from the data
+# 2. Comparison with the summary
+# 3. Figures cited by the summary
+# 4. Data for the results dashboard
 
-ROOT = Path(sys.argv[1])
-cells = []
-
-
-def md(text: str) -> None:
-    cells.append({"cell_type": "markdown", "metadata": {}, "source": text.strip("\n").splitlines(keepends=True)})
-
-
-def code(text: str) -> None:
-    cells.append({"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [],
-                  "source": text.strip("\n").splitlines(keepends=True)})
-
-
-md('''
-# Phase 6: Report material
-
-`reports/summary.md` is the text for the course report. This notebook keeps it honest: it recomputes the headline
-numbers from the phase outputs and checks them against the values written in the summary, and it checks that every
-figure the summary cites exists.
-
-**Steps**
-1. Headline numbers recomputed from the data
-2. Comparison with the summary
-3. Figures cited by the summary
-4. Data for the results dashboard
-''')
-code('''
+# %%
 import re
 import sys
 from pathlib import Path
@@ -42,16 +25,15 @@ sys.path.insert(0, str(Path.cwd().parent))  # project root, for the analysis pac
 from analysis.config import DATA_DIR, REPORTS_DIR
 
 SUMMARY = (REPORTS_DIR / "summary.md").read_text(encoding="utf-8")
-''')
 
-md('''
-## Step 1. Headline numbers recomputed from the data
+# %% [markdown]
+# ## Step 1. Headline numbers recomputed from the data
+#
+# Counts, style shares per era, raw rates by style, the rate ratios against league × season and their stricter
+# versions (+ team strength, per team match), the decomposition and the body-area findings (point estimates; the CIs
+# are in the Phase 5 notebook).
 
-Counts, style shares per era, raw rates by style, the rate ratios against league × season and their stricter
-versions (+ team strength, per team match), the decomposition and the body-area findings (point estimates; the CIs
-are in the Phase 5 notebook).
-''')
-code('''
+# %%
 ps = pd.read_parquet(DATA_DIR / "05_injury_analysis" / "player_seasons.parquet")
 clusters = pd.read_parquet(DATA_DIR / "04_clusters" / "team_season_clusters.parquet")
 features = pd.read_parquet(DATA_DIR / "03_features" / "team_season_features.parquet")
@@ -95,14 +77,13 @@ numbers |= {
                                               .set_index("style").loc["Positional possession", "ratio, + team strength"], 2),
 }
 pd.Series(numbers, name="value").to_frame()
-''')
 
-md('''
-## Step 2. Comparison with the summary
+# %% [markdown]
+# ## Step 2. Comparison with the summary
+#
+# Each number must appear in `summary.md` exactly as recomputed (as written there).
 
-Each number must appear in `summary.md` exactly as recomputed (as written there).
-''')
-code('''
+# %%
 EXPECTED_TEXT = {
     "team-seasons": "1,170 team-seasons", "player-club-seasons": "36,525", "injuries > 7 days": "24,581",
     "positional possession share 2014–18 (%)": "from {}% to", "positional possession share 2022–26 (%)": "to {}% of team-seasons",
@@ -125,28 +106,25 @@ for key, pattern in EXPECTED_TEXT.items():
 check = pd.DataFrame(rows).set_index("number")
 assert check["in summary"].all(), check[~check["in summary"]]
 check
-''')
 
-md('''
-## Step 3. Figures cited by the summary
-4. Data for the results dashboard
-''')
-code('''
-cited = sorted(set(re.findall(r"figures/([\\w.-]+\\.png)", SUMMARY)))
+# %% [markdown]
+# ## Step 3. Figures cited by the summary
+
+# %%
+cited = sorted(set(re.findall(r"figures/([\w.-]+\.png)", SUMMARY)))
 missing = [f for f in cited if not (REPORTS_DIR / "figures" / f).exists()]
 assert not missing, missing
 print(f"{len(cited)} figures cited, all present:", ", ".join(cited))
-''')
 
-md('''
-## Step 4. Data for the results dashboard
+# %% [markdown]
+# ## Step 4. Data for the results dashboard
+#
+# The interactive dashboard (an Artifact) shows only numbers from these files, built here from the phase outputs:
+# style profiles and the cluster map (PCA of each phase's dimensions, for drawing only), style shares and dimension
+# means per season, injury rate ratios, the attack × defence grid, body areas, the season trend, the decomposition and
+# the league stories. Written to `data/06_report/dashboard/` as JSON row lists.
 
-The interactive dashboard (an Artifact) shows only numbers from these files, built here from the phase outputs:
-style profiles and the cluster map (PCA of each phase's dimensions, for drawing only), style shares and dimension
-means per season, injury rate ratios, the attack × defence grid, body areas, the season trend, the decomposition and
-the league stories. Written to `data/06_report/dashboard/` as JSON row lists.
-''')
-code('''
+# %%
 import json
 from sklearn.decomposition import PCA
 from analysis.config import phase_dir
@@ -268,11 +246,3 @@ for name, rows in files.items():
     (OUT / f"{name}.json").write_text(json.dumps(rows, ensure_ascii=False), encoding="utf-8")
 pd.Series({n: len(v) for n, v in files.items()}, name="rows").to_frame().assign(
     kb=[round((OUT / f"{n}.json").stat().st_size / 1024, 1) for n in files])
-''')
-
-for i, cell in enumerate(cells):
-    cell["id"] = f"report-{i:02d}"
-meta = json.loads((ROOT / "notebooks/01_entities.ipynb").read_text())["metadata"]
-nb = {"cells": cells, "metadata": meta, "nbformat": 4, "nbformat_minor": 5}
-(ROOT / "notebooks/06_report.ipynb").write_text(json.dumps(nb, indent=1, ensure_ascii=False) + "\n")
-print(len(cells), "cells")

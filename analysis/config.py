@@ -12,8 +12,47 @@ MAPPINGS_DIR = ROOT / "mappings"  # hand-reviewed inputs, tracked in git
 REPORTS_DIR = ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
 
+SEED = 42  # every random step (bootstraps, K-means, GMM, PCA, permutations) is seeded from this
+
+
+@dataclass(frozen=True)
+class Phase:
+    """One analysis phase: its id, output folder (data/<folder>/), title and script/notebook name."""
+
+    id: str
+    folder: str
+    title: str
+    name: str
+
+    @property
+    def script(self) -> Path:
+        return ROOT / "analysis" / "phases" / f"p{self.name}.py"
+
+    @property
+    def notebook(self) -> Path:
+        return ROOT / "notebooks" / f"{self.name}.ipynb"
+
+
+PIPELINE: tuple[Phase, ...] = (
+    Phase("00", "00_audit", "Data audit", "00_audit"),
+    Phase("01", "01_entities", "Entity resolution", "01_entities"),
+    Phase("02", "02_injuries", "Injury cleaning", "02_injuries"),
+    Phase("03", "03_features", "Team-season features", "03_features"),
+    Phase("04", "04_clusters", "Clustering", "04_clustering"),
+    Phase("05", "05_injury_analysis", "Injury analysis", "05_injury_analysis"),
+    Phase("06", "06_report", "Report", "06_report"),
+)
+
 # One output folder per phase: data/<phase>/. A phase writes only to its own folder and reads earlier ones.
-PHASES = ("01_entities", "02_injuries", "03_features", "04_clusters", "05_injury_analysis", "06_report")
+PHASES = tuple(p.folder for p in PIPELINE)
+
+
+def get_phase(key: str) -> Phase:
+    """Phase by id ("05"), folder ("05_injury_analysis") or name ("04_clustering")."""
+    for p in PIPELINE:
+        if key in (p.id, p.folder, p.name):
+            return p
+    raise ValueError(f"Unknown phase: {key}. Known: {', '.join(p.id for p in PIPELINE)}")
 
 
 def phase_dir(phase: str) -> Path:

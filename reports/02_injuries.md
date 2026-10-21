@@ -1,6 +1,6 @@
 # Phase 2: Injury cleaning and body-area mapping
 
-Generated 2026-10-21 by `notebooks/02_injuries.ipynb`, where each step is shown with its checks.
+Generated 2026-10-22 by `notebooks/02_injuries.ipynb`, where each step is shown with its checks.
 
 ## Key findings
 

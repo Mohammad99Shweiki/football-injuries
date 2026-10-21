@@ -1,6 +1,6 @@
 # Phase 0: Data audit
 
-Generated 2026-10-21 by `notebooks/00_audit.ipynb` (`analysis/audit.py`). Raw data is read only.
+Generated 2026-10-22 by `notebooks/00_audit.ipynb` (`analysis/audit.py`). Raw data is read only.
 
 ## Key findings
 
@@ -24,7 +24,7 @@ Generated 2026-10-21 by `notebooks/00_audit.ipynb` (`analysis/audit.py`). Raw da
 | transfermarkt | competitions__* | 2 | 0.1 | .json 2 |
 | transfermarkt | player | 25696 | 17113.9 | .json 25696 |
 | transfermarkt | players__* | 145 | 37.7 | .json 145 |
-| understat | (all) | 60 | 30.8 | .json 60 |
+| understat | (all) | 1230 | 63.3 | .json 1230 |
 
 ## 2. Parsed tables (`data/tables/`)
 

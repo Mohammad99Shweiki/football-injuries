@@ -1,67 +1,49 @@
-"""Writes notebooks/03_features.ipynb: Phase 3 as a sequence of steps, each with notes, code and a check."""
+"""Phase 03: Team-season features. Cells in the percent format; run with `python -m analysis.run 03`, notebook built by `scripts/notebooks/build_notebook.py`."""
 
-import json
-import sys
-from pathlib import Path
+# %% [markdown]
+# # Phase 3: Team-season features (transformation + reduction)
+#
+# **Goal:** one row per team-season (1,170) describing **playing style**, plus the team's **workload** and team
+# strength measures kept alongside. Every feature is a per-match rate, a share or a season total, so leagues of 18 and
+# 20 clubs and the shortened Ligue 1 2019-20 are comparable.
+#
+# Each feature has a **role**:
+# - **style**: clustered in Phase 4 (how a team plays);
+# - **outcome**: npxG and npxGA, kept to check how far clusters follow team strength, not clustered (open decision 5);
+# - **exposure**: workload and rotation, not clustered; used in Phase 5 as the load players are exposed to.
+#
+# | Group | Features | Role | Source |
+# |---|---|---|---|
+# | Pressing | PPDA (Σ passes allowed / Σ defensive actions), opponent PPDA | style | Understat league data |
+# | Ball progression | deep completions for and against (per match) | style | Understat league data |
+# | Attack type and shape | fast-attack share, slow-attack share, conceded fast-attack share, set-piece share, outside-box shot share, back-three minutes share | style | Understat team statistics |
+# | Physical intensity | fouls committed and suffered, cards (yellow + 2 × red), corners for and against (per match) | style | Football-Data |
+# | Chance quality | npxG and npxGA per match | outcome | Understat league data |
+# | Workload | matches in all competitions, European matches, mean rest days, share of matches on < 4 days' rest, rest-day SD (gaps > 21 days left out) | exposure | TM fixtures |
+# | Rotation | share of the club's minutes played by its top 14 players | exposure | TM minutes (Phase 2) |
+#
+# Shooting (shots on target) is computed for the record but **not used**: it reflects team strength more than style,
+# and Football-Data's Serie A values are inflated in 2018-19 to 2020-21 (see `DECISIONS.md`).
+#
+# **Steps**
+# 1. Team-season keys
+# 2. Understat league data: pressing, ball progression, chance quality
+# 3. Understat team statistics: attack type and shape
+# 4. Football-Data: physical intensity (and shots on target, not used)
+# 5. TM fixtures: workload
+# 6. TM minutes: rotation
+# 7. One table, checked complete
+# 8. How features differ by season and league
+# 9. Correlations and redundant features
+# 10. Standardise and save, with roles
+# 11. Phase-of-play dimensions: how a team attacks and how it defends
+# 12. Report
+#
+# **Inputs:** `data/tables/` (`us_team_matches`, `us_team_stats`, `fd_matches`, `tm_fixtures`),
+# `data/01_entities/team_seasons.csv`, `data/02_injuries/player_club_seasons.parquet`.
+# **Outputs:** `data/03_features/`, `reports/03_features.md`.
 
-ROOT = Path(sys.argv[1])
-cells = []
-
-
-def md(text: str) -> None:
-    cells.append({"cell_type": "markdown", "metadata": {}, "source": text.strip("\n").splitlines(keepends=True)})
-
-
-def code(text: str) -> None:
-    cells.append({"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [],
-                  "source": text.strip("\n").splitlines(keepends=True)})
-
-
-md('''
-# Phase 3: Team-season features (transformation + reduction)
-
-**Goal:** one row per team-season (1,170) describing **playing style**, plus the team's **workload** and team
-strength measures kept alongside. Every feature is a per-match rate, a share or a season total, so leagues of 18 and
-20 clubs and the shortened Ligue 1 2019-20 are comparable.
-
-Each feature has a **role**:
-- **style**: clustered in Phase 4 (how a team plays);
-- **outcome**: npxG and npxGA, kept to check how far clusters follow team strength, not clustered (open decision 5);
-- **exposure**: workload and rotation, not clustered; used in Phase 5 as the load players are exposed to.
-
-| Group | Features | Role | Source |
-|---|---|---|---|
-| Pressing | PPDA (Σ passes allowed / Σ defensive actions), opponent PPDA | style | Understat league data |
-| Ball progression | deep completions for and against (per match) | style | Understat league data |
-| Attack type and shape | fast-attack share, slow-attack share, conceded fast-attack share, set-piece share, outside-box shot share, back-three minutes share | style | Understat team statistics |
-| Physical intensity | fouls committed and suffered, cards (yellow + 2 × red), corners for and against (per match) | style | Football-Data |
-| Chance quality | npxG and npxGA per match | outcome | Understat league data |
-| Workload | matches in all competitions, European matches, mean rest days, share of matches on < 4 days' rest, rest-day SD (gaps > 21 days left out) | exposure | TM fixtures |
-| Rotation | share of the club's minutes played by its top 14 players | exposure | TM minutes (Phase 2) |
-
-Shooting (shots on target) is computed for the record but **not used**: it reflects team strength more than style,
-and Football-Data's Serie A values are inflated in 2018-19 to 2020-21 (see `DECISIONS.md`).
-
-**Steps**
-1. Team-season keys
-2. Understat league data: pressing, ball progression, chance quality
-3. Understat team statistics: attack type and shape
-4. Football-Data: physical intensity (and shots on target, not used)
-5. TM fixtures: workload
-6. TM minutes: rotation
-7. One table, checked complete
-8. How features differ by season and league
-9. Correlations and redundant features
-10. Standardise and save, with roles
-11. Phase-of-play dimensions: how a team attacks and how it defends
-12. Report
-
-**Inputs:** `data/tables/` (`us_team_matches`, `us_team_stats`, `fd_matches`, `tm_fixtures`),
-`data/01_entities/team_seasons.csv`, `data/02_injuries/player_club_seasons.parquet`.
-**Outputs:** `data/03_features/`, `reports/03_features.md`.
-''')
-
-code('''
+# %%
 import sys
 from datetime import date
 from pathlib import Path
@@ -90,29 +72,25 @@ LOG = []  # one row per preprocessing operation, for docs/PREPROCESSING_LOG.md
 def log(step: str, operation: str, rows_in: int, rows_out: int) -> None:
     LOG.append({"step": step, "operation": operation, "rows in": rows_in, "rows out": rows_out})
     print(f"[{step}] {operation}: {rows_in:,} → {rows_out:,}")
-''')
 
-# ---- step 1
-md('''
-## Step 1. Team-season keys
+# %% [markdown]
+# ## Step 1. Team-season keys
+#
+# The 1,170 team-seasons from Phase 1, with each source's identity. Every feature table is joined to these keys.
 
-The 1,170 team-seasons from Phase 1, with each source's identity. Every feature table is joined to these keys.
-''')
-code('''
+# %%
 keys = pd.read_csv(DATA_DIR / "01_entities" / "team_seasons.csv", dtype={"tm_club_id": str, "us_team_id": str})
 assert len(keys) == 1170 and not keys.duplicated(["league", "season", "tm_club_id"]).any()
 keys.head(3)
-''')
 
-# ---- step 2
-md('''
-## Step 2. Understat league data: pressing, ball progression, chance quality
+# %% [markdown]
+# ## Step 2. Understat league data: pressing, ball progression, chance quality
+#
+# Season PPDA is **Σ passes allowed / Σ defensive actions** over the team's league matches, not the mean of match
+# PPDAs (a low-pass match would otherwise weigh as much as a busy one). Lower PPDA = more intense pressing. *Opponent
+# PPDA* is the same for the opponents: low means the team is pressed hard, typical of teams that keep the ball.
 
-Season PPDA is **Σ passes allowed / Σ defensive actions** over the team's league matches, not the mean of match
-PPDAs (a low-pass match would otherwise weigh as much as a busy one). Lower PPDA = more intense pressing. *Opponent
-PPDA* is the same for the opponents: low means the team is pressed hard, typical of teams that keep the ball.
-''')
-code('''
+# %%
 um = read_table("us_team_matches")
 num = ["ppda.att", "ppda.def", "ppda_allowed.att", "ppda_allowed.def", "deep", "deep_allowed", "npxG", "npxGA"]
 um[num] = um[num].astype(float)
@@ -129,26 +107,24 @@ understat = pd.DataFrame({
     "npxga_pm": g.npxGA.mean(),
 }).reset_index().rename(columns={"team_id": "us_team_id"})
 log("3.2", "Understat team-matches aggregated to team-seasons", len(um), len(understat))
-''')
-code('''
+
+# %%
 # Check: one row per Understat team-season, plausible ranges.
 understat.describe().round(2).T
-''')
 
-# ---- step 3 (Understat team statistics)
-md('''
-## Step 3. Understat team statistics: attack type and shape
+# %% [markdown]
+# ## Step 3. Understat team statistics: attack type and shape
+#
+# From `us_team_stats` (Understat team pages, league matches, collected 2026-10-21). Shares, so they don't depend on
+# how many shots a team takes:
+# - **fast-attack share**: shots from fast attacks / all shots (counter-attacking);
+# - **slow-attack share**: shots from slow, patient attacks / all shots (possession build-up);
+# - **conceded fast-attack share**: the same for shots conceded (a high line exposed to counters);
+# - **set-piece share**: shots from corners, set pieces and direct free kicks / all shots (penalties excluded);
+# - **outside-box shot share**: shots from outside the box / all shots;
+# - **back-three share**: minutes in formations starting with a back three / all minutes.
 
-From `us_team_stats` (Understat team pages, league matches, collected 2026-10-21). Shares, so they don't depend on
-how many shots a team takes:
-- **fast-attack share**: shots from fast attacks / all shots (counter-attacking);
-- **slow-attack share**: shots from slow, patient attacks / all shots (possession build-up);
-- **conceded fast-attack share**: the same for shots conceded (a high line exposed to counters);
-- **set-piece share**: shots from corners, set pieces and direct free kicks / all shots (penalties excluded);
-- **outside-box shot share**: shots from outside the box / all shots;
-- **back-three share**: minutes in formations starting with a back three / all minutes.
-''')
-code('''
+# %%
 ts = read_table("us_team_stats")
 for c in ["shots", "against.shots", "time"]:
     ts[c] = pd.to_numeric(ts[c], errors="coerce")
@@ -175,24 +151,22 @@ team_stats = pd.DataFrame({
 }).reset_index().rename(columns={"team_id": "us_team_id"})
 log("3.3", "Understat team statistics to style shares per team-season", len(ts), len(team_stats))
 print("back-three formations:", ", ".join(sorted(back_three)))
-''')
-code('''
+
+# %%
 # Check: ranges, and the team-seasons at the top of each share (should read like football).
 display(team_stats.describe().round(3).T)
 named = team_stats.merge(keys[["league", "season", "us_team_id", "club", "season_key"]], on=["league", "season", "us_team_id"])
 pd.DataFrame({c: named.nlargest(4, c).apply(lambda r: f"{r.club} {r.season_key}", axis=1).to_list()
               for c in team_stats.columns if c.endswith("share")})
-''')
 
-# ---- step 3
-md('''
-## Step 4. Football-Data: physical intensity (and shots on target, not used)
+# %% [markdown]
+# ## Step 4. Football-Data: physical intensity (and shots on target, not used)
+#
+# Each match gives one row for the home team and one for the away team. *Fouls suffered* is the opponent's fouls
+# committed. Cards weigh a red as two yellows. Rates are means over the matches that have the statistic (3 matches
+# have none, Phase 0).
 
-Each match gives one row for the home team and one for the away team. *Fouls suffered* is the opponent's fouls
-committed. Cards weigh a red as two yellows. Rates are means over the matches that have the statistic (3 matches
-have none, Phase 0).
-''')
-code('''
+# %%
 fd = read_table("fd_matches")
 stats = ["HST", "AST", "HF", "AF", "HC", "AC", "HY", "AY", "HR", "AR"]
 fd[stats] = fd[stats].apply(pd.to_numeric, errors="coerce")
@@ -218,24 +192,22 @@ football_data = g.agg(
     corners_for_pm=("corners_for", "mean"), corners_against_pm=("corners_against", "mean"),
 ).reset_index()
 log("3.3", "Football-Data matches to team-matches (home + away) to team-seasons", len(fd), len(football_data))
-''')
-code('''
+
+# %%
 # Check: plausible ranges; Serie A shots on target by season (the total-shots definition changed in 2018-19).
 display(football_data.describe().round(2).T)
 football_data[football_data.league == "Serie A"].groupby("season").sot_for_pm.mean().round(2).to_frame().T
-''')
 
-# ---- step 4
-md('''
-## Step 5. TM fixtures: workload
+# %% [markdown]
+# ## Step 5. TM fixtures: workload
+#
+# All official matches of each club-season (league, domestic cups, super cups, European and other international club
+# competitions, relegation playoffs), from TM fixtures. **Rest days** = days since the club's previous match in the
+# same season; the first match of a season has none. Gaps of more than 21 days are breaks (winter break, COVID
+# suspension, World Cup 2022 stop; 0.7% of gaps) and are left out of the rest features; international breaks stay in. *European matches* are UEFA and FIFA club competitions
+# (competition types 10 and 13, qualifiers included).
 
-All official matches of each club-season (league, domestic cups, super cups, European and other international club
-competitions, relegation playoffs), from TM fixtures. **Rest days** = days since the club's previous match in the
-same season; the first match of a season has none. Gaps of more than 21 days are breaks (winter break, COVID
-suspension, World Cup 2022 stop; 0.7% of gaps) and are left out of the rest features; international breaks stay in. *European matches* are UEFA and FIFA club competitions
-(competition types 10 and 13, qualifiers included).
-''')
-code('''
+# %%
 fx = read_table("tm_fixtures")
 fx = pd.DataFrame({
     "tm_club_id": fx.club_id, "game_id": fx.game_id, "season": fx["game.seasonId"].astype(int),
@@ -254,22 +226,20 @@ workload = pd.DataFrame({
     "rest_sd": g.rest_days.std(),
 }).reset_index()
 log("3.4", "TM club fixtures to club-season workload", len(fx), len(workload))
-''')
-code('''
+
+# %%
 # Check: ranges, and no two matches of a club on one day.
 assert (fx.rest_days.dropna() > 0).all()
 workload.describe().round(2).T
-''')
 
-# ---- step 5
-md('''
-## Step 6. TM minutes: rotation
+# %% [markdown]
+# ## Step 6. TM minutes: rotation
+#
+# From Phase 2's membership table (minutes in all competitions for each player at each club-season): the share of the
+# club's minutes played by its **top 14 players**. High = a fixed core plays most minutes; low = heavy rotation.
+# The Herfindahl index (sum of squared minute shares) is computed as a check on the choice.
 
-From Phase 2's membership table (minutes in all competitions for each player at each club-season): the share of the
-club's minutes played by its **top 14 players**. High = a fixed core plays most minutes; low = heavy rotation.
-The Herfindahl index (sum of squared minute shares) is computed as a check on the choice.
-''')
-code('''
+# %%
 members = pd.read_parquet(DATA_DIR / "02_injuries" / "player_club_seasons.parquet")
 
 
@@ -284,16 +254,14 @@ rotation = rotation.rename(columns={"club_id": "tm_club_id"})
 log("3.5", "player-club-season minutes to club-season rotation", len(members), len(rotation))
 print(f"top-14 share vs HHI: r = {rotation.top14_share.corr(rotation.minutes_hhi):.2f}")
 rotation.describe().round(3).T
-''')
 
-# ---- step 6
-md('''
-## Step 7. One table
+# %% [markdown]
+# ## Step 7. One table
+#
+# All feature groups joined to the 1,170 keys. Every team-season must have every feature, and each source's match
+# count must agree with the expected league schedule.
 
-All feature groups joined to the 1,170 keys. Every team-season must have every feature, and each source's match
-count must agree with the expected league schedule.
-''')
-code('''
+# %%
 features = (keys
             .merge(understat, on=["league", "season", "us_team_id"], how="left")
             .merge(team_stats, on=["league", "season", "us_team_id"], how="left")
@@ -318,30 +286,26 @@ assert not missing.any(), missing[missing > 0]
 assert (features.us_matches == features.fd_matches).all()
 log("3.6", "feature groups joined to team-seasons", len(keys), len(features))
 print(len(ALL), "features, none missing;", "league matches agree between Understat and Football-Data")
-''')
 
-# ---- step 7
-md('''
-## Step 8. How features differ by season and league
+# %% [markdown]
+# ## Step 8. How features differ by season and league
+#
+# Season means show how football changed over the period; league means show how leagues differ. Both are part of
+# what clustering should see, which is why the features are standardised over all team-seasons together (step 9).
 
-Season means show how football changed over the period; league means show how leagues differ. Both are part of
-what clustering should see, which is why the features are standardised over all team-seasons together (step 9).
-''')
-code('''
+# %%
 by_season = features.groupby("season_key")[ALL].mean()
 by_league = features.groupby("league")[ALL].mean()
 display(by_season.round(2))
 display(by_league.round(2))
-''')
 
-# ---- step 8
-md('''
-## Step 9. Correlations and redundant features
+# %% [markdown]
+# ## Step 9. Correlations and redundant features
+#
+# Pairs with |r| > 0.9 carry nearly the same information and would count twice in the distance K-means uses. For
+# each such pair one feature is dropped; the choice is written next to `DROP` in step 9.
 
-Pairs with |r| > 0.9 carry nearly the same information and would count twice in the distance K-means uses. For
-each such pair one feature is dropped; the choice is written next to `DROP` in step 9.
-''')
-code('''
+# %%
 corr = features[ALL].corr()
 pairs = (corr.where(np.triu(np.ones(corr.shape, dtype=bool), k=1)).stack().rename("r").reset_index()
          .rename(columns={"level_0": "feature_a", "level_1": "feature_b"}))
@@ -351,16 +315,14 @@ redundant = strong[strong.abs_r > REDUNDANT_R]
 print(f"{len(redundant)} pairs with |r| > {REDUNDANT_R}")
 display(redundant.round(3))
 strong.head(12).round(3)
-''')
 
-# ---- step 9
-md('''
-## Step 10. Standardise and save
+# %% [markdown]
+# ## Step 10. Standardise and save
+#
+# Z-scores over **all** team-seasons together (open decision 4), so that changes over time and differences between
+# leagues stay visible to the clustering. Raw values and z-scores are both saved.
 
-Z-scores over **all** team-seasons together (open decision 4), so that changes over time and differences between
-leagues stay visible to the clustering. Raw values and z-scores are both saved.
-''')
-code('''
+# %%
 # For each redundant pair, the feature to drop (see DECISIONS.md).
 # rest_mean vs short_rest_share (r = -0.90): matches on < 4 days' rest are the congestion measure linked to injury
 # risk (Dupont et al. 2010), and rest_mean is also close to matches_all (r = -0.89).
@@ -378,36 +340,34 @@ STYLE = roles[(roles.role == "style") & (roles.status == "kept")].feature.tolist
 log("3.9", f"standardised {len(KEEP)} features over all team-seasons (dropped: {', '.join(DROP) or 'none'})", len(features), len(out))
 assert np.allclose(z.mean(), 0) and np.allclose(z.std(ddof=0), 1)
 roles.groupby(["role", "status"]).feature.apply(", ".join).to_frame()
-''')
 
-# ---- step 11 (phase-of-play dimensions)
-md('''
-## Step 11. Phase-of-play dimensions
+# %% [markdown]
+# ## Step 11. Phase-of-play dimensions
+#
+# Football analysis describes a style **per phase of play**: how a team attacks (in possession) and how it defends
+# (out of possession) (Fernandez-Navarro et al. 2016; Demir et al. 2025). The style features become four dimensions per
+# phase; each is the mean of its features' signed z-scores, re-standardised, so every dimension weighs the same in
+# Phase 4's clustering (one per phase). Formation (back-three share) is a **structure**, not a style: a back three is
+# used by possession teams and by low blocks alike, so it is not clustered and is reported per style instead. Fouls
+# suffered describe the opponent more than the team and are left out.
+#
+# | Phase | Dimension | Features (sign) | Literature term |
+# |---|---|---|---|
+# | attack | possession | opponent PPDA (+), deep completions (+), corners for (+) | possession vs direct |
+# | attack | patience | slow-attack share (+) | slow progression, elaborate build-up |
+# | attack | verticality | fast-attack share (+) | fast progression, counter-attack |
+# | attack | directness | outside-box shot share (+), set-piece share (+) | direct play, set plays |
+# | defence | press | PPDA (−) | high vs low pressure |
+# | defence | high line | conceded fast-attack share (+) | line height, exposure to counters |
+# | defence | territory conceded | deep completions against (+), corners against (+) | deep block vs defending forward |
+# | defence | aggression | fouls (+), cards (+) | duel-based, physical defending |
+#
+# **Relative dimensions (sensitivity only).** Global scaling keeps change over time visible (decided), but then part of a
+# style is simply "the season it was played in" (the whole Big Five drifted towards possession). For a sensitivity
+# clustering in Phase 4, each dimension is also centred within its league-season and re-standardised: how a team played
+# **relative to its league that season**.
 
-Football analysis describes a style **per phase of play**: how a team attacks (in possession) and how it defends
-(out of possession) (Fernandez-Navarro et al. 2016; Demir et al. 2025). The style features become four dimensions per
-phase; each is the mean of its features' signed z-scores, re-standardised, so every dimension weighs the same in
-Phase 4's clustering (one per phase). Formation (back-three share) is a **structure**, not a style: a back three is
-used by possession teams and by low blocks alike, so it is not clustered and is reported per style instead. Fouls
-suffered describe the opponent more than the team and are left out.
-
-| Phase | Dimension | Features (sign) | Literature term |
-|---|---|---|---|
-| attack | possession | opponent PPDA (+), deep completions (+), corners for (+) | possession vs direct |
-| attack | patience | slow-attack share (+) | slow progression, elaborate build-up |
-| attack | verticality | fast-attack share (+) | fast progression, counter-attack |
-| attack | directness | outside-box shot share (+), set-piece share (+) | direct play, set plays |
-| defence | press | PPDA (−) | high vs low pressure |
-| defence | high line | conceded fast-attack share (+) | line height, exposure to counters |
-| defence | territory conceded | deep completions against (+), corners against (+) | deep block vs defending forward |
-| defence | aggression | fouls (+), cards (+) | duel-based, physical defending |
-
-**Relative dimensions (sensitivity only).** Global scaling keeps change over time visible (decided), but then part of a
-style is simply "the season it was played in" (the whole Big Five drifted towards possession). For a sensitivity
-clustering in Phase 4, each dimension is also centred within its league-season and re-standardised: how a team played
-**relative to its league that season**.
-''')
-code('''
+# %%
 PHASE_DIMS = {
     "attack": {"possession": {"opp_ppda": 1, "deep_pm": 1, "corners_for_pm": 1}, "patience": {"slow_attack_share": 1},
                "verticality": {"fast_attack_share": 1}, "directness": {"outside_box_share": 1, "set_piece_share": 1}},
@@ -436,13 +396,11 @@ display(dim_corr)
 # How much of each dimension is season-and-league level (share of variance between league-seasons).
 between = dims.groupby([features.league, features.season]).transform("mean").var() / dims.var()
 between.round(2).rename("variance between league-seasons").to_frame()
-''')
 
-# ---- step 10
-md('''
-## Step 12. Report
-''')
-code('''
+# %% [markdown]
+# ## Step 12. Report
+
+# %%
 log_table = pd.DataFrame(LOG)
 log_table.to_csv(OUT_DIR / "preprocessing_counts.csv", index=False)
 groups = roles[["group", "feature", "role", "status"]]
@@ -503,13 +461,5 @@ text = [
     f"- `data/{PHASE}/style_dimensions.parquet`: the 4 attacking and 4 defensive dimension scores and the back-three share per team-season (Phase 4 input).",
     "",
 ]
-(REPORTS_DIR / "03_features.md").write_text("\\n".join(text), encoding="utf-8")
+(REPORTS_DIR / "03_features.md").write_text("\n".join(text), encoding="utf-8")
 print("wrote", REPORTS_DIR / "03_features.md")
-''')
-
-for i, cell in enumerate(cells):
-    cell["id"] = f"features-{i:02d}"
-meta = json.loads((ROOT / "notebooks/01_entities.ipynb").read_text())["metadata"]
-nb = {"cells": cells, "metadata": meta, "nbformat": 4, "nbformat_minor": 5}
-(ROOT / "notebooks/03_features.ipynb").write_text(json.dumps(nb, indent=1, ensure_ascii=False) + "\n")
-print(len(cells), "cells")

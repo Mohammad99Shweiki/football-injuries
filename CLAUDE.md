@@ -5,8 +5,9 @@ Master's data mining course project (An-Najah National University). **Solo proje
 Read `docs/ANALYSIS_PLAN.md` for the step-by-step plan. `docs/scraper/scraper-spec.md` describes how the raw data was collected.
 
 Run analysis code with the `analysis` dependency group (kept out of the Docker image):
-`uv run --group analysis python -c "from analysis import audit; audit.run()"`, or execute a notebook with
-`cd notebooks && uv run --group analysis jupyter nbconvert --to notebook --execute --inplace 00_audit.ipynb`.
+`uv run --group analysis python -m analysis.run status|all|05 [--until 7]` (records each step in `data/NN_*/_run.json`).
+Each phase's code lives in `analysis/phases/pNN_*.py` (`# %%` cells, the single source of truth); notebooks are generated
+with `uv run --group analysis python scripts/notebooks/build_notebook.py` and can be executed with nbconvert as before.
 
 ## Working style
 - Keep answers short and precise. Explain decisions briefly, without long write-ups.
@@ -32,13 +33,14 @@ Run analysis code with the `analysis` dependency group (kept out of the Docker i
 | Sources | Understat (style: PPDA, deep, xG), Football-Data.co.uk (shots, fouls, cards, corners, dates), Transfermarkt (injuries, squads, minutes, fixtures, age, position) |
 
 ## Repository layout
-- `scraper/`: data collection (finished): `collect/`, `parse/`, `validate.py`, `dashboard/`, Docker files. Run its commands from `scraper/`.
-- `analysis/`: code shared across phases only. `config.py` holds paths, leagues, seasons and `phase_dir`; `load.py` loads tables; `report.py` has markdown helpers.
-- `notebooks/`: one notebook per phase (`00_audit.ipynb`, `01_entities.ipynb`, …) holding that phase's steps in order: for each step a short note (what and why), the code, and a check cell showing the intermediate result. The notebook runs top to bottom from the tables and writes the phase report.
+- `scraper/`: data collection (finished): `collect/`, `parse/`, `validate.py`, `serve.py`, Docker files. Run its commands from `scraper/`.
+- `app/`: the dashboard (React + Vite): step 1 scraping (run console, validation report); step 2 analysis screens come from the design brief (`docs/ui/analysis-studio-design-brief.md`).
+- `analysis/`: `phases/` (one script per phase, steps as `# %%` cells: a markdown note `## Step N. Title`, the code, a check), `run.py` (runner, run records, staleness), `api.py` (`/api/analysis/*`), `steps.py`, and shared code: `config.py` (paths, leagues, seasons, `SEED`, `PIPELINE`, `phase_dir`), `load.py`, `report.py`, `audit.py`.
+- `notebooks/`: one notebook per phase, generated from `analysis/phases/`; do not edit them by hand. Each runs top to bottom from the tables and writes the phase report.
 - `mappings/`: hand-reviewed inputs (team map, injury label map), tracked in git.
-- `data/`: git-ignored, all generated, folders only (no loose files): `raw/`, `tables/`, `scraper_run/` (scraper manifest and run state), then `01_entities/` … `05_injury_analysis/`.
+- `data/`: git-ignored, all generated, folders only (no loose files): `raw/`, `tables/`, `scraper_run/` (scraper manifest and run state), then `00_audit/` … `06_report/` (each with `_run.json`).
 - `reports/`: `NN_*.md` per phase, `figures/NN_*.png`.
-- `docs/`: `ANALYSIS_PLAN.md`, `DECISIONS.md`, `scraper/` (spec and dashboard handoff).
+- `docs/`: `ANALYSIS_PLAN.md`, `DECISIONS.md`, `PREPROCESSING_LOG.md`, `scraper/` (spec and dashboard handoff), `ui/` (analysis design brief).
 
 ## Data (verified in Phase 0, 2026-10-21; details in `reports/00_data_audit.md`)
 `data/` is git-ignored. Re-create with the scraper (`cd scraper && docker compose up`, see README) then `python -m parse` (from `scraper/`).
