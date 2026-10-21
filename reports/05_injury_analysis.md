@@ -178,6 +178,173 @@ k = 4 robustness check:
 | Dominant pressing | 8015 | 258 | 6398 | 0.798 | 0.492 | 34.0 | 0.426 | 1.21 (1.15–1.26) | 1.09 (1.03–1.14) |
 | Passive low block | 11358 | 364 | 6969 | 0.614 | 0.461 | 30.0 | 0.485 | 0.93 (0.88–0.97) | 0.96 (0.91–1.01) |
 
-## 9. Outputs
+## 9. Style cards (core team-seasons)
+
+- **Aggressive press and set pieces** (Direct and physical family; 178 team-seasons, core 86 (48%)): physical: many fouls, cards and duels; relies on set pieces; presses high and wins the ball back fast. fouls per match: 14.7 (all teams 12.5); shots from set pieces: 30% (all teams 26%); PPDA (lower = more pressing): 8.8 (all teams 10.9). Points/match 1.27, European matches 3.0. Typical: AS Monaco 2017-18, FC Toulouse 2016-17 | Cagliari Calcio 2018-19, CA Osasuna 2019-20 | Real Sociedad 2025-26, Cádiz CF 2023-24.
+- **Controlled possession** (Dominant pressing family; 175 team-seasons, core 86 (49%)): dominates the ball and plays in the opponent's half; creates little from set pieces; defends deep, rarely caught on the break. deep completions per match: 7.6 (all teams 6.1); shots from set pieces: 23% (all teams 26%); shots conceded from fast attacks: 5% (all teams 6%). Points/match 1.79, European matches 7.3. Typical: Southampton FC 2014-15, Real Madrid 2015-16 | LOSC Lille 2021-22, Athletic Bilbao 2020-21 | Chelsea FC 2025-26, Stade Reims 2023-24.
+- **Direct and physical** (Direct and physical family; 178 team-seasons, core 86 (48%)): shoots from distance; physical: many fouls, cards and duels; spends long spells without the ball. shots from outside the box: 46% (all teams 38%); fouls per match: 13.8 (all teams 12.5); deep completions per match: 4.7 (all teams 6.1). Points/match 1.14, European matches 0.9. Typical: GFC Ajaccio 2015-16, SM Caen 2017-18 | Rayo Vallecano 2018-19, FC Girondins Bordeaux 2018-19 | US Lecce 2022-23, Real Valladolid CF 2022-23.
+- **Back three** (Back three family; 166 team-seasons, core 112 (67%)): plays with a back three; works the ball into the box; defends deep, rarely caught on the break. minutes in a back three: 87% (all teams 23%); shots from outside the box: 35% (all teams 38%); shots conceded from fast attacks: 6% (all teams 6%). Points/match 1.44, European matches 4.0. Typical: Genoa CFC 2017-18, Eintracht Frankfurt 2017-18 | TSG 1899 Hoffenheim 2020-21, Udinese Calcio 2021-22 | 1.FSV Mainz 05 2022-23, FC Toulouse 2025-26.
+- **Counter-attacking** (Passive low block family; 132 team-seasons, core 62 (47%)): strikes on the break; spends long spells without the ball; sits off and lets the opponent play. shots from fast attacks: 9% (all teams 6%); deep completions per match: 4.7 (all teams 6.1); PPDA (lower = more pressing): 12.3 (all teams 10.9). Points/match 1.16, European matches 1.1. Typical: Angers SCO 2017-18, Stade Rennais FC 2014-15 | Hertha BSC 2019-20, Hertha BSC 2020-21 | UD Almería 2023-24, Angers SCO 2022-23.
+- **Elite dominance** (Dominant pressing family; 114 team-seasons, core 77 (68%)): dominates the ball and plays in the opponent's half; holds a high line, exposed to counters; clean: few fouls and cards. deep completions per match: 11.1 (all teams 6.1); shots conceded from fast attacks: 8% (all teams 6%); fouls per match: 10.3 (all teams 12.5). Points/match 2.12, European matches 10.3. Typical: Inter Milan 2017-18, Paris Saint-Germain 2015-16 | Paris Saint-Germain 2021-22, Borussia Dortmund 2020-21 | Brighton & Hove Albion 2022-23, FC Barcelona 2025-26.
+- **Passive low block** (Passive low block family; 227 team-seasons, core 109 (48%)): sits off and lets the opponent play; relies on set pieces; spends long spells without the ball. PPDA (lower = more pressing): 13.5 (all teams 10.9); shots from set pieces: 29% (all teams 26%); deep completions per match: 4.8 (all teams 6.1). Points/match 1.06, European matches 1.0. Typical: Crystal Palace 2017-18, West Bromwich Albion 2017-18 | Aston Villa 2021-22, Dijon FCO 2020-21 | FC Nantes 2022-23, VfL Wolfsburg 2024-25.
+
+Injury RR, all teams vs core teams only:
+
+| style | RR, all teams | RR, core teams | days RR, all teams | days RR, core teams | share of player-seasons in core teams |
+|---|---|---|---|---|---|
+| Aggressive press and set pieces | 0.97 | 0.95 | 1.04 | 1.11 | 0.49 |
+| Controlled possession | 1.14 | 1.19 | 1.06 | 1.02 | 0.49 |
+| Direct and physical | 0.9 | 0.84 | 0.94 | 0.9 | 0.49 |
+| Back three | 1.0 | 1.0 | 0.97 | 0.97 | 0.68 |
+| Counter-attacking | 0.89 | 0.93 | 0.97 | 0.98 | 0.46 |
+| Elite dominance | 1.25 | 1.25 | 1.08 | 1.07 | 0.67 |
+| Passive low block | 0.95 | 0.93 | 0.97 | 0.93 | 0.48 |
+
+## 10. How the ways of playing changed
+
+| dimension (z) | 2014–18 | 2018–22 | 2022–26 | shape |
+|---|---|---|---|---|
+| dominance | -0.22 | 0.02 | 0.2 | rising |
+| pressing | 0.53 | -0.1 | -0.44 | falling |
+| counter | 0.09 | -0.02 | -0.07 | falling |
+| high_line | 0.08 | -0.03 | -0.06 | falling |
+| physical | 0.36 | -0.07 | -0.3 | falling |
+| set_pieces | 0.05 | 0.05 | -0.11 | falling |
+| long_shots | 0.62 | -0.03 | -0.6 | falling |
+| back_three | -0.33 | 0.08 | 0.26 | rising |
+
+Shape per league:
+
+| dimension | all leagues | Premier League | La Liga | Serie A | Bundesliga | Ligue 1 |
+|---|---|---|---|---|---|---|
+| dominance | rising | rising | rising | rising | rising | rising |
+| pressing | falling | falling | falling | falling | falling | falling |
+| counter | falling | falling | falling | falling | rising | falling |
+| high_line | falling | falling | falling | falling | rising | falling |
+| physical | falling | dip | falling | falling | falling | falling |
+| set_pieces | falling | peak | peak | rising | falling | falling |
+| long_shots | falling | falling | falling | falling | falling | falling |
+| back_three | rising | rising | rising | rising | rising | rising |
+
+In real units (all leagues):
+
+| measure | 2014–18 | 2018–22 | 2022–26 |
+|---|---|---|---|
+| deep completions per match | 5.701 | 6.046 | 6.534 |
+| PPDA (lower = more pressing) | 9.66 | 11.116 | 11.894 |
+| shots from fast attacks | 0.062 | 0.06 | 0.06 |
+| shots conceded from fast attacks | 0.062 | 0.061 | 0.06 |
+| fouls per match | 13.314 | 12.376 | 11.866 |
+| shots from set pieces | 0.261 | 0.261 | 0.255 |
+| shots from outside the box | 0.413 | 0.376 | 0.344 |
+| minutes in a back three | 0.134 | 0.257 | 0.311 |
+
+![Dimensions over time](figures/05_style_dimensions_over_time.png)
+
+## 11. How teams move between styles
+
+| style → next season | Aggressive press and set pieces | Controlled possession | Direct and physical | Back three | Counter-attacking | Elite dominance | Passive low block |
+|---|---|---|---|---|---|---|---|
+| Aggressive press and set pieces | 48.0 | 13.0 | 17.0 | 4.0 | 7.0 | 2.0 | 10.0 |
+| Controlled possession | 3.0 | 48.0 | 4.0 | 10.0 | 7.0 | 16.0 | 11.0 |
+| Direct and physical | 19.0 | 11.0 | 42.0 | 8.0 | 10.0 | 1.0 | 9.0 |
+| Back three | 6.0 | 6.0 | 6.0 | 59.0 | 6.0 | 6.0 | 13.0 |
+| Counter-attacking | 8.0 | 6.0 | 10.0 | 11.0 | 30.0 | 3.0 | 32.0 |
+| Elite dominance | 1.0 | 26.0 | 1.0 | 6.0 | 2.0 | 62.0 | 2.0 |
+| Passive low block | 6.0 | 10.0 | 5.0 | 12.0 | 12.0 | 4.0 | 52.0 |
+
+Largest moves between styles:
+
+| style | next style | clubs |
+|---|---|---|
+| Counter-attacking | Passive low block | 29 |
+| Direct and physical | Aggressive press and set pieces | 27 |
+| Elite dominance | Controlled possession | 26 |
+| Controlled possession | Elite dominance | 25 |
+| Aggressive press and set pieces | Direct and physical | 25 |
+| Aggressive press and set pieces | Controlled possession | 19 |
+| Passive low block | Counter-attacking | 18 |
+| Passive low block | Back three | 18 |
+
+## 12. Style mix and injuries per era
+
+| era | Aggressive press and set pieces | Controlled possession | Direct and physical | Back three | Counter-attacking | Elite dominance | Passive low block |
+|---|---|---|---|---|---|---|---|
+| 2014–18 | 25.8 | 9.4 | 30.9 | 4.1 | 11.7 | 7.9 | 10.2 |
+| 2018–22 | 13.8 | 17.3 | 11.7 | 15.8 | 10.5 | 8.4 | 22.4 |
+| 2022–26 | 6.0 | 18.1 | 2.8 | 22.8 | 11.7 | 13.0 | 25.6 |
+
+Injury RR per style and era (fixed league baselines):
+
+| era | Aggressive press and set pieces | Controlled possession | Direct and physical | Back three | Counter-attacking | Elite dominance | Passive low block |
+|---|---|---|---|---|---|---|---|
+| 2014–18 | 1.02 | 1.08 | 0.93 | 0.92 | 0.85 | 1.17 | 0.77 |
+| 2018–22 | 0.97 | 1.13 | 0.86 | 0.94 | 0.92 | 1.28 | 1.04 |
+| 2022–26 | 0.77 | 1.18 | 0.61 | 1.05 | 0.89 | 1.27 | 0.93 |
+
+## 13. Where the injury trend comes from (Kitagawa decomposition)
+
+| outcome | eras | from | to | change | from style mix | within styles | mix share of change |
+|---|---|---|---|---|---|---|---|
+| injuries | 2014–18 → 2018–22 | 0.646 | 0.684 | 0.038 | 0.032 | 0.005 | 0.856 |
+| injuries | 2018–22 → 2022–26 | 0.684 | 0.689 | 0.006 | 0.018 | -0.013 | 3.297 |
+| injuries | 2014–18 → 2022–26 | 0.646 | 0.689 | 0.043 | 0.062 | -0.019 | 1.436 |
+| days lost | 2014–18 → 2018–22 | 30.417 | 29.116 | -1.301 | -0.867 | -0.434 | 0.667 |
+| days lost | 2018–22 → 2022–26 | 29.116 | 31.939 | 2.824 | 0.552 | 2.271 | 0.196 |
+| days lost | 2014–18 → 2022–26 | 30.417 | 31.939 | 1.522 | 1.745 | -0.223 | 1.146 |
+| severe injuries | 2014–18 → 2018–22 | 0.296 | 0.289 | -0.007 | -0.006 | -0.001 | 0.913 |
+| severe injuries | 2018–22 → 2022–26 | 0.289 | 0.318 | 0.029 | 0.006 | 0.022 | 0.224 |
+| severe injuries | 2014–18 → 2022–26 | 0.296 | 0.318 | 0.022 | 0.019 | 0.003 | 0.857 |
+| hamstring injuries | 2014–18 → 2018–22 | 0.083 | 0.082 | -0.001 | -0.001 | 0.0 | 1.328 |
+| hamstring injuries | 2018–22 → 2022–26 | 0.082 | 0.101 | 0.019 | 0.003 | 0.016 | 0.146 |
+| hamstring injuries | 2014–18 → 2022–26 | 0.083 | 0.101 | 0.018 | 0.008 | 0.01 | 0.451 |
+| knee injuries | 2014–18 → 2018–22 | 0.105 | 0.099 | -0.006 | -0.002 | -0.004 | 0.317 |
+| knee injuries | 2018–22 → 2022–26 | 0.099 | 0.094 | -0.005 | 0.0 | -0.006 | -0.083 |
+| knee injuries | 2014–18 → 2022–26 | 0.105 | 0.094 | -0.011 | 0.001 | -0.012 | -0.113 |
+
+![Decomposition](figures/05_trend_decomposition.png)
+
+## 14. Style dimensions vs injury outcomes (within-league correlations, 60 league-seasons)
+
+| dimension | injuries / player-season | days lost / player-season | severe share | hamstring share | knee share | muscle share |
+|---|---|---|---|---|---|---|
+| dominance | 0.15 | 0.04 | -0.09 | 0.05 | -0.57 | 0.59 |
+| pressing | -0.09 | 0.04 | 0.1 | -0.06 | 0.51 | -0.49 |
+| counter | -0.06 | -0.02 | 0.03 | 0.2 | 0.16 | -0.21 |
+| high_line | -0.06 | -0.02 | 0.05 | 0.2 | 0.18 | -0.2 |
+| physical | -0.04 | 0.14 | 0.11 | -0.14 | 0.41 | -0.4 |
+| set_pieces | 0.11 | 0.13 | -0.07 | -0.17 | 0.11 | -0.34 |
+| long_shots | -0.29 | -0.19 | 0.13 | -0.08 | 0.56 | -0.63 |
+| back_three | 0.23 | 0.07 | -0.14 | 0.1 | -0.59 | 0.51 |
+
+Season-to-season changes (within league, n = 55; removes slow shared trends):
+
+| dimension | injuries / player-season | days lost / player-season | severe share | hamstring share | knee share | muscle share |
+|---|---|---|---|---|---|---|
+| dominance | 0.0 | -0.16 | -0.04 | -0.19 | -0.25 | 0.02 |
+| pressing | 0.01 | 0.1 | 0.01 | 0.01 | 0.08 | 0.01 |
+| counter | 0.11 | 0.15 | 0.04 | -0.05 | 0.02 | -0.1 |
+| high_line | 0.12 | 0.14 | 0.04 | -0.05 | 0.05 | -0.14 |
+| physical | 0.06 | 0.23 | 0.04 | 0.07 | -0.03 | -0.12 |
+| set_pieces | 0.02 | -0.1 | -0.01 | -0.12 | -0.08 | -0.29 |
+| long_shots | -0.15 | -0.23 | -0.07 | 0.06 | -0.04 | -0.18 |
+| back_three | 0.0 | 0.01 | 0.02 | 0.2 | -0.23 | 0.02 |
+
+![Links](figures/05_style_injury_links.png)
+
+## 15. One story per league
+
+**Premier League.** From 2014–18 to 2022–26, Passive low block (30% → 38%), Back three (4% → 11%) grew; Direct and physical (18% → 0%), Counter-attacking (12% → 5%) shrank. Ways of playing: dominance rising, pressing falling, counter falling, high line falling, physical dip, set pieces peak, long shots falling, back three rising. Injuries per player-season went from 0.56 to 0.71 (+0.15): +0.041 from the style mix, +0.112 within styles. Days lost per player-season 34.4 → 38.7; hamstring injuries per player-season 0.114 → 0.139 (style mix +0.004); knee 0.113 → 0.110 (style mix +0.003).
+
+**La Liga.** From 2014–18 to 2022–26, Passive low block (1% → 25%), Controlled possession (9% → 26%) grew; Aggressive press and set pieces (48% → 18%), Direct and physical (24% → 8%) shrank. Ways of playing: dominance rising, pressing falling, counter falling, high line falling, physical falling, set pieces peak, long shots falling, back three rising. Injuries per player-season went from 0.71 to 0.49 (-0.23): +0.128 from the style mix, -0.353 within styles. Days lost per player-season 30.8 → 23.8; hamstring injuries per player-season 0.118 → 0.087 (style mix +0.014); knee 0.101 → 0.064 (style mix +0.014).
+
+**Serie A.** From 2014–18 to 2022–26, Back three (12% → 49%), Passive low block (0% → 15%) grew; Direct and physical (59% → 5%), Counter-attacking (10% → 8%) shrank. Ways of playing: dominance rising, pressing falling, counter falling, high line falling, physical falling, set pieces rising, long shots falling, back three rising. Injuries per player-season went from 0.74 to 0.89 (+0.15): +0.116 from the style mix, +0.038 within styles. Days lost per player-season 27.1 → 35.0; hamstring injuries per player-season 0.083 → 0.133 (style mix +0.024); knee 0.104 → 0.098 (style mix +0.004).
+
+**Bundesliga.** From 2014–18 to 2022–26, Back three (4% → 28%), Passive low block (12% → 29%) grew; Aggressive press and set pieces (47% → 4%), Direct and physical (15% → 0%) shrank. Ways of playing: dominance rising, pressing falling, counter rising, high line rising, physical falling, set pieces falling, long shots falling, back three rising. Injuries per player-season went from 0.86 to 0.74 (-0.12): -0.010 from the style mix, -0.112 within styles. Days lost per player-season 42.5 → 35.8; hamstring injuries per player-season 0.034 → 0.060 (style mix +0.009); knee 0.151 → 0.111 (style mix -0.027).
+
+**Ligue 1.** From 2014–18 to 2022–26, Back three (0% → 22%), Controlled possession (9% → 23%) grew; Direct and physical (38% → 1%), Aggressive press and set pieces (28% → 3%) shrank. Ways of playing: dominance rising, pressing falling, counter falling, high line falling, physical falling, set pieces falling, long shots falling, back three rising. Injuries per player-season went from 0.37 to 0.60 (+0.23): +0.014 from the style mix, +0.212 within styles. Days lost per player-season 18.4 → 26.2; hamstring injuries per player-season 0.059 → 0.079 (style mix -0.012); knee 0.060 → 0.086 (style mix +0.008).
+
+
+## 16. Outputs
 
 - `data/05_injury_analysis/player_seasons.parquet`: the player-club-season table with style, strength, workload, age, position and injuries.

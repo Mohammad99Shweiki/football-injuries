@@ -47,7 +47,15 @@ md('''
 8. Team strength and workload
 9. Fitness absences (secondary outcome)
 10. Sensitivity checks
-11. Report
+12. Style cards: what each style looks like on the pitch
+13. Core teams only
+14. How the ways of playing changed, and in what shape
+15. How teams move between styles
+16. Style mix and injuries per era
+17. How much of the injury trend comes from styles changing (decomposition)
+18. Style dimensions vs injury outcomes across league-seasons
+19. One story per league
+20. Report
 
 **Inputs:** `data/02_injuries/`, `data/03_features/`, `data/04_clusters/`, `tm_squads`, `us_team_matches`.
 **Outputs:** `data/05_injury_analysis/`, `reports/05_injury_analysis.md`, `reports/figures/05_*.png`.
@@ -64,7 +72,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from IPython.display import Image, display
+from IPython.display import Image, Markdown, display
 from matplotlib.colors import LinearSegmentedColormap
 from scipy.stats import chi2, chi2_contingency
 
@@ -518,9 +526,16 @@ print("same direction in every variant:", direction[direction].index.tolist())
 fmt(k4)[["player-seasons", "injuries / player-season", "days lost / player-season", "severe share", "RR (95% CI)", "days RR (95% CI)"]]
 ''')
 
-# ---- step 11
+# ---- steps 12-19 (style cards and evolution), from phase5_evolution_steps.py
+sys.path.insert(0, str(Path(__file__).parent))
+from phase5_evolution_steps import STEPS  # noqa: E402
+
+for kind, text in STEPS:
+    (md if kind == "markdown" else code)(text)
+
+# ---- step 20
 md('''
-## Step 11. Report
+## Step 20. Report
 ''')
 code('''
 sig = by_style[(by_style["RR low"] > 1) | (by_style["RR high"] < 1)]
@@ -607,7 +622,67 @@ text = [
     "",
     md_table(fmt(k4)[cols].rename_axis("style (k = 4)")),
     "",
-    "## 9. Outputs",
+    "## 9. Style cards (core team-seasons)",
+    "",
+    *[f"- **{name}** ({c['family (k = 4)']} family; {c['team-seasons']} team-seasons, core {c['core']}): {c['how it plays']}. "
+      f"{c['in numbers (core)']}. Points/match {c['points/match']}, European matches {c['European matches']}. "
+      f"Typical: {c['typical 2014–18']} | {c['typical 2018–22']} | {c['typical 2022–26']}." for name, c in cards.iterrows()],
+    "",
+    "Injury RR, all teams vs core teams only:",
+    "",
+    md_table(core_check.rename_axis("style")),
+    "",
+    "## 10. How the ways of playing changed",
+    "",
+    md_table(era_all.T.round(2).assign(shape=shapes["all leagues"]).rename_axis("dimension (z)")),
+    "",
+    "Shape per league:",
+    "",
+    md_table(shapes.rename_axis("dimension")),
+    "",
+    "In real units (all leagues):",
+    "",
+    md_table(raw_by_era.round(3).rename_axis("measure")),
+    "",
+    f"![Dimensions over time](figures/{dims_fig})",
+    "",
+    "## 11. How teams move between styles",
+    "",
+    md_table((100 * transition_share).round(0).rename_axis("style \\u2192 next season")),
+    "",
+    "Largest moves between styles:",
+    "",
+    md_table(flows, index=False),
+    "",
+    "## 12. Style mix and injuries per era",
+    "",
+    md_table((100 * mix_era).round(1).rename_axis("era")),
+    "",
+    "Injury RR per style and era (fixed league baselines):",
+    "",
+    md_table(rr_era.round(2).rename_axis("era")),
+    "",
+    "## 13. Where the injury trend comes from (Kitagawa decomposition)",
+    "",
+    md_table(decomposition[decomposition.scope == "all leagues"].drop(columns="scope").round(3), index=False),
+    "",
+    f"![Decomposition](figures/{decomp_fig})",
+    "",
+    "## 14. Style dimensions vs injury outcomes (within-league correlations, 60 league-seasons)",
+    "",
+    md_table(link.rename_axis("dimension")),
+    "",
+    "Season-to-season changes (within league, n = 55; removes slow shared trends):",
+    "",
+    md_table(link_changes.rename_axis("dimension")),
+    "",
+    f"![Links](figures/{link_fig})",
+    "",
+    "## 15. One story per league",
+    "",
+    *[f"{story}\\n" for story in stories.values()],
+    "",
+    "## 16. Outputs",
     "",
     f"- `data/{PHASE}/player_seasons.parquet`: the player-club-season table with style, strength, workload, age, position and injuries.",
     "",
