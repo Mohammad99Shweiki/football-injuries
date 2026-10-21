@@ -209,6 +209,14 @@ cd notebooks && for nb in 00_audit 01_entities 02_injuries 03_features 04_cluste
 
 The notebooks are generated from `scripts/notebooks/build_0*_notebook.py`; each step has a note, the code and a check.
 
+## Interactive results
+
+An interactive dashboard shows the clusters and results: a cluster map of all team-seasons per phase of play, the style
+cards, style shares and dimensions over time per league, injury rate ratios, the attack × defence grid, body areas, the
+injury trend, the decomposition and the league stories: https://claude.ai/artifact/PzWvuXE97B84QyZy6q4qnN (private
+until shared). Its data files are exported by `notebooks/06_report.ipynb` (step 4) to `data/06_report/dashboard/`;
+the page source is `scripts/dashboard/index.html`.
+
 ## Figures for the report
 
 | # | File | Shows |
