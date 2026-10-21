@@ -64,3 +64,10 @@ No data changed. Quality problems found here are handled in later phases (see `r
 | 3.7 | 2026-10-21 | transformation | 22 features | Z-scores over all 1,170 team-seasons (global standardisation). Raw values kept alongside. Roles: 15 style (clustered via 3.9), 2 outcome, 5 exposure. | 1,170 | `data/03_features/team_season_features.parquet` | step 9 |
 | 3.8 | 2026-10-21 | transformation | `us_team_stats` (43,813) | Six style shares per team-season (fast/slow attack, conceded fast attack, set pieces, outside-box shots, back-three minutes). | 43,813 → 1,170 | style features | `03_features.ipynb` step 3 |
 | 3.9 | 2026-10-21 | transformation | 15 style features (z-scores) | Combined into 8 equal-weight style dimensions (signed mean, re-standardised); every style feature used once. | 1,170 | `data/03_features/style_dimensions.parquet` | step 11 |
+
+## Phase 5: Injury analysis (pattern evaluation)
+
+| # | Date | Type | Input | Operation | Rows affected | Output | Where |
+|---|---|---|---|---|---|---|---|
+| 5.1 | 2026-10-21 | integration | `02_injuries/player_club_seasons` (36,525), clusters, Phase 3 exposure, points per match, `tm_squads` | Player-club-season table: team style (k = 7, k = 4), strength third, workload, position (all players) and age on 1 January of the season (21 missing DOB), injuries > 7 days aggregated per player-club-season (24,581 → all matched), days lost, severe, surgery, counts by body area, mild injuries (5,180) and fitness absences (953). | 36,525 rows, 10,340 players, 1,170 team-seasons | `data/05_injury_analysis/player_seasons.parquet` | `05_injury_analysis.ipynb` step 1 |
+| 5.2 | 2026-10-21 | transformation | player-seasons | Expected injuries and days lost per player-season: league mean (indirect standardisation) and league × age band × position mean. | 36,525 (36,504 with age) | `exp_*` columns | step 2 |
