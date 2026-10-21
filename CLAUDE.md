@@ -44,7 +44,8 @@ Run analysis code with the `analysis` dependency group (kept out of the Docker i
 `data/` is git-ignored. Re-create with the scraper (`cd scraper && docker compose up`, see README) then `python -m parse` (from `scraper/`).
 - `data/raw/` (read only, ~17 GB, 27,197 files, all fetched OK):
   - `football_data/{1415…2526}/{E0,SP1,I1,D1,F1}.csv`: 60 CSVs (utf-8-sig).
-  - `understat/{EPL,La_liga,Serie_A,Bundesliga,Ligue_1}/{2014…2025}.json`: 60 getLeagueData payloads.
+  - `understat/{EPL,La_liga,Serie_A,Bundesliga,Ligue_1}/{2014…2025}.json`: 60 getLeagueData payloads (U1).
+  - `understat/team/{league}/{season}/{team_id}.json`: 1,170 getTeamData payloads (U2, added 2026-10-21): team-season statistics (attack speed, shot situations, formations, shot zones, …).
   - `transfermarkt/competition/{GB1,ES1,IT1,L1,FR1}/club__season=YYYY.json` (60), `club/{id}/squad__season=YYYY.json` (1,170),
     `player/{id}/{injury,performance-game}.json` (25,696, for 12,848 players), plus `clubs__*`/`players__*` lookups.
 - `data/tables/*.csv`: parsed, every value as original text; every row has `source_file`. Load with `analysis.load.read_table`.
@@ -55,6 +56,7 @@ Run analysis code with the `analysis` dependency group (kept out of the Docker i
 | `us_matches` | 21,690 | Understat match `id` (101 unplayed Ligue 1 2019-20, `isResult=false`) |
 | `us_team_matches` | 43,178 | team × league match: `league (EPL…), season (2014), team_id, date`; PPDA att/def, deep, npxG |
 | `us_player_seasons` | 32,574 | Understat player × team × league-season |
+| `us_team_stats` | 43,813 | Understat team-season × `block` × `category` (e.g. `attackSpeed`/`Fast`): shots, goals, xG for and against; formations also minutes (`time`) |
 | `tm_clubs` | 1,170 | club-season: `competition_id (GB1…), season_param, club_id` |
 | `tm_squads` | 42,238 | squad member: `season_param, club_id, playerId`; DOB, position, position_group. Lists include unused youth/loanees (up to 88) |
 | `tm_injuries` | 82,075 | whole careers; event = `playerId, start, end, name`. `injuryId` is a **type code**, not an event id. 71,375 in window |

@@ -43,9 +43,9 @@ export const SITES: Record<SourceKey, SiteInfo> = {
     unit: 'CSVs',
   },
   us: {
-    key: 'us', name: 'Understat', short: 'Understat', host: 'understat.com/getLeagueData',
+    key: 'us', name: 'Understat', short: 'Understat', host: 'understat.com/getLeagueData · getTeamData',
     color: 'var(--site-us)', logo: null, word: 'understat', wordSub: '',
-    defaultNote: 'Live layout: XHR endpoint getLeagueData, one request per league-season.',
+    defaultNote: 'XHR endpoints: getLeagueData per league-season, getTeamData per team-season.',
     unit: 'league-seasons',
   },
   tm: {

@@ -1,10 +1,10 @@
-"""Understat league payloads -> `us_team_matches`, `us_player_seasons`, `us_matches`."""
+"""Understat payloads -> `us_team_matches`, `us_player_seasons`, `us_matches` (league data), `us_team_stats` (team data)."""
 
 import json
 from collections.abc import Iterator
 from pathlib import Path
 
-from collect.understat import OUT_DIR
+from collect.understat import OUT_DIR, TEAM_DIR
 from parse.common import Row, TableBuilder, flatten, source_file
 
 
@@ -48,3 +48,20 @@ class UsMatches(_UnderstatTable):
         for path, payload, keys in self.payloads():
             for match in payload["dates"]:
                 yield keys | flatten(match) | {"source_file": source_file(path)}
+
+
+class UsTeamStats(TableBuilder):
+    """One row per team-season, statistics block and category, e.g. `attackSpeed` / `Fast` with shots, goals, xG
+    and the same for the opponents (`against.*`); formations also carry minutes played (`time`)."""
+
+    name = "us_team_stats"
+
+    def __init__(self, raw_dir: Path = TEAM_DIR) -> None:
+        self.raw_dir = raw_dir
+
+    def rows(self) -> Iterator[Row]:
+        for path in sorted(self.raw_dir.glob("*/*/*.json")):
+            keys = {"league": path.parent.parent.name, "season": path.parent.name, "team_id": path.stem}
+            for block, categories in json.loads(path.read_bytes())["statistics"].items():
+                for category, values in categories.items():
+                    yield keys | {"block": block, "category": category} | flatten(values) | {"source_file": source_file(path)}

@@ -1,4 +1,4 @@
-import type { SourceKey, Status } from '../api/types'
+import type { SourceKey, Status, UsStep } from '../api/types'
 import { Eyebrow } from '../components/Eyebrow'
 import { MiniIcon } from '../components/Icons'
 import { SiteSticker } from '../components/Sticker'
@@ -63,7 +63,31 @@ function CollectorCard({ source, status }: { source: SourceKey; status: Status |
           <dd>{fmt(s?.failed ?? 0)}</dd>
         </div>
       </dl>
+      {source === 'us' && <SourceSteps steps={status?.us_steps} />}
       <div className="collector-note">{s?.note || site.defaultNote}</div>
     </article>
+  )
+}
+
+const US_PLACEHOLDER: UsStep[] = [
+  { id: 'U1', label: 'League data', call: 'getLeagueData(league, season)', done: 0, total: 0, total_is_estimate: true, sub: 'queued', state: 'queued' },
+  { id: 'U2', label: 'Team statistics', call: 'getTeamData(team, season)', done: 0, total: 0, total_is_estimate: true, sub: 'queued', state: 'queued' },
+]
+
+/** Understat's two request kinds, each with its own count and bar. */
+function SourceSteps({ steps }: { steps?: UsStep[] }) {
+  return (
+    <ul className="collector-steps" aria-label="Understat steps">
+      {(steps ?? US_PLACEHOLDER).map((t) => (
+        <li key={t.id}>
+          <span className={`step-chip ${t.state}`}>{t.id}</span>
+          <span className="collector-step-label" title={t.call}>{t.label}</span>
+          <span className="collector-step-count">{t.total > 0 ? `${fmt(t.done)} / ${fmtTotal(t.total, t.total_is_estimate)}` : '—'}</span>
+          <div className="bar-track" aria-hidden="true">
+            <div className="bar-fill" style={{ width: `${pct(t.done, t.total)}%`, background: t.state === 'done' ? BAR.ok : BAR.run }} />
+          </div>
+        </li>
+      ))}
+    </ul>
   )
 }

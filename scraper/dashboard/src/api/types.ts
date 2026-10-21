@@ -32,6 +32,18 @@ export interface TmStep {
   state: 'queued' | 'running' | 'done'
 }
 
+/** Understat steps: U1 league data per league-season, U2 team statistics per team-season. */
+export interface UsStep {
+  id: 'U1' | 'U2'
+  label: string
+  call: string
+  done: number
+  total: number
+  total_is_estimate: boolean
+  sub: string
+  state: 'queued' | 'running' | 'done'
+}
+
 export interface Backoff {
   at_elapsed_s: number
   status: number | null
@@ -80,6 +92,7 @@ export interface Status {
   flags: Flags
   sources: Record<SourceKey, SourceStatus>
   tm_steps: TmStep[]
+  us_steps: UsStep[]
   tm_unique_players: number
   limiter: Limiter
   coverage: Record<SourceKey, CellState[][]>

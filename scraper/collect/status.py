@@ -73,6 +73,13 @@ class StepState:
     state: str = "queued"
 
 
+def initial_us_steps() -> list[StepState]:
+    return [
+        StepState("U1", "League data", "getLeagueData(league, season)"),
+        StepState("U2", "Team statistics", "getTeamData(team, season)"),
+    ]
+
+
 def initial_steps() -> list[StepState]:
     return [
         StepState("T1", "Clubs per league-season", "competition_clubs(comp_id, season_id)"),
@@ -102,6 +109,7 @@ class RunStatus:
     mode: str = "full"
     sources: dict[str, SourceState] = field(default_factory=lambda: {s: SourceState() for s in SOURCES})
     steps: list[StepState] = field(default_factory=initial_steps)
+    us_steps: list[StepState] = field(default_factory=initial_us_steps)
     players: int = 0
     lim: LimiterState = field(default_factory=LimiterState)
     cov: dict[str, list[list[str]]] = field(default_factory=dict)
@@ -211,7 +219,7 @@ class RunStatus:
 
     def step(self, step_id: str, *, done: int, total: int, estimate: bool = False, sub: str = "", state: str = "running") -> None:
         with self._lock:
-            step = next(s for s in self.steps if s.id == step_id)
+            step = next(s for s in self.steps + self.us_steps if s.id == step_id)
             step.done, step.total, step.total_is_estimate, step.state = done, total, estimate, state
             step.sub = sub or state
 
@@ -286,6 +294,7 @@ class RunStatus:
                 "flags": dict(self.flags),
                 "sources": {k: vars(v).copy() for k, v in self.sources.items()},
                 "tm_steps": [vars(s).copy() for s in self.steps],
+                "us_steps": [vars(s).copy() for s in self.us_steps],
                 "tm_unique_players": self.players,
                 "limiter": {
                     "concurrency": self.lim.concurrency,
