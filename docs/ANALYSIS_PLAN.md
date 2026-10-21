@@ -35,10 +35,9 @@ Stack: Python, pandas, numpy, scikit-learn, scipy, matplotlib/seaborn, rapidfuzz
 ## Phase 2: Injury cleaning and body-area mapping
 - **Parse:** from/until dates, `days` as an integer (handle "?" and ongoing injuries), and games missed.
 - **Exclude** non-injuries (illness, flu, COVID, quarantine, rest), keeping a separate count. Confirm the exclusion list with me.
-- **Severity filter:** `days > 7`. Keep severity bands for analysis: 8–28 days (moderate) and > 28 days (severe).
-- **Body-area mapping:** create `mappings/injury_label_map.csv` with the raw label, frequency, body_area, injury_type and notes.
+- **Severity filter:** `days > 7`. Keep severity bands for analysis: 8–28 days (moderate) and > 28 days (severe). Injuries of 4–7 days (mild) are kept in a separate file for a sensitivity check.
+- **Body-area mapping:** create `mappings/injury_label_map.csv` with the raw label, frequency, class (injury / non-injury), body_area, surgery flag and notes. (Injury type dropped 2026-10-21, see DECISIONS.)
   - **Body area:** hamstring, thigh (other/quad), groin/adductor/hip, knee, calf/achilles/lower leg, ankle, foot/toe, back/spine, head/neck, upper body, unspecified muscle, unknown.
-  - **Injury type:** muscle, ligament, tendon, bone/fracture, cartilage/meniscus, contusion, other, unknown.
   - Propose mappings ordered by frequency so that the labels covering ≥ 95% of injuries are mapped. **I review the CSV before it's applied.**
 - **Attribution:** link each injury to the player's club-season on the injury date (from squads and dates).
 - **Output:** `data/02_injuries/injuries_clean.parquet`, plus a report of coverage and the share of unknown body areas per season.
@@ -85,6 +84,8 @@ Use one row per team-season (~1,150). Use per-match rates.
   - severe (> 28 days) only
   - multi-club players excluded
   - COVID seasons excluded
+  - injuries > 3 days (adding the mild 4–7 day band)
+- **Secondary outcome:** *Fitness* absences (non-injuries, mostly reconditioning) per cluster, read mainly within the Bundesliga where they are recorded.
 - **Output:** `data/05_injury_analysis/player_seasons.parquet`, `reports/05_injury_analysis.md` and figures.
 
 ## Phase 6: Report material

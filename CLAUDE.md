@@ -73,9 +73,9 @@ Season keys differ per source: FD `season_code` "1415", Understat/TM start year 
 - **Novelty:** a 2026 paper (Big Data and Cognitive Computing) links possession to injury burden in the big five using Transfermarkt. This project differs through clustering of styles and body-area patterns; keep that angle explicit.
 
 ## Open decisions (defaults: confirm with me when reached)
-1. Non-injury absences (illness, flu, COVID, quarantine, rest): **exclude** from the injury analysis, count separately.
-2. Player-season inclusion: **≥ 1 appearance**, with a sensitivity check at ≥ 900 minutes.
-3. Players at two clubs in one season: assign each injury to the club the player was at on the injury date; flag these players for a sensitivity check.
+1. ~~Non-injury absences~~ **Settled 2026-10-21:** excluded and counted separately (illness, fitness, rest, medical, not from football); *Fitness* is a secondary outcome in Phase 5. Mild injuries (4–7 days) are kept separately for a > 3-day sensitivity check.
+2. ~~Player-season inclusion~~ **Settled 2026-10-21:** ≥ 1 appearance **or** ≥ 1 match marked injured for the club that season; sensitivity check at ≥ 900 minutes (see `docs/DECISIONS.md`).
+3. ~~Players at two clubs~~ **Settled 2026-10-21:** each injury goes to the club the player was at on its date (per-match records); injuries at non-Big Five clubs dropped; multi-club player-seasons flagged (`multi_club_season`).
 4. Feature scaling: **standardise globally across all team-seasons**, not within season, so that changes over time and differences between leagues are preserved.
 5. Team strength: clusters may reflect quality (good teams press more and create more xG). Compare clustering with and without outcome-type features (xG, xGA); decide after seeing both.
 
