@@ -62,3 +62,5 @@ No data changed. Quality problems found here are handled in later phases (see `r
 | 3.5 | 2026-10-21 | integration | the four feature tables + team-season keys | Joined on Phase 1 keys; 17 features, none missing; league match counts agree between Understat and Football-Data. | 1,170 | features | step 6 |
 | 3.6 | 2026-10-21 | reduction | 17 features | Dropped `rest_mean` (\|r\| > 0.9 with `short_rest_share`). | 17 → 16 features | — | steps 8–9 |
 | 3.7 | 2026-10-21 | transformation | 16 features | Z-scores over all 1,170 team-seasons (global standardisation). Raw values kept alongside. | 1,170 | `data/03_features/team_season_features.parquet` | step 9 |
+| 3.8 | 2026-10-21 | transformation | `us_team_stats` (43,813) | Six style shares per team-season (fast/slow attack, conceded fast attack, set pieces, outside-box shots, back-three minutes). | 43,813 → 1,170 | style features | `03_features.ipynb` step 3 |
+| 3.9 | 2026-10-21 | transformation | 15 style features (z-scores) | Combined into 8 equal-weight style dimensions (signed mean, re-standardised); every style feature used once. | 1,170 | `data/03_features/style_dimensions.parquet` | step 11 |
