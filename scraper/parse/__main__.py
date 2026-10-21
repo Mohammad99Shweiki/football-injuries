@@ -7,11 +7,11 @@ from collect.common import log
 from parse import transfermarkt
 from parse.common import TableBuilder, write_table
 from parse.football_data import FdMatches
-from parse.understat import UsMatches, UsPlayerSeasons, UsTeamMatches
+from parse.understat import UsMatches, UsPlayerSeasons, UsTeamMatches, UsTeamStats
 
 
 def all_builders() -> list[TableBuilder]:
-    return [FdMatches(), UsTeamMatches(), UsPlayerSeasons(), UsMatches(), *transfermarkt.builders()]
+    return [FdMatches(), UsTeamMatches(), UsPlayerSeasons(), UsMatches(), UsTeamStats(), *transfermarkt.builders()]
 
 
 def parse_all(only: list[str] | None = None) -> None:

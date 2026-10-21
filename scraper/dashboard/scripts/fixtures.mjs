@@ -6,6 +6,7 @@ export function status({ progress = 61, phase = 'running', backoff = false, fail
   const tmTotal = 21000
   const tmDone = Math.round((tmTotal * progress) / 100)
   const usDone = Math.min(60, Math.round((60 * progress) / 70))
+  const usTeams = Math.min(1170, Math.round((1170 * progress) / 70))
   const minutes = [3.8,4.0,4.1,3.9,4.0,4.2,4.0,4.1,3.9,4.0,4.1,4.0,0,0,3.6,3.9,4.0,4.1,5.2,6.1,6.6,6.3,6.8,6.4,6.2,6.7,6.5,6.3,6.6,6.4]
   return {
     phase, mode: 'full', started_at: '2026-10-20T10:00:00Z', finished_at: phase === 'finished' ? '2026-10-20T11:46:00Z' : null,
@@ -13,7 +14,7 @@ export function status({ progress = 61, phase = 'running', backoff = false, fail
     flags: { dry_run: dry, limit: null },
     sources: {
       fd: { state: 'done', done: 60, total: 60, total_is_estimate: false, rate: '1 / 2 s', cache_hits: 0, failed: 0, note: 'Bytes saved as received. Documented quirk: Serie A shots include blocked shots from 2018/19.' },
-      us: { state: usDone === 60 ? 'done' : phase === 'paused' ? 'paused' : 'running', done: usDone, total: 60, total_is_estimate: false, rate: '1 / s', cache_hits: 0, failed: 0, note: 'Live layout: XHR endpoint getLeagueData, one request per league-season.' },
+      us: { state: usTeams === 1170 ? 'done' : phase === 'paused' ? 'paused' : 'running', done: usDone + usTeams, total: 1230, total_is_estimate: false, rate: '1 / s', cache_hits: 0, failed: 0, note: 'XHR endpoints: getLeagueData per league-season, getTeamData per team-season.' },
       tm: { state: progress >= 100 ? 'done' : phase === 'paused' ? 'paused' : 'running', done: tmDone, total: tmTotal, total_is_estimate: progress < 100, rate: '8 conc · ~6.4/s', cache_hits: 1212, failed, note: 'Record + replay transport. SDK cache=None; responses keyed by method + full URL.' },
     },
     tm_steps: [
@@ -22,6 +23,10 @@ export function status({ progress = 61, phase = 'running', backoff = false, fail
       { id: 'T3', label: 'Injury history', call: 'player_injuries(player_id)', done: 5610, total: 9640, total_is_estimate: false, sub: 'full history, 1 request each', state: 'running' },
       { id: 'T4', label: 'Player stats', call: 'player_performance_games(player_id)', done: 4930, total: 9640, total_is_estimate: false, sub: 'running', state: 'running' },
       { id: 'T5', label: 'Fixtures, all competitions', call: 'built from T4 records', done: 4930, total: 9640, total_is_estimate: false, sub: 'built from T4 — no requests', state: 'running' },
+    ],
+    us_steps: [
+      { id: 'U1', label: 'League data', call: 'getLeagueData(league, season)', done: usDone, total: 60, total_is_estimate: false, sub: usDone === 60 ? 'done' : 'running', state: usDone === 60 ? 'done' : 'running' },
+      { id: 'U2', label: 'Team statistics', call: 'getTeamData(team, season)', done: usTeams, total: 1170, total_is_estimate: false, sub: 'Bundesliga 2021: Union Berlin', state: usTeams === 1170 ? 'done' : 'running' },
     ],
     tm_unique_players: 9640,
     limiter: {

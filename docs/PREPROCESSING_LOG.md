@@ -14,6 +14,8 @@ Raw data (`data/raw/`) is never changed: every step reads a table and writes a n
 | 0.2 | 2026-10-20 | reduction | TM per-match player records | Aggregated to player × season × competition × club (appearances, minutes, participation states), as TM has no such table. | 632,170 rows out | `tm_player_stats` | `scraper/parse/` |
 | 0.3 | 2026-10-20 | integration | TM per-match player records | Club fixtures built as the union of all squad players' matches, deduplicated on club + game. | 52,275 rows out | `tm_fixtures` | `scraper/parse/` |
 
+| 0.4 | 2026-10-21 | transformation | `data/raw/understat/team/` (1,170 getTeamData payloads, new) | Team-season statistics flattened to long format: one row per team-season × block × category, values as original text. All 1,170 team-seasons have all attack-speed and situation categories. | 43,813 rows | `data/tables/us_team_stats.csv` | `scraper/parse/understat.py` |
+
 ## Phase 0: Data audit
 
 No data changed. Quality problems found here are handled in later phases (see `reports/00_data_audit.md`).

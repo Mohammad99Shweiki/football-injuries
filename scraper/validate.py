@@ -28,7 +28,7 @@ BY_UNDERSTAT = {league.understat: league for league in LEAGUES}
 BY_TM = {league.tm_id: league for league in LEAGUES}
 SOURCE_KEY = {"football_data": "fd", "understat": "us", "transfermarkt": "tm"}
 TABLES = (
-    "fd_matches", "us_team_matches", "us_player_seasons", "us_matches",
+    "fd_matches", "us_team_matches", "us_player_seasons", "us_matches", "us_team_stats",
     "tm_clubs", "tm_squads", "tm_injuries", "tm_player_stats", "tm_fixtures",
 )
 KNOWN_EXCEPTIONS = {(LEAGUES[4], 2019): "COVID, stopped early"}
@@ -92,6 +92,14 @@ class UsMatchCounts(_CountCheck):
         return Counter(
             (BY_UNDERSTAT[r["league"]], int(r["season"])) for r in read_table("us_matches") if r["isResult"] == "true"
         )
+
+
+class UsTeamStatsCounts(_CountCheck):
+    title = "Understat: team statistics per league-season"
+    expected = staticmethod(expected_clubs)
+
+    def observed(self) -> Counter:
+        return Counter((BY_UNDERSTAT[p.parent.parent.name], int(p.parent.name)) for p in understat.TEAM_DIR.glob("*/*/*.json"))
 
 
 class TmClubCounts(_CountCheck):
@@ -216,6 +224,7 @@ class SuspiciousRawFiles(Check):
         sources = (
             ("fd", football_data.OUT_DIR.glob("*/*.csv"), lambda p: (football_data.check_csv(p.read_bytes()), None, "")),
             ("us", understat.OUT_DIR.glob("*/*.json"), lambda p: (understat.check_payload(p.read_bytes()), None, "")),
+            ("us", understat.TEAM_DIR.glob("*/*/*.json"), lambda p: (understat.check_team_payload(p.read_bytes()), None, "")),
             ("tm", transfermarkt.OUT_DIR.rglob("*.json"), self._tm_problem),
         )
         for source, paths, check in sources:
@@ -275,6 +284,7 @@ def all_checks(fix: bool = False) -> list[Check]:
     return [
         FdMatchCounts(),
         UsMatchCounts(),
+        UsTeamStatsCounts(),
         TmClubCounts(),
         TmLeagueFixtureCounts(),
         ManifestFailures(Manifest()),
@@ -318,6 +328,10 @@ def build_report(run: dict | None = None) -> dict:
     run = run or {}
     total_pairs = len(LEAGUES) * len(SEASONS)
     fd, us, tm_clubs = FdMatchCounts().observed(), UsMatchCounts().observed(), TmClubCounts().observed()
+    us_teams = UsTeamStatsCounts().observed()
+    us_teams_total = sum(us_teams.values())
+    us_teams_expected = sum(expected_clubs(league, season) for league in LEAGUES for season in SEASONS)
+    us_teams_ok = all(us_teams.get((lg, s)) == expected_clubs(lg, s) for lg in LEAGUES for s in SEASONS)
     fixtures = TmLeagueFixtureCounts().items()
     failures = ManifestFailures(Manifest()).items()
     suspicious = SuspiciousRawFiles().items()
@@ -356,7 +370,7 @@ def build_report(run: dict | None = None) -> dict:
     problems = failures + suspicious
     readme_done = README_TODO not in (ROOT / "README.md").read_text(encoding="utf-8")
 
-    checks_ok = [match_ok and bool(fd) and bool(us), clubs_ok, fixtures_ok, not problems]
+    checks_ok = [match_ok and bool(fd) and bool(us), us_teams_ok, clubs_ok, fixtures_ok, not problems]
     return {
         "finished_at": run.get("finished_at"),
         "run_time_s": run.get("run_time_s"),
@@ -364,6 +378,7 @@ def build_report(run: dict | None = None) -> dict:
         "summary": [
             _tile("Football-Data CSVs", f"{fd_files} / {total_pairs}", "Union of columns at parse time", fd_files == total_pairs),
             _tile("Understat league-seasons", f"{us_files} / {total_pairs}", "XHR getLeagueData payloads", us_files == total_pairs),
+            _tile("Understat team statistics", f"{us_teams_total:,} / {us_teams_expected:,}", "XHR getTeamData payloads", us_teams_ok),
             _tile(
                 "Transfermarkt requests", f"{tm_files:,}",
                 f"{len(tm_failed)} failed · {len(tm_suspicious)} suspicious bodies", not tm_failed and not tm_suspicious,
@@ -386,6 +401,8 @@ def build_report(run: dict | None = None) -> dict:
         "dod": [
             _dod("60 Football-Data CSVs and 60 Understat league-seasons saved raw",
                  fd_files == total_pairs and us_files == total_pairs, f"{fd_files} + {us_files} of {total_pairs} each"),
+            _dod("Understat team statistics for every team-season", us_teams_ok,
+                 f"{us_teams_total:,} of {us_teams_expected:,} team-seasons"),
             _dod("Transfermarkt T1–T5 complete, manifest clean", clubs_ok and fixtures_ok and not problems,
                  f"{len(problems)} entries to re-queue" if problems else "T1–T5 not complete yet"),
             _dod(f"{len(TABLES)} tables parsed with original values", tables == len(TABLES), f"{tables} of {len(TABLES)} tables"),

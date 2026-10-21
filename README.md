@@ -127,7 +127,8 @@ data/scraper_run/    manifest.csv (source, url, local_path, status, http_status,
 | Source | Raw file | Content |
 |---|---|---|
 | Football-Data | `data/raw/football_data/{1415..2526}/{E0,SP1,I1,D1,F1}.csv` | response bytes as received |
-| Understat | `data/raw/understat/{league}/{2014..2025}.json` | response bytes as received |
+| Understat | `data/raw/understat/{league}/{2014..2025}.json` (U1) | response bytes as received |
+| Understat | `data/raw/understat/team/{league}/{season}/{team_id}.json` (U2) | response bytes as received |
 | Transfermarkt | `data/raw/transfermarkt/<url path>__<query>.json` | `{method, url, status, headers, fetched_at, body}`; `body` is the decoded upstream JSON text |
 
 Transfermarkt batch routes (`/players?ids[]=…`, `/clubs?ids[]=…`) are stored as `players__<sha1 of query>.json`.
@@ -145,8 +146,16 @@ XHR from `https://understat.com/getLeagueData/{league}/{season}`, which returns 
 - `players` holds season rows with `id, player_name, team_title, position, games, time, xG, xA, …`.
 - `dates` is the match list.
 
-That's one request per league-season (60 in total), throttled to 1 request per second. The soccerdata fallback was
-not needed.
+That's one request per league-season (60 in total, step **U1**), throttled to 1 request per second. The soccerdata
+fallback was not needed.
+
+**Understat team statistics (U2, added 2026-10-21).** `https://understat.com/getTeamData/{team}/{season}` (the team
+page's XHR; `{team}` is the Understat team title with spaces as underscores) returns `{dates, players, statistics}`.
+`statistics` holds season totals for league matches in blocks: `attackSpeed` (Fast / Standard / Normal / Slow),
+`situation` (open play, corners, set pieces, direct free kicks, penalties), `formation` (with minutes played),
+`shotZone`, `gameState`, `timing` and `result`, each with shots, goals and xG for and against. One request per
+team-season (1,170), team list taken from the U1 payload, 1 request per second. Note: when every other source replays
+from disk, Transfermarkt's replay holds the shared event loop for a few minutes before U2 requests start.
 
 **Transfermarkt** (`tmapi.transfermarkt.technology`, through `transfermarkt-api` 5.0.0).
 
@@ -184,6 +193,7 @@ carries `source_file`.
 | `us_team_matches` | team × match | Nested fields are flattened as `ppda.att`, `ppda.def`, … |
 | `us_player_seasons` | player × league-season | |
 | `us_matches` | match | Understat match list (extra table, as the spec asks for the match list) |
+| `us_team_stats` | team-season × block × category | U2 statistics, long format: `block` (e.g. `attackSpeed`), `category` (e.g. `Fast`), shots, goals, xG and `against.*`; formations also `time` |
 | `tm_clubs` | club × league-season | |
 | `tm_squads` | player × club × season | Player attributes are today's values (name, DOB, height, foot, position). |
 | `tm_injuries` | injury event | Full career, all seasons. `durationDetails.days` is upstream's value, one less than the website's inclusive count. |
