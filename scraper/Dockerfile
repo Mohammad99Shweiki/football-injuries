@@ -31,7 +31,7 @@ RUN adduser -D -u 1000 app && mkdir -p data && chown app:app data
 USER app
 
 # Raw data, tables, manifest and run state live on the mounted volume.
-ENV DASHBOARD_HOST=0.0.0.0 MANIFEST_PATH=/app/data/manifest.csv
+ENV DASHBOARD_HOST=0.0.0.0
 VOLUME ["/app/data"]
 EXPOSE 8765
 WORKDIR /app/scraper

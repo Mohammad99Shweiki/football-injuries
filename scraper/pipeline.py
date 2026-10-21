@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass
 
 from collect.common import Collector, RunContext, Selection, log
-from collect.config import LEAGUES, ROOT, League
+from collect.config import LEAGUES, RUN_DIR, League
 from collect.football_data import FootballDataCollector
 from collect.fs import atomic_write
 from collect.status import RunStatus, iso
@@ -15,7 +15,7 @@ from collect.understat import UnderstatCollector
 from parse.__main__ import parse_all
 from validate import ManifestFailures, SuspiciousRawFiles, run_checks
 
-LAST_RUN_PATH = ROOT / "data" / "last_run.json"
+LAST_RUN_PATH = RUN_DIR / "last_run.json"
 
 
 @dataclass(frozen=True)

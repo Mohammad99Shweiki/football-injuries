@@ -10,11 +10,12 @@ and compares injuries across clusters, seasons and leagues; see `docs/ANALYSIS_P
 ```
 docs/          ANALYSIS_PLAN.md, DECISIONS.md, scraper/ (scraper-spec.md, dashboard-handoff/)
 scraper/       stage 1, data collection (finished): collect/, parse/, validate.py, dashboard/, Docker files
-analysis/      stage 2, analysis code: config.py (paths, leagues), load.py, then one module per phase
-notebooks/     one thin notebook per phase: 00_audit.ipynb, 01_entities.ipynb, ...
+analysis/      stage 2, code shared across phases: config.py (paths, leagues), load.py, report.py
+notebooks/     one notebook per phase, its steps in order (note, code, check): 00_audit.ipynb, 01_entities.ipynb, ...
 mappings/      hand-reviewed inputs (team map, injury label map), tracked in git
 data/          git-ignored, all generated:
   raw/           scraper downloads (read only)
+  scraper_run/   scraper run state: manifest, live status, last run, smoke test
   tables/        parsed tables (python -m parse)
   01_entities/ … 05_injury_analysis/   output of each analysis phase
 reports/       NN_*.md per phase, figures/NN_*.png
@@ -22,7 +23,7 @@ reports/       NN_*.md per phase, figures/NN_*.png
 
 Data flows one way: `raw → tables → 01 → 02 → … → reports`. Phase N writes only to `data/NN_*/`.
 
-Academic use only. Raw data and tables (`data/`, `manifest.csv`) are git-ignored and must not be redistributed.
+Academic use only. Raw data and tables (`data/`) are git-ignored and must not be redistributed.
 
 ## Setup
 
@@ -44,7 +45,7 @@ docker compose run --rm app --headless --limit 2   # terminal-only run, any run_
 ```
 
 - **Data:** the repository's `data/` is mounted into the container. Raw files, tables and run state stay on your machine and survive rebuilds. Local and Docker runs share them.
-- **Manifest:** in Docker the manifest is written to `data/manifest.csv` (`MANIFEST_PATH`); local runs use `./manifest.csv`.
+- **Run state:** manifest, live status, last run and smoke-test results go to `data/scraper_run/` (local and Docker alike; `MANIFEST_PATH` overrides the manifest).
 - **Localhost only:** the port is published to `127.0.0.1` only, because the dashboard has no login.
 
 ## Usage
@@ -77,7 +78,7 @@ React + Vite (TypeScript) in `dashboard/`, built from the design handoff in `doc
 
 | Route | What |
 |---|---|
-| `GET /api/status` | live run status, polled every second (also written to `data/status.json`) |
+| `GET /api/status` | live run status, polled every second (also written to `data/scraper_run/status.json`) |
 | `GET /api/validation` | validation report JSON (same checks as `validate.py`) |
 | `POST /api/control` | `start`, `smoke_test`, `pause`, `resume`, `requeue` |
 
@@ -118,7 +119,7 @@ scraper/
   dashboard/           React app
 data/raw/{football_data,understat,transfermarkt}/
 data/tables/
-manifest.csv         source, url, local_path, status, http_status, bytes, fetched_at, error (network requests only)
+data/scraper_run/    manifest.csv (source, url, local_path, status, http_status, bytes, fetched_at, error; network requests only), status.json, last_run.json, smoke.json
 ```
 
 ## Raw storage

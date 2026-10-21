@@ -4,13 +4,13 @@ Work one phase at a time. At the end of each phase, give a short summary (what w
 
 Structure:
 ```
-analysis/       # reusable code: config.py (paths, leagues), load.py, one module per phase
-notebooks/      # 00_audit … 06_report, one per phase, thin, calling analysis/
+analysis/       # code shared across phases: config.py (paths, leagues), load.py, report.py
+notebooks/      # 00_audit … 06_report, one per phase: each step as note + code + check, run top to bottom
 mappings/       # hand-reviewed CSVs (tracked in git): team_map, injury_label_map, non-injury labels
 data/raw/, data/tables/          # scraper output, read only
 data/01_entities/ … data/05_injury_analysis/   # each phase's output (analysis.config.phase_dir)
 reports/        # NN_*.md per phase, figures/NN_*.png
-docs/DECISIONS.md
+docs/DECISIONS.md, docs/PREPROCESSING_LOG.md
 ```
 Phase N writes only to `data/NN_*/` and reads only from `data/tables/`, `mappings/` and earlier phase folders.
 Stack: Python, pandas, numpy, scikit-learn, scipy, matplotlib/seaborn, rapidfuzz (name matching).
