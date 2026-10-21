@@ -65,11 +65,18 @@ No data changed. Quality problems found here are handled in later phases (see `r
 | 3.8 | 2026-10-21 | transformation | `us_team_stats` (43,813) | Six style shares per team-season (fast/slow attack, conceded fast attack, set pieces, outside-box shots, back-three minutes). | 43,813 → 1,170 | style features | `03_features.ipynb` step 3 |
 | 3.9 | 2026-10-21 | transformation | 15 style features (z-scores) | Combined into 4 attacking and 4 defensive phase-of-play dimensions (signed mean, re-standardised); 13 features used once; back-three share kept as structure, fouls suffered left out. (Replaces the first version with 8 mixed dimensions.) | 1,170 | `data/03_features/style_dimensions.parquet` | step 11 |
 
+## Phase 4: Clustering (soft memberships)
+
+| # | Date | Type | Input | Operation | Rows affected | Output | Where |
+|---|---|---|---|---|---|---|---|
+| 4.1 | 2026-10-21 | transformation | phase dimensions, K-means k = 4 centroids | Fuzzy membership per style (fuzzy c-means formula, m = 2), own-style membership, second style and its membership; GMM membership probability, GMM and consensus styles for comparison. Clear members (≥ 0.5): attack 703, defence 679. | 1,170 team-seasons, +10 columns | `data/04_clusters/team_season_clusters.parquet`, `gmm_selection.csv` | `04_clustering.ipynb` step 5 |
+
 ## Phase 5: Injury analysis (pattern evaluation)
 
 | # | Date | Type | Input | Operation | Rows affected | Output | Where |
 |---|---|---|---|---|---|---|---|
 | 5.1 | 2026-10-21 | integration | `02_injuries/player_club_seasons` (36,525), clusters, Phase 3 exposure, points per match, `tm_squads` | Player-club-season table: team style (k = 7, k = 4), strength third, workload, position (all players) and age on 1 January of the season (21 missing DOB), injuries > 7 days aggregated per player-club-season (24,581 → all matched), days lost, severe, surgery, counts by body area, mild injuries (5,180) and fitness absences (953). | 36,525 rows, 10,340 players, 1,170 team-seasons | `data/05_injury_analysis/player_seasons.parquet` | `05_injury_analysis.ipynb` step 1 |
 | 5.2 | 2026-10-21 | transformation | player-seasons | Expected injuries and days lost per player-season: league mean (indirect standardisation) and league × age band × position mean. | 36,525 (36,504 with age) | `exp_*` columns | step 2 |
-| 5.3 | 2026-10-21 | transformation | team-season phase dimensions + clusters | Typicality per phase (own-centroid distance ÷ next-centroid distance); core = ≤ 0.8 (attack 857, defence 872 of 1,170 team-seasons); era label per season; formation = back three if ≥ 50% of minutes. | 1,170 | `attack_core`, `defence_core`, `era`, `formation` | `05_injury_analysis.ipynb` steps 1, 11 |
+| 5.3 | 2026-10-21 | transformation | team-season phase dimensions + clusters | ~~Typicality per phase (own-centroid distance ÷ next-centroid distance); core = ≤ 0.8 (attack 857, defence 872)~~ superseded by 4.1: core = fuzzy membership ≥ 0.5 (attack 703, defence 679 of 1,170 team-seasons); era label per season; formation = back three if ≥ 50% of minutes. | 1,170 | `attack_core`, `defence_core`, `era`, `formation` | `05_injury_analysis.ipynb` steps 1, 11 |
 | 5.4 | 2026-10-21 | reduction | 1,170 team-seasons; player-seasons | League-season aggregates for the style–injury links (dimension means, injury outcomes per league-season). | 1,170 → 60; 36,525 → 60 | in-notebook tables | step 18 |
+| 5.5 | 2026-10-21 | transformation | Phase 5 result tables | Excess injuries/days per player-season; empirical-Bayes shrinkage of 16 grid cells and 40 league × style cells; 3-season rolling means (12 seasons, 60 league-seasons); CMH + Benjamini–Hochberg over 80 style × body-area tests (9 findings); RR by position (4) and age band (4) per style. | 16, 40, 12, 60, 80, 64 rows | `data/05_injury_analysis/tables/*_shrunk.csv`, `season_*_rolling.csv`, `body_areas_fdr.csv`, `breakdown_position_age.csv` | `05_injury_analysis.ipynb` step 18 |

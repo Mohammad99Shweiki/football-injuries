@@ -145,7 +145,9 @@ for ph, (col, order) in PHASES.items():
     dims = [c for c in style_dims.columns if c.startswith(f"{ph}_")]
     xy = PCA(n_components=2, random_state=42).fit_transform(style_dims[dims].to_numpy())
     for (_, t), (x, y) in zip(clusters.iterrows(), xy):
-        rows.append({"phase": ph, "style": t[col], "league": t.league, "club": t.club, "season": t.season_key, "pc1": r(x), "pc2": r(y)})
+        rows.append({"phase": ph, "style": t[col], "league": t.league, "club": t.club, "season": t.season_key, "pc1": r(x), "pc2": r(y),
+                     "membership": r(t[f"{ph}_membership"], 2), "second_style": t[f"{ph}_second_style"],
+                     "second_membership": r(t[f"{ph}_second_membership"], 2)})
 files["cluster_map"] = rows
 
 # Style profiles: cards from Phase 5 plus each style's injury rate ratios.
@@ -159,7 +161,8 @@ for ph, (col, order) in PHASES.items():
                      "how": c["how it plays"], "numbers": c["in numbers (core)"], "back_three": c["back-three minutes"],
                      "points": r(c["points/match"], 2), "paired_with": c["most often with"],
                      "typical_2014_18": c["typical 2014–18"], "typical_2018_22": c["typical 2018–22"], "typical_2022_26": c["typical 2022–26"],
-                     "rr": r(q["RR"], 2), "rr_low": r(q["RR low"], 2), "rr_high": r(q["RR high"], 2), "days_rr": r(q["days RR"], 2)})
+                     "rr": r(q["RR"], 2), "rr_low": r(q["RR low"], 2), "rr_high": r(q["RR high"], 2), "days_rr": r(q["days RR"], 2),
+                     "excess_per_100": r(q["excess / 100 player-seasons"], 1)})
 files["styles"] = rows
 
 # Style shares per season (all leagues and each league).
@@ -186,25 +189,41 @@ for grouping, file, order in [("attack", "attacking_style", ATTACK), ("defence",
     rows += [{"grouping": grouping, "style": st, "order": i, "player_seasons": int(q["player-seasons"]),
               "injuries_per_ps": r(q["injuries / player-season"]), "days_per_ps": r(q["days lost / player-season"], 1),
               "severe_share": r(q["severe share"]), "rr": r(q["RR"]), "rr_low": r(q["RR low"]), "rr_high": r(q["RR high"]),
-              "days_rr": r(q["days RR"]), "days_rr_low": r(q["days RR low"]), "days_rr_high": r(q["days RR high"])} for i, (st, q) in enumerate(t.iterrows())]
+              "days_rr": r(q["days RR"]), "days_rr_low": r(q["days RR low"]), "days_rr_high": r(q["days RR high"]),
+              "excess_per_100": r(q["excess / 100 player-seasons"], 1), "excess_days": r(q["excess days / player-season"], 1)}
+             for i, (st, q) in enumerate(t.iterrows())]
 files["injury_rr"] = rows
 
-g = pd.read_csv(T / "attack_defence_grid.csv")
-files["grid"] = [{"attack": q.attack_style, "defence": q.defence_style, "rr": r(q.RR, 2), "days_rr": r(q["days RR"], 2),
-                  "team_seasons": int(q["team-seasons"])} for _, q in g.iterrows()]
+g = pd.read_csv(T / "attack_defence_grid_shrunk.csv")
+files["grid"] = [{"attack": q.attack_style, "defence": q.defence_style, "rr": r(q["RR raw"], 2), "rr_shrunk": r(q["RR shrunk"], 2),
+                  "weight_own_data": r(q["RR weight on own data"], 2), "days_rr": r(q["days RR raw"], 2),
+                  "days_rr_shrunk": r(q["days RR shrunk"], 2), "team_seasons": int(q["team-seasons"])} for _, q in g.iterrows()]
 
 rows = []
 for ph, file in [("attack", "attacking_style"), ("defence", "defensive_style")]:
     med = pd.read_csv(T / f"body_median_{file}.csv", index_col=0)
     above = pd.read_csv(T / f"body_above_{file}.csv", index_col=0)
-    rows += [{"phase": ph, "style": st, "area": a, "relative": r(med.loc[st, a], 2), "leagues_above": int(above.loc[st, a])}
+    fdr = pd.read_csv(T / "body_areas_fdr.csv")
+    fdr = fdr[fdr.grouping == ("attacking style" if ph == "attack" else "defensive style")].set_index(["style", "area"])
+    rows += [{"phase": ph, "style": st, "area": a, "relative": r(med.loc[st, a], 2), "leagues_above": int(above.loc[st, a]),
+              "odds_ratio": r(fdr.loc[(st, a), "MH odds ratio"], 2), "q": r(fdr.loc[(st, a), "q (BH)"], 4),
+              "finding": bool(fdr.loc[(st, a), "finding"])}
              for st in med.index for a in med.columns]
 files["body_areas"] = rows
 
-bs = pd.read_csv(T / "by_season.csv", index_col=0)
+bs = pd.read_csv(T / "by_season.csv", index_col=0).join(
+    pd.read_csv(T / "season_trend_rolling.csv", index_col=0)[["injuries / player-season (3-season mean)", "days lost / player-season (3-season mean)"]])
 files["season_trend"] = [{"season": s, "injuries_per_ps": r(q["injuries / player-season"]),
                           "low": r(q["injuries / player-season"] * q["RR low"] / q["RR"]), "high": r(q["injuries / player-season"] * q["RR high"] / q["RR"]),
-                          "days_per_ps": r(q["days lost / player-season"], 1), "unknown_area_share": r(q["unknown body area"])} for s, q in bs.iterrows()]
+                          "days_per_ps": r(q["days lost / player-season"], 1), "unknown_area_share": r(q["unknown body area"]),
+                          "injuries_rolling": r(q["injuries / player-season (3-season mean)"]),
+                          "days_rolling": r(q["days lost / player-season (3-season mean)"], 1)} for s, q in bs.iterrows()]
+
+bd = pd.read_csv(T / "breakdown_position_age.csv")
+files["breakdown"] = [{"phase": "attack" if q.grouping == "attacking style" else "defence", "style": q["style"],
+                       "by": "position" if q.by == "position" else "age band", "group": q.group,
+                       "player_seasons": int(q["player-seasons"]), "rr": r(q.RR, 2), "rr_low": r(q["RR low"], 2), "rr_high": r(q["RR high"], 2),
+                       "excess_per_100": r(q["excess / 100 player-seasons"], 1)} for _, q in bd.iterrows()]
 
 dec = pd.read_csv(T / "decomposition.csv")
 dec = dec[dec.eras == "2014–18 → 2022–26"]

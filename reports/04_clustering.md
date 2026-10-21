@@ -91,7 +91,49 @@ League mix:
 | Low block | 0.24 | 0.05 | 0.15 | 0.36 | 0.2 |
 | Aggressive duel press | 0.14 | 0.44 | 0.1 | 0.03 | 0.29 |
 
-## 4. Combined styles
+## 4. Soft memberships and consensus
+
+Gaussian mixture (k = 4) and consensus clustering (bootstrap K-means, bootstrap GMM and Ward) against K-means:
+
+| measure | attack | defence |
+|---|---|---|
+| K-means vs Ward (ARI) | 0.394 | 0.345 |
+| K-means vs GMM (ARI) | 0.302 | 0.544 |
+| K-means vs consensus (ARI) | 0.892 | 0.923 |
+| same style as GMM | 0.602 | 0.797 |
+| same style as consensus | 0.959 | 0.97 |
+| clear members (GMM p ≥ 0.8) | 0.338 | 0.428 |
+| lowest-BIC k | 2.0 | 2.0 |
+| clear members (fuzzy ≥ 0.5) | 0.601 | 0.58 |
+
+Fuzzy membership of each team-season's own style (clear member: ≥ 0.5), with the GMM probability for comparison:
+
+| phase | style | fuzzy mean | clear (fuzzy ≥ 0.5) | GMM mean | most often borders on |
+|---|---|---|---|---|---|
+| attack | Positional possession | 0.59 | 0.68 | 0.81 | Build-up into the box |
+| attack | Counter-attack | 0.59 | 0.69 | 0.4 | Direct play |
+| attack | Direct play | 0.59 | 0.67 | 0.7 | Counter-attack |
+| attack | Build-up into the box | 0.51 | 0.42 | 0.41 | Direct play |
+| defence | High press, high line | 0.54 | 0.56 | 0.56 | Compact mid-block |
+| defence | Low block | 0.57 | 0.66 | 0.83 | Compact mid-block |
+| defence | Aggressive duel press | 0.55 | 0.61 | 0.7 | Compact mid-block |
+| defence | Compact mid-block | 0.53 | 0.47 | 0.56 | Low block |
+
+GMM BIC by k (lower is better):
+
+| k | attack | defence |
+|---|---|---|
+| 2 | 12181.0 | 12499.0 |
+| 3 | 12245.0 | 12542.0 |
+| 4 | 12303.0 | 12605.0 |
+| 5 | 12369.0 | 12674.0 |
+| 6 | 12450.0 | 12735.0 |
+| 7 | 12507.0 | 12821.0 |
+| 8 | 12580.0 | 12899.0 |
+| 9 | 12669.0 | 12979.0 |
+| 10 | 12742.0 | 13045.0 |
+
+## 5. Combined styles
 
 | attack \ defence | High press, high line | Low block | Aggressive duel press | Compact mid-block |
 |---|---|---|---|---|

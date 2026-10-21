@@ -32,9 +32,10 @@ three) is reported per style, not clustered. Team strength and workload are show
 2. K-means for k = 2…10 per phase: quality measures, stability (bootstrap ARI and per-cluster Jaccard), Ward
 3. Profiles at k = 4 per phase: centroids, typical teams, strength, workload, formation, leagues
 4. Names (by rule) and the combined style; saved clusters
-5. How the attacking and defensive styles combine
-6. 2-D views (PCA, for visualisation only)
-7. Report
+5. Soft memberships (Gaussian mixture) and consensus clustering
+6. How the attacking and defensive styles combine
+7. 2-D views (PCA, for visualisation only)
+8. Report
 
 **Input:** `data/03_features/` (phase dimensions, features), `us_team_matches` (points, strength check only).
 **Outputs:** `data/04_clusters/`, `reports/04_clustering.md`, `reports/figures/04_*.png`.
@@ -57,6 +58,10 @@ from scipy.cluster.hierarchy import dendrogram, linkage
 from sklearn.cluster import AgglomerativeClustering, KMeans
 from sklearn.decomposition import PCA
 from sklearn.metrics import adjusted_rand_score, calinski_harabasz_score, davies_bouldin_score, silhouette_score
+from sklearn.mixture import GaussianMixture
+from scipy.cluster.hierarchy import fcluster
+from scipy.optimize import linear_sum_assignment
+from scipy.spatial.distance import squareform
 
 sys.path.insert(0, str(Path.cwd().parent))  # project root, for the analysis package
 from analysis.config import DATA_DIR, FIGURES_DIR, REPORTS_DIR, phase_dir
@@ -302,9 +307,108 @@ print(f"saved {len(out)} team-seasons; {(~out.rare_style).sum()} in {counts[coun
       f"with ≥ {RARE_COMBINATION} team-seasons, {out.rare_style.sum()} in rare ones")
 ''')
 
+# ---- step 5 (soft memberships and consensus)
+md('''
+## Step 5. Soft memberships (Gaussian mixture) and consensus clustering
+
+K-means gives every team-season one style, but many sit between two. Two further clustering methods, both still
+clustering, check and refine that:
+- **Gaussian mixture model (GMM)** per phase, k = 2…10 (full covariance, 10 starts, fixed seed): its BIC is a
+  model-based second opinion on k, and at k = 4 it gives each team-season a **membership probability** for every
+  style. Its groups only partly match K-means, so it serves as a robustness check, not as the membership measure.
+- **Fuzzy membership** (fuzzy c-means memberships from the K-means centroids, fuzziness m = 2; Bezdek 1981): each
+  team-season's degree of belonging (0–1, summing to 1) to every style, consistent with the K-means clusters. A
+  team-season with membership ≥ 0.5 in its own style is a **clear member** (used in Phase 5); its second style and
+  membership show what it borders on.
+- **Consensus clustering**: 50 bootstrap K-means fits, 50 bootstrap GMM fits and Ward are combined into how often each
+  pair of team-seasons ends up together (co-association), and that matrix is clustered (average linkage, k = 4).
+
+K-means stays the main assignment; agreement with GMM and the consensus (adjusted Rand index) is its robustness check.
+''')
+code('''
+def align(reference: np.ndarray, labels: np.ndarray, k: int) -> np.ndarray:
+    """Relabel `labels` (0..k-1) to the K-means cluster (0..k-1) they overlap most, one-to-one."""
+    both = np.zeros((k, k))
+    np.add.at(both, (labels, reference), 1)
+    rows, cols = linear_sum_assignment(-both)
+    return dict(zip(rows, cols))
+
+
+gmm_rows, soft = [], {}
+for ph in PHASES:
+    x, k = X[ph], MAIN_K[ph]
+    for kk in K_RANGE:
+        g = GaussianMixture(kk, covariance_type="full", n_init=10, random_state=SEED).fit(x)
+        gmm_rows.append({"phase": ph, "k": kk, "BIC": g.bic(x), "AIC": g.aic(x),
+                         "GMM vs K-means (ARI)": adjusted_rand_score(kmeans[(ph, kk)].labels_, g.predict(x))})
+    ref = kmeans[(ph, k)].labels_
+    g = GaussianMixture(k, covariance_type="full", n_init=10, random_state=SEED).fit(x)
+    mapping = align(ref, g.predict(x), k)
+    proba = np.zeros((len(x), k))
+    for comp, cl in mapping.items():
+        proba[:, cl] = g.predict_proba(x)[:, comp]
+    # Consensus: co-association over bootstrap K-means, bootstrap GMM and Ward partitions of all team-seasons.
+    co, parts = np.zeros((len(x), len(x))), 0
+    for b, idx in enumerate(boot_idx):
+        for model in (KMeans(n_clusters=k, n_init=10, random_state=SEED + b), GaussianMixture(k, n_init=3, random_state=SEED + b)):
+            lab = model.fit(x[idx]).predict(x)
+            co += lab[:, None] == lab[None, :]
+            parts += 1
+    ward_lab = AgglomerativeClustering(n_clusters=k, linkage="ward").fit_predict(x)
+    co += ward_lab[:, None] == ward_lab[None, :]
+    co /= parts + 1
+    cons = fcluster(linkage(squareform(1 - co, checks=False), method="average"), k, criterion="maxclust") - 1
+    cmap = align(ref, cons, k)
+    soft[ph] = {"proba": proba, "gmm": np.array([mapping[c] for c in g.predict(x)]), "consensus": np.array([cmap[c] for c in cons])}
+gmm_summary = pd.DataFrame(gmm_rows)
+agreement = pd.DataFrame([{
+    "phase": ph, "K-means vs Ward (ARI)": summary.query("phase == @ph and k == @MAIN_K[@ph]")["Ward vs K-means (ARI)"].iloc[0],
+    "K-means vs GMM (ARI)": adjusted_rand_score(kmeans[(ph, MAIN_K[ph])].labels_, soft[ph]["gmm"]),
+    "K-means vs consensus (ARI)": adjusted_rand_score(kmeans[(ph, MAIN_K[ph])].labels_, soft[ph]["consensus"]),
+    "same style as GMM": (kmeans[(ph, MAIN_K[ph])].labels_ == soft[ph]["gmm"]).mean(),
+    "same style as consensus": (kmeans[(ph, MAIN_K[ph])].labels_ == soft[ph]["consensus"]).mean(),
+    "clear members (GMM p ≥ 0.8)": (soft[ph]["proba"][np.arange(len(style_dims)), kmeans[(ph, MAIN_K[ph])].labels_] >= 0.8).mean(),
+    "lowest-BIC k": int(gmm_summary[gmm_summary.phase == ph].sort_values("BIC").k.iloc[0]),
+} for ph in PHASES]).set_index("phase")
+
+for ph in PHASES:
+    lab = kmeans[(ph, MAIN_K[ph])].labels_
+    out[f"{ph}_gmm_p"] = soft[ph]["proba"][np.arange(len(out)), lab].round(3)
+    out[f"{ph}_gmm_style"] = pd.Series(soft[ph]["gmm"] + 1).map(NAMES[ph]).to_numpy()
+    out[f"{ph}_consensus_style"] = pd.Series(soft[ph]["consensus"] + 1).map(NAMES[ph]).to_numpy()
+FUZZY_M = 2  # fuzziness of the memberships (the conventional value)
+for ph in PHASES:
+    km, x = kmeans[(ph, MAIN_K[ph])], X[ph]
+    dist = np.linalg.norm(x[:, None, :] - km.cluster_centers_[None, :, :], axis=2) + 1e-12
+    member = 1 / ((dist[:, :, None] / dist[:, None, :]) ** (2 / (FUZZY_M - 1))).sum(axis=2)
+    rows = np.arange(len(x))
+    second = np.argsort(-member, axis=1)[:, 1]
+    out[f"{ph}_membership"] = member[rows, km.labels_].round(3)
+    out[f"{ph}_second_style"] = pd.Series(second + 1).map(NAMES[ph]).to_numpy()
+    out[f"{ph}_second_membership"] = member[rows, second].round(3)
+    assert np.allclose(member.sum(axis=1), 1) and (member.argmax(axis=1) == km.labels_).all()
+assert out.notna().all().all()
+out.to_parquet(OUT_DIR / "team_season_clusters.parquet", index=False)
+gmm_summary.to_csv(OUT_DIR / "gmm_selection.csv", index=False)
+display(gmm_summary.pivot(index="k", columns="phase", values=["BIC", "GMM vs K-means (ARI)"]).round(3))
+agreement.round(3).T
+''')
+code('''
+# Fuzzy membership of each team-season's own style, per style (how clear each cluster is), with GMM for comparison.
+agreement["clear members (fuzzy ≥ 0.5)"] = [(out[f"{ph}_membership"] >= 0.5).mean() for ph in agreement.index]
+clarity = pd.concat({ph: pd.DataFrame({
+    "fuzzy mean": out.groupby(f"{ph}_style")[f"{ph}_membership"].mean(),
+    "clear (fuzzy ≥ 0.5)": out.groupby(f"{ph}_style")[f"{ph}_membership"].apply(lambda m: (m >= 0.5).mean()),
+    "GMM mean": out.groupby(f"{ph}_style")[f"{ph}_gmm_p"].mean(),
+    "most often borders on": out.groupby(f"{ph}_style")[f"{ph}_second_style"].agg(lambda s: s.mode()[0]),
+}).loc[ORDER[ph]] for ph in PHASES})
+display(agreement.round(3).T)
+clarity.round(2)
+''')
+
 # ---- step 5
 md('''
-## Step 5. How the attacking and defensive styles combine
+## Step 6. How the attacking and defensive styles combine
 
 Team-seasons, points per match and back-three minutes per combination. Typical teams are the ones closest to the
 combination's centre in both phases.
@@ -342,7 +446,7 @@ heat_fig = save(fig, "04_centroids.png")
 
 # ---- step 6
 md('''
-## Step 6. 2-D views
+## Step 7. 2-D views
 
 PCA of each phase's four dimensions, **only to draw** the clusters. Marker shapes and labels carry identity
 alongside colour.
@@ -371,7 +475,7 @@ pca_fig = save(fig, "04_pca.png")
 
 # ---- step 7
 md('''
-## Step 7. Report
+## Step 8. Report
 ''')
 code('''
 cols = ["phase", "k", "silhouette", "davies_bouldin", "calinski_harabasz", "stability (mean ARI)", "min cluster Jaccard",
@@ -406,7 +510,14 @@ for ph in PHASES:
              f"Share of team strength (points per match) explained: eta² = {p['eta2_points']:.2f}.", "",
              md_table(ctx.rename_axis("cluster")), "", "Centroids (z):", "", md_table(cen.round(2).rename_axis("cluster")), "",
              "League mix:", "", md_table(p["leagues"].rename(index=NAMES[ph]).rename_axis("style")), ""]
-text += ["## 4. Combined styles", "", md_table(combo.rename_axis("attack \\\\ defence")), "",
+text += ["## 4. Soft memberships and consensus", "",
+         "Gaussian mixture (k = 4) and consensus clustering (bootstrap K-means, bootstrap GMM and Ward) against K-means:", "",
+         md_table(agreement.round(3).T.rename_axis("measure")), "",
+         "Fuzzy membership of each team-season's own style (clear member: ≥ 0.5), with the GMM probability for comparison:", "",
+         md_table(clarity.round(2).rename_axis(["phase", "style"])), "",
+         "GMM BIC by k (lower is better):", "",
+         md_table(gmm_summary.pivot(index="k", columns="phase", values="BIC").round(0).rename_axis("k")), ""]
+text += ["## 5. Combined styles", "", md_table(combo.rename_axis("attack \\\\ defence")), "",
          md_table(combos.rename_axis("style")), "", f"![Centroids](figures/{heat_fig})", "", f"![PCA](figures/{pca_fig})", ""]
 (REPORTS_DIR / "04_clustering.md").write_text("\\n".join(text), encoding="utf-8")
 print("wrote", REPORTS_DIR / "04_clustering.md")

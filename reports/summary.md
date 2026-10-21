@@ -15,8 +15,9 @@ Football changed markedly: patient positional possession grew from 6% to 25% of 
 counter-attacking play shrank, pressing and fouling declined, and back-three systems rose from 13% to 31% of minutes.
 Players in **positional-possession** teams had 24% more injuries than their league average (rate ratio 1.24, 95% CI
 1.18–1.30), robust to age, position, team strength and every sensitivity check; high-press, high-line defending added
-14%. The styles also differ in **where** players get hurt: possession and pressing styles more hamstring and groin
-injuries, counter-attacking, direct and duel-heavy styles more knee injuries, consistently within leagues. A Kitagawa
+14%. The styles also differ in **where** players get hurt: after correcting for multiple comparisons, duel-heavy and
+counter-attacking styles have more knee injuries and the low block fewer hamstring and groin injuries; possession and
+pressing styles lean towards more hamstring injuries, but that tendency does not survive the correction. A Kitagawa
 decomposition shows that the shift in attacking styles alone would have raised injuries by 0.073 per player-season
 between 2014–18 and 2022–26, in every league, and accounts for more than half of the 22% rise in hamstring injuries.
 
@@ -55,13 +56,20 @@ silhouette, Davies–Bouldin, Calinski–Harabasz, bootstrap stability (mean ARI
 and interpretability, and compared with Ward hierarchical clustering. k = 4 was chosen for both phases (attack:
 silhouette 0.22, weakest cluster Jaccard 0.64; defence: 0.21 and 0.80). k = 3 loses the modern styles and k = 5
 produces dissolving clusters. Ward agrees moderately (ARI 0.39 attack, 0.35 defence): styles form a continuum, and
-the clusters are useful divisions of it. Clusters are named by rule (Figure 1).
+the clusters are useful divisions of it. Clusters are named by rule (Figure 1). Two further clustering methods check
+this: a Gaussian mixture model (its BIC prefers k = 2 in both phases, again a continuum) and a consensus clustering of
+bootstrap K-means, bootstrap GMM and Ward partitions, which reproduces K-means closely (ARI 0.89 attack, 0.92
+defence). Each team-season also gets a **fuzzy membership** (0–1) in every style from the K-means centroids
+(fuzzy c-means memberships, m = 2); ≥ 0.5 in its own style makes it a clear member (703 attack, 679 defence).
 
 **Injury analysis.** Unit: player-club-season. Rates: injuries and days lost per player-season, injuries per 1,000
 minutes, severe share. Because Transfermarkt records injuries at very different rates per league, groups are compared
 by a **league-adjusted rate ratio** (observed ÷ expected at the league's average; indirect standardisation), with 95%
-confidence intervals from 1,000 bootstrap resamples of team-seasons. Body-area differences count only when they hold
-within at least 4 of the 5 leagues. Trends: three eras (2014–18, 2018–22, 2022–26), style transitions between
+confidence intervals from 1,000 bootstrap resamples of team-seasons; absolute excess injuries per 100
+player-seasons are shown next to each ratio. Body-area patterns are tested within leagues (Cochran–Mantel–Haenszel)
+and corrected for the 80 comparisons (Benjamini–Hochberg, q < 0.05); small attack × defence cells are shrunk towards
+the average (empirical Bayes); season trends are shown with 3-season rolling means. All of these were fixed before
+looking at their results. Trends: three eras (2014–18, 2018–22, 2022–26), style transitions between
 seasons, and a Kitagawa decomposition of injury changes into style mix and within-style change. No regression or
 classification model is used (course constraint).
 
@@ -130,14 +138,15 @@ about 20%. Clubs keep their attacking style from one season to the next about ha
 
 ### 5.4 Where players get hurt
 
-Body-area shares relative to the league's share (patterns that hold in at least 4 of 5 leagues):
-- Positional possession and the high press: **more hamstring** injuries (4/5 leagues each); the high press also more
-  **groin** injuries (5/5).
-- Counter-attack (5/5), direct play (4/5) and the aggressive duel press (4/5): **more knee** injuries.
-- Low block: **20% fewer hamstring** injuries.
+Body-area patterns that survive the within-league test after false-discovery-rate correction (9 of 80):
+- **Knee:** more with the aggressive duel press (odds ratio 1.23; above the league in 4/5 leagues) and counter-attack
+  (1.13; 5/5); fewer with Positional possession (0.82) and the high press (0.85).
+- **Low block:** fewer hamstring (0.85) and groin (0.81) injuries.
+- Positional possession: more unspecified muscle injuries (1.21).
 
-The overall effect is small (Cramér's V 0.04–0.05); several pooled differences turned out to be labelling and are not
-reported as findings.
+Patterns seen in at least 4 of 5 leagues but **not** significant after correction (shown as tendencies only): more
+hamstring injuries with Positional possession and the high press, more groin injuries with the high press, more knee
+injuries with direct play. The overall effect is small (Cramér's V 0.04–0.05).
 
 *Figure 4: `figures/05_body_areas_by_style.png`.*
 
@@ -175,7 +184,8 @@ partly because of recording changes.
 
 A plausible reading, not measured here (no tracking data): possession-dominant teams, which pair it with a high
 press and a high line, are likely to make more high-speed actions and repeated sprints in the opponent's half and
-play more matches (European football), all known risk factors for hamstring and groin strain; direct,
+play more matches (European football), all known risk factors for muscle injuries (their hamstring and groin excess
+is only a tendency here); direct,
 counter-attacking and duel-heavy football is likely to involve more contact and decelerations, consistent with more
 knee injuries. As the Big Five moved towards patient possession, the mix of styles shifted towards the more
 injury-prone one, enough to raise injury rates in every league even while rates within styles changed little. The
