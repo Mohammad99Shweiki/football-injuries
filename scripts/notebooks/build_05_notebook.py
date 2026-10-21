@@ -884,6 +884,20 @@ md('''
 ''')
 code('''
 ps.to_parquet(OUT_DIR / "player_seasons.parquet", index=False)
+# Result tables, for the Phase 6 dashboard.
+TABLES = OUT_DIR / "tables"
+TABLES.mkdir(exist_ok=True)
+for name, t in results.items():
+    t.to_csv(TABLES / f"rates_{name.replace(' ', '_')}.csv")
+grid.to_csv(TABLES / "attack_defence_grid.csv")
+for name, b in body.items():
+    b["median"].to_csv(TABLES / f"body_median_{name.replace(' ', '_')}.csv")
+    b["above"].to_csv(TABLES / f"body_above_{name.replace(' ', '_')}.csv")
+by_season.join(unknown_share).to_csv(TABLES / "by_season.csv")
+decomposition.to_csv(TABLES / "decomposition.csv", index=False)
+pd.Series(stories, name="story").rename_axis("league").to_csv(TABLES / "league_stories.csv")
+for ph, c in cards.items():
+    c.to_csv(TABLES / f"cards_{ph}.csv")
 
 
 def sig_list(t: pd.DataFrame, rr: str = "RR") -> str:

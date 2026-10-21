@@ -13,7 +13,7 @@ REPORTS_DIR = ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
 
 # One output folder per phase: data/<phase>/. A phase writes only to its own folder and reads earlier ones.
-PHASES = ("01_entities", "02_injuries", "03_features", "04_clusters", "05_injury_analysis")
+PHASES = ("01_entities", "02_injuries", "03_features", "04_clusters", "05_injury_analysis", "06_report")
 
 
 def phase_dir(phase: str) -> Path:

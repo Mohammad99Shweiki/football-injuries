@@ -1,0 +1,572 @@
+<style>
+#dash-root { --dash-gutter: clamp(16px, 3vw, 40px); }
+.fx { font-family: var(--font-anthropic-sans); display: flex; flex-direction: column; gap: var(--cds-gap-lg); max-width: 1180px; margin-inline: auto; }
+.fx-head { display: flex; flex-direction: column; gap: var(--cds-gap-xs); }
+.fx-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; text-wrap: balance; }
+.fx-take { color: var(--color-fg-muted); font-size: var(--cds-font-size-body); margin: 0; max-width: 75ch; }
+.fx-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--cds-gap-md); }
+.fx-kpi { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md); display: flex; flex-direction: column; gap: var(--cds-gap-xs); }
+.fx-kpi-v { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; }
+.fx-kpi-l { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.fx-bar { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); align-items: center; justify-content: space-between; border-bottom: 1px solid var(--color-border-line); padding-bottom: var(--cds-pad-sm); }
+.fx-tabs, .fx-seg { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs); }
+.fx-tabs button, .fx-seg button { font: inherit; font-size: var(--cds-font-size-body); background: none; border: 1px solid transparent; border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); color: var(--color-fg-muted); cursor: pointer; }
+.fx-tabs button[aria-selected="true"] { color: var(--color-fg); border-color: var(--color-border-line); background: var(--color-panel); }
+.fx-seg button[aria-pressed="true"] { color: var(--color-fg); border-color: var(--color-border-line); background: var(--color-panel); }
+.fx-tabs button:focus-visible, .fx-seg button:focus-visible, .fx select:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+.fx-controls { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); align-items: center; }
+.fx-controls label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); display: flex; gap: var(--cds-gap-xs); align-items: center; }
+.fx select { font: inherit; font-size: var(--cds-font-size-body); color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); }
+.fx-page { display: flex; flex-direction: column; gap: var(--cds-gap-lg); }
+.fx-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: var(--cds-gap-md); }
+.fx-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: flex; flex-direction: column; gap: var(--cds-gap-sm); min-width: 0; }
+.fx-card h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
+.fx-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; max-width: 80ch; }
+.fx-chart { position: relative; min-height: 18rem; }
+.fx-chart.tall { min-height: 26rem; }
+.fx-chart svg { display: block; overflow: visible; }
+.fx-chart text { fill: var(--color-fg-muted); font-size: 11px; font-family: var(--font-anthropic-sans); }
+.fx-chart .lbl { fill: var(--color-fg); }
+.fx-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); max-width: 16rem; z-index: 2; }
+.fx-tip .k { color: var(--cds-text-secondary); }
+.fx-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs) var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.fx-legend span { display: inline-flex; gap: 6px; align-items: center; }
+.fx-legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.fx-styles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: var(--cds-gap-md); }
+.fx-style { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md); display: flex; flex-direction: column; gap: var(--cds-gap-xs); border-top-width: 4px; min-width: 0; }
+.fx-style h3 { margin: 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); }
+.fx-style .how { font-size: var(--cds-font-size-body); }
+.fx-style .num { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.fx-style dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 2px var(--cds-gap-sm); font-size: var(--cds-font-size-caption); }
+.fx-style dt { color: var(--color-fg-muted); }
+.fx-style dd { margin: 0; font-variant-numeric: tabular-nums; }
+.fx-rr { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-heading); font-variant-numeric: tabular-nums; }
+.fx-stories { display: flex; flex-direction: column; gap: var(--cds-gap-md); margin: 0; padding: 0; list-style: none; }
+.fx-stories li { font-size: var(--cds-font-size-body); max-width: 95ch; }
+.fx-stories b { font-weight: var(--cds-font-weight-medium); }
+.fx-fail { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: inherit; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.fx-fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+[data-dash-source-state=empty] { color: transparent; }
+[data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+</style>
+
+<div class="fx">
+  <header class="fx-head" id="top">
+    <h1 class="fx-title">Big Five playing styles and injuries, 2014/15–2025/26</h1>
+    <p class="fx-take dash-skeleton" data-source="headline styles" id="takeaway">—</p>
+  </header>
+
+  <section class="fx-kpis" aria-label="Headline figures">
+    <div class="fx-kpi"><span class="fx-kpi-v dash-skeleton" data-source="headline" data-field="team_seasons">—</span><span class="fx-kpi-l">team-seasons clustered (5 leagues × 12 seasons)</span></div>
+    <div class="fx-kpi"><span class="fx-kpi-v dash-skeleton" data-source="headline" data-field="possession_share_last">—</span><span class="fx-kpi-l">of team-seasons played positional possession in 2022–26, up from <span data-source="headline" data-field="possession_share_first">—</span> in 2014–18</span></div>
+    <div class="fx-kpi"><span class="fx-kpi-v dash-skeleton" data-source="styles" data-field="rr" data-where="phase=attack&amp;style=Positional possession">—</span><span class="fx-kpi-l">injury rate ratio for positional possession (1 = league average)</span></div>
+    <div class="fx-kpi"><span class="fx-kpi-v dash-skeleton" data-source="headline" data-field="mix_injuries">—</span><span class="fx-kpi-l">injuries per player-season added by the style shift, 2014–18 → 2022–26</span></div>
+  </section>
+
+  <nav class="fx-bar" aria-label="Pages and filters">
+    <div class="fx-tabs" role="tablist">
+      <button role="tab" id="tab-styles" data-page="styles">Styles</button>
+      <button role="tab" id="tab-evolution" data-page="evolution">Evolution</button>
+      <button role="tab" id="tab-injuries" data-page="injuries">Injuries</button>
+      <button role="tab" id="tab-trends" data-page="trends">Trends</button>
+    </div>
+    <div class="fx-controls">
+      <div class="fx-seg" role="group" aria-label="Phase of play">
+        <button data-phase="attack">Attacking styles</button>
+        <button data-phase="defence">Defensive styles</button>
+      </div>
+      <label for="fx-league">League <select id="fx-league"></select></label>
+    </div>
+  </nav>
+
+  <section class="fx-page" id="styles" role="tabpanel" aria-labelledby="tab-styles">
+    <div class="fx-card" id="map-card">
+      <h2 id="map-title">Cluster map</h2>
+      <p class="fx-note">Each dot is one team-season, placed by its style dimensions (PCA, for drawing only; the clustering uses all four dimensions of the phase). Colour is the K-means cluster. Hover a dot for the team.</p>
+      <div class="fx-legend" id="map-legend" data-source="cluster_map"></div>
+      <div class="fx-chart tall" id="map" data-source="cluster_map"></div>
+    </div>
+    <div class="fx-styles" id="cards" data-source="styles"></div>
+  </section>
+
+  <section class="fx-page" id="evolution" role="tabpanel" aria-labelledby="tab-evolution" hidden>
+    <div class="fx-card" id="shares-card">
+      <h2 id="shares-title">How the style mix changed</h2>
+      <p class="fx-note">Share of team-seasons in each style, season by season.</p>
+      <div class="fx-legend" id="shares-legend" data-source="style_shares"></div>
+      <div class="fx-chart" id="shares" data-source="style_shares"></div>
+    </div>
+    <div class="fx-card" id="dims-card">
+      <h2 id="dims-title">How each way of playing moved</h2>
+      <p class="fx-note">Mean score per season (standardised over all team-seasons, 0 = the 12-season average). The dashed line is all five leagues when one league is picked.</p>
+      <div class="fx-chart" id="dims" data-source="dimension_trends"></div>
+    </div>
+  </section>
+
+  <section class="fx-page" id="injuries" role="tabpanel" aria-labelledby="tab-injuries" hidden>
+    <div class="fx-card" id="rr-card">
+      <h2 id="rr-title">Injuries and days lost by style</h2>
+      <p class="fx-note">League-adjusted rate ratio with 95% confidence interval (bootstrap over team-seasons): 1 is the league average, 1.2 means 20% more. Injuries lasting more than 7 days.</p>
+      <div class="fx-chart" id="rr" data-source="injury_rr"></div>
+    </div>
+    <div class="fx-grid">
+      <div class="fx-card" id="grid-card">
+        <h2>Attacking × defensive style</h2>
+        <p class="fx-note">Injury rate ratio for each combination; across a row only the defensive style changes, down a column only the attacking style. Grey: fewer than 40 team-seasons.</p>
+        <div class="fx-chart" id="grid" data-source="grid"></div>
+      </div>
+      <div class="fx-card" id="body-card">
+        <h2 id="body-title">Where players get hurt</h2>
+        <p class="fx-note">Share of injuries in each body area relative to the league's share (median over the five leagues); the small number is how many leagues are above 1. Bold: holds in at least 4 of 5 leagues.</p>
+        <div class="fx-chart" id="body" data-source="body_areas"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="fx-page" id="trends" role="tabpanel" aria-labelledby="tab-trends" hidden>
+    <div class="fx-card" id="trend-card">
+      <h2>Injury frequency by season</h2>
+      <p class="fx-note">Injuries lasting more than 7 days per player-season, all five leagues, with 95% confidence band. Raw Transfermarkt records also reflect recording changes (Premier League 2018-19).</p>
+      <div class="fx-chart" id="trend" data-source="season_trend"></div>
+    </div>
+    <div class="fx-card" id="decomp-card">
+      <h2>Where the change comes from, 2014–18 → 2022–26</h2>
+      <p class="fx-note">Kitagawa decomposition: the change in an outcome per player-season split into the part from the style mix shifting (more players in styles with higher rates) and the part from rates changing within styles.</p>
+      <div class="fx-seg" role="group" aria-label="Outcome" id="outcomes"></div>
+      <div class="fx-legend" id="decomp-legend"><span><i class="c0"></i>from the style mix</span><span><i class="c1"></i>within styles</span><span><i class="cf"></i>total change</span></div>
+      <div class="fx-chart" id="decomp" data-source="decomposition"></div>
+    </div>
+    <div class="fx-card" id="stories-card">
+      <h2>One story per league</h2>
+      <ul class="fx-stories" id="stories" data-source="league_stories"></ul>
+    </div>
+  </section>
+</div>
+
+<script>
+// Shared state and helpers for every chart on the page.
+window.FX = {
+  ATTACK: ['Positional possession', 'Build-up into the box', 'Counter-attack', 'Direct play'],
+  DEFENCE: ['High press, high line', 'Compact mid-block', 'Aggressive duel press', 'Low block'],
+  LEAGUES: ['All leagues', 'Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1'],
+  OUTCOMES: ['injuries', 'days lost', 'severe injuries', 'hamstring injuries', 'knee injuries'],
+  page: 'styles',
+  phase() { return dash.params().phase || 'attack'; },
+  league() { return dash.params().league || 'All leagues'; },
+  outcome() { return dash.params().outcome || 'injuries'; },
+  color(i) { return dash.colors[i % dash.colors.length]; },
+  fmt2: d3.format('.2f'),
+  pct: d3.format('.0%'),
+  tip(box) {
+    let t = box.querySelector('.fx-tip');
+    if (!t) { t = document.createElement('div'); t.className = 'fx-tip'; t.hidden = true; box.appendChild(t); }
+    return t;
+  },
+  place(tip, box, x, y) {
+    tip.hidden = false;
+    const w = tip.offsetWidth, h = tip.offsetHeight, bw = box.clientWidth;
+    tip.style.left = Math.max(0, Math.min(bw - w, x + 12)) + 'px';
+    tip.style.top = Math.max(0, y - h - 8) + 'px';
+  },
+  lines(tip, head, rows) {
+    tip.replaceChildren();
+    const k = document.createElement('div'); k.className = 'k'; k.textContent = head; tip.appendChild(k);
+    rows.forEach((r) => { const d = document.createElement('div'); d.textContent = r; tip.appendChild(d); });
+  },
+  failed(box, id) {
+    const s = dash.data(id).status;
+    if (s === 'error' || s === 'connect' || s === 'declined') {
+      box.replaceChildren(); const f = document.createElement('div'); f.className = 'fx-fail'; f.textContent = 'Failed to load'; box.appendChild(f);
+      box.classList.remove('dash-skeleton'); return true;
+    }
+    if (s !== 'ok') { box.replaceChildren(); box.classList.add('dash-skeleton'); return true; }
+    box.classList.remove('dash-skeleton');
+    return false;
+  },
+  svg(box, height) {
+    const width = Math.max(280, box.clientWidth);
+    const svg = d3.select(box).selectAll('svg').data([0]).join('svg').attr('width', '100%').attr('viewBox', `0 0 ${width} ${height}`);
+    svg.selectAll('*').remove();
+    box.style.minHeight = height + 'px';
+    return { svg, width };
+  },
+  axis(g) { g.attr('font-size', null).attr('font-family', null); g.selectAll('.domain').attr('stroke', 'var(--cds-chart-axis)'); g.selectAll('.tick line').attr('stroke', 'var(--cds-chart-grid)'); return g; },
+};
+FX.order = (phase) => (phase === 'defence' ? FX.DEFENCE : FX.ATTACK);
+</script>
+
+<script>
+// Headline numbers, worked out from the datasets.
+dash.calc('headline', {
+  title: 'Headline figures',
+  description: 'Team-seasons clustered, positional-possession share in the first and last era, and the injuries added by the style shift (all leagues, combined style).',
+  inputs: ['cluster_map', 'style_shares', 'decomposition'],
+  fn: (cluster_map, style_shares, decomposition) => {
+    const share = (from, to) => {
+      const rows = style_shares.filter((r) => r.league === 'All leagues' && r.phase === 'attack' && r.style === 'Positional possession' && r.season >= from && r.season < to);
+      return Math.round(100 * rows.reduce((a, r) => a + r.share, 0) / rows.length);
+    };
+    const mix = decomposition.find((r) => r.scope === 'all leagues' && r.outcome === 'injuries' && r.styles === 'combined style');
+    return [{ team_seasons: cluster_map.filter((r) => r.phase === 'attack').length,
+              possession_share_first: share('2014-15', '2018-19'), possession_share_last: share('2022-23', '2026-27'),
+              mix_injuries: Math.round(1000 * mix.style_mix) / 1000 }];
+  },
+});
+</script>
+
+<script>
+// Tabs, phase switch, league picker, outcome switch.
+(() => {
+  const tabs = [...document.querySelectorAll('.fx-tabs button')];
+  const show = (page) => {
+    FX.page = page;
+    tabs.forEach((b) => b.setAttribute('aria-selected', String(b.dataset.page === page)));
+    document.querySelectorAll('.fx-page').forEach((s) => { s.hidden = s.id !== page; });
+    dash.setLink(page);
+    window.dispatchEvent(new Event('fx-redraw'));
+  };
+  tabs.forEach((b) => b.addEventListener('click', () => show(b.dataset.page)));
+  document.querySelectorAll('[data-phase]').forEach((b) => b.addEventListener('click', () => dash.setParams({ phase: b.dataset.phase })));
+  const sel = document.getElementById('fx-league');
+  sel.replaceChildren(...FX.LEAGUES.map((l) => new Option(l, l)));
+  sel.addEventListener('change', () => dash.setParams({ league: sel.value }));
+  const out = document.getElementById('outcomes');
+  out.replaceChildren(...FX.OUTCOMES.map((o) => { const b = document.createElement('button'); b.textContent = o; b.dataset.outcome = o; b.addEventListener('click', () => dash.setParams({ outcome: o })); return b; }));
+  dash.onData(() => {
+    document.querySelectorAll('[data-phase]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.phase === FX.phase())));
+    out.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.outcome === FX.outcome())));
+    sel.value = FX.league();
+  });
+  const start = location.hash.slice(1);
+  show(['styles', 'evolution', 'injuries', 'trends'].includes(start) ? start : 'styles');
+})();
+</script>
+
+<script>
+// Takeaway and headline figures.
+dash.onData(() => {
+  const h = dash.data('headline'), s = dash.data('styles');
+  const take = document.getElementById('takeaway');
+  document.querySelectorAll('[data-source="headline"][data-field]').forEach((el) => {
+    el.classList.toggle('dash-skeleton', h.status !== 'ok');
+    if (h.status !== 'ok') { el.textContent = '—'; return; }
+    const v = h.data[0][el.dataset.field];
+    el.textContent = el.dataset.field.startsWith('possession_share') ? v + '%' : el.dataset.field === 'mix_injuries' ? '+' + v.toFixed(3) : d3.format(',')(v);
+  });
+  const rrEl = document.querySelector('.fx-kpi [data-source="styles"]');
+  rrEl.classList.toggle('dash-skeleton', s.status !== 'ok');
+  const pp = s.status === 'ok' ? s.data.find((r) => r.phase === 'attack' && r.style === 'Positional possession') : null;
+  rrEl.textContent = pp ? FX.fmt2(pp.rr) : '—';
+  take.classList.toggle('dash-skeleton', h.status !== 'ok' || !pp);
+  take.textContent = h.status === 'ok' && pp
+    ? `Football moved towards patient possession: ${h.data[0].possession_share_first}% → ${h.data[0].possession_share_last}% of team-seasons. Players in positional-possession teams get ${Math.round(100 * (pp.rr - 1))}% more injuries than their league average, and the shift in styles alone added ${h.data[0].mix_injuries.toFixed(3)} injuries per player-season.`
+    : '—';
+});
+</script>
+
+<script>
+// Cluster map and style cards.
+(() => {
+  const box = document.getElementById('map');
+  let hasDrawn = false;
+  const draw = () => {
+    if (FX.page !== 'styles' || FX.failed(box, 'cluster_map')) return;
+    const phase = FX.phase(), order = FX.order(phase);
+    document.getElementById('map-title').textContent = phase === 'attack' ? 'Cluster map: attacking styles' : 'Cluster map: defensive styles';
+    const pts = dash.data('cluster_map').data.filter((r) => r.phase === phase);
+    const height = Math.round(Math.min(560, Math.max(320, box.clientWidth * 0.6)));
+    const { svg, width } = FX.svg(box, height);
+    const m = { t: 10, r: 10, b: 30, l: 34 };
+    const x = d3.scaleLinear(d3.extent(pts, (d) => d.pc1), [m.l, width - m.r]).nice();
+    const y = d3.scaleLinear(d3.extent(pts, (d) => d.pc2), [height - m.b, m.t]).nice();
+    FX.axis(svg.append('g').attr('transform', `translate(0,${height - m.b})`).call(d3.axisBottom(x).ticks(6).tickSize(-(height - m.t - m.b))));
+    FX.axis(svg.append('g').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(width - m.l - m.r))));
+    svg.append('text').attr('x', width - m.r).attr('y', height - 4).attr('text-anchor', 'end').text('first principal component');
+    const dots = svg.append('g').selectAll('circle').data(pts).join('circle')
+      .attr('cx', (d) => x(d.pc1)).attr('cy', (d) => y(d.pc2)).attr('r', 3.2)
+      .attr('fill', (d) => FX.color(order.indexOf(d.style))).attr('fill-opacity', 0.7)
+      .attr('stroke', 'var(--color-panel)').attr('stroke-width', 0.6);
+    const ring = svg.append('circle').attr('r', 6).attr('fill', 'none').attr('stroke-width', 2).attr('visibility', 'hidden');
+    const delaunay = d3.Delaunay.from(pts, (d) => x(d.pc1), (d) => y(d.pc2));
+    const tip = FX.tip(box);
+    svg.on('pointermove', (event) => {
+      const [mx, my] = d3.pointer(event);
+      const d = pts[delaunay.find(mx, my)];
+      if (!d) return;
+      ring.attr('cx', x(d.pc1)).attr('cy', y(d.pc2)).attr('stroke', FX.color(order.indexOf(d.style))).attr('visibility', 'visible');
+      FX.lines(tip, `${d.club} ${d.season}`, [d.style, d.league]);
+      FX.place(tip, box, x(d.pc1) * box.clientWidth / width, y(d.pc2) * box.clientHeight / height);
+    }).on('pointerleave', () => { tip.hidden = true; ring.attr('visibility', 'hidden'); });
+    if (!hasDrawn && matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+      dots.attr('r', 0).transition().duration(600).delay((d, i) => (i % 60) * 6).attr('r', 3.2);
+    }
+    hasDrawn = true;
+    const legend = document.getElementById('map-legend');
+    legend.replaceChildren(...order.map((s, i) => {
+      const n = pts.filter((p) => p.style === s).length;
+      const span = document.createElement('span'); const dot = document.createElement('i'); dot.style.background = FX.color(i);
+      span.append(dot, `${s} (${n})`); return span;
+    }));
+  };
+  const cards = document.getElementById('cards');
+  const drawCards = () => {
+    if (FX.page !== 'styles') return;
+    const s = dash.data('styles');
+    if (s.status !== 'ok') { cards.replaceChildren(); return; }
+    const phase = FX.phase(), order = FX.order(phase);
+    const rows = s.data.filter((r) => r.phase === phase).sort((a, b) => a.order - b.order);
+    cards.replaceChildren(...rows.map((r) => {
+      const enc = (v) => String(v).replace(/%/g, '%25').replace(/&/g, '%26').replace(/=/g, '%3D');
+      const where = `phase=${enc(r.phase)}&style=${enc(r.style)}`;
+      const mark = (el, field) => { el.dataset.source = 'styles'; el.dataset.field = field; el.dataset.where = where; return el; };
+      const card = document.createElement('article'); card.className = 'fx-style'; card.style.borderTopColor = FX.color(order.indexOf(r.style));
+      const h = mark(document.createElement('h3'), 'style'); h.textContent = r.style;
+      const how = mark(document.createElement('div'), 'how'); how.className = 'how'; how.textContent = r.how;
+      const num = mark(document.createElement('div'), 'numbers'); num.className = 'num'; num.textContent = r.numbers;
+      const dl = document.createElement('dl');
+      const row = (label, field, text) => { const dt = document.createElement('dt'); dt.textContent = label; const dd = mark(document.createElement('dd'), field); dd.textContent = text; dl.append(dt, dd); };
+      row('Team-seasons', 'team_seasons', d3.format(',')(r.team_seasons));
+      row('Core teams', 'core', r.core);
+      row('Points/match', 'points', FX.fmt2(r.points));
+      row('Back-three minutes', 'back_three', r.back_three);
+      row('Most often with', 'paired_with', r.paired_with);
+      row('Typical 2014–18', 'typical_2014_18', r.typical_2014_18);
+      row('Typical 2018–22', 'typical_2018_22', r.typical_2018_22);
+      row('Typical 2022–26', 'typical_2022_26', r.typical_2022_26);
+      const rr = document.createElement('div');
+      const v = mark(document.createElement('span'), 'rr'); v.className = 'fx-rr'; v.textContent = FX.fmt2(r.rr);
+      const lo = mark(document.createElement('span'), 'rr_low'); lo.textContent = FX.fmt2(r.rr_low);
+      const hi = mark(document.createElement('span'), 'rr_high'); hi.textContent = FX.fmt2(r.rr_high);
+      rr.append(v, ' injury rate ratio (', lo, '–', hi, ')');
+      rr.className = 'num';
+      card.append(h, how, num, rr, dl);
+      return card;
+    }));
+  };
+  dash.onData(() => { draw(); drawCards(); });
+  window.addEventListener('fx-redraw', () => { draw(); drawCards(); });
+})();
+</script>
+
+<script>
+// Style shares over time and dimension trends.
+(() => {
+  const sharesBox = document.getElementById('shares'), dimsBox = document.getElementById('dims');
+  const drawShares = () => {
+    if (FX.page !== 'evolution' || FX.failed(sharesBox, 'style_shares')) return;
+    const phase = FX.phase(), league = FX.league(), order = FX.order(phase);
+    document.getElementById('shares-title').textContent = `How the ${phase === 'attack' ? 'attacking' : 'defensive'} style mix changed: ${league}`;
+    const rows = dash.data('style_shares').data.filter((r) => r.phase === phase && r.league === league);
+    const seasons = [...new Set(rows.map((r) => r.season))].sort();
+    const wide = seasons.map((s) => Object.fromEntries([['season', s], ...order.map((st) => [st, rows.find((r) => r.season === s && r.style === st)?.share ?? 0])]));
+    const series = d3.stack().keys(order)(wide);
+    const height = 300;
+    const { svg, width } = FX.svg(sharesBox, height);
+    const m = { t: 8, r: 10, b: 26, l: 40 };
+    const x = d3.scalePoint(seasons, [m.l, width - m.r]);
+    const y = d3.scaleLinear([0, 1], [height - m.b, m.t]);
+    svg.append('g').selectAll('path').data(series).join('path')
+      .attr('fill', (d) => FX.color(order.indexOf(d.key))).attr('stroke', 'var(--color-panel)').attr('stroke-width', 1)
+      .attr('d', d3.area().x((d) => x(d.data.season)).y0((d) => y(d[0])).y1((d) => y(d[1])));
+    const step = width < 520 ? 3 : width < 800 ? 2 : 1;
+    FX.axis(svg.append('g').attr('transform', `translate(0,${height - m.b})`).call(d3.axisBottom(x).tickValues(seasons.filter((s, i) => i % step === 0)).tickFormat((s) => s.slice(2))));
+    FX.axis(svg.append('g').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(FX.pct)));
+    const tip = FX.tip(sharesBox);
+    const guide = svg.append('line').attr('y1', m.t).attr('y2', height - m.b).attr('stroke', 'var(--cds-chart-reference)').attr('visibility', 'hidden');
+    svg.on('pointermove', (event) => {
+      const [mx] = d3.pointer(event);
+      const s = seasons.reduce((a, b) => (Math.abs(x(b) - mx) < Math.abs(x(a) - mx) ? b : a));
+      const w = wide.find((r) => r.season === s);
+      guide.attr('x1', x(s)).attr('x2', x(s)).attr('visibility', 'visible');
+      FX.lines(tip, s, order.slice().reverse().map((st) => `${st}: ${FX.pct(w[st])}`));
+      FX.place(tip, sharesBox, x(s) * sharesBox.clientWidth / width, 40);
+    }).on('pointerleave', () => { tip.hidden = true; guide.attr('visibility', 'hidden'); });
+    const legend = document.getElementById('shares-legend');
+    legend.replaceChildren(...order.map((s, i) => { const span = document.createElement('span'); const dot = document.createElement('i'); dot.style.background = FX.color(i); span.append(dot, s); return span; }));
+  };
+  const drawDims = () => {
+    if (FX.page !== 'evolution' || FX.failed(dimsBox, 'dimension_trends')) return;
+    const phase = FX.phase(), league = FX.league();
+    document.getElementById('dims-title').textContent = `How each ${phase === 'attack' ? 'attacking' : 'defensive'} dimension moved: ${league}`;
+    const all = dash.data('dimension_trends').data.filter((r) => r.phase === phase);
+    const dims = [...new Set(all.map((r) => r.dimension))];
+    const seasons = [...new Set(all.map((r) => r.season))].sort();
+    const cols = dimsBox.clientWidth < 600 ? 1 : 2;
+    const ph = 170;
+    const height = ph * Math.ceil(dims.length / cols);
+    const { svg, width } = FX.svg(dimsBox, height);
+    const y = d3.scaleLinear(d3.extent(all.filter((r) => r.league === league || r.league === 'All leagues'), (r) => r.value), [ph - 28, 22]).nice();
+    dims.forEach((dim, i) => {
+      const g = svg.append('g').attr('transform', `translate(${(i % cols) * (width / cols)},${Math.floor(i / cols) * ph})`);
+      const w = width / cols;
+      const x = d3.scalePoint(seasons, [36, w - 14]);
+      g.append('text').attr('class', 'lbl').attr('x', 36).attr('y', 12).text(dim);
+      FX.axis(g.append('g').attr('transform', `translate(36,0)`).call(d3.axisLeft(y).ticks(3).tickSize(-(w - 50))));
+      FX.axis(g.append('g').attr('transform', `translate(0,${ph - 28})`).call(d3.axisBottom(x).tickValues([seasons[0], seasons[seasons.length - 1]]).tickFormat((s) => s.slice(2))));
+      const line = d3.line().x((r) => x(r.season)).y((r) => y(r.value));
+      if (league !== 'All leagues') {
+        g.append('path').datum(all.filter((r) => r.dimension === dim && r.league === 'All leagues').sort((a, b) => d3.ascending(a.season, b.season)))
+          .attr('fill', 'none').attr('stroke', 'var(--cds-chart-muted)').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3').attr('d', line);
+      }
+      g.append('path').datum(all.filter((r) => r.dimension === dim && r.league === league).sort((a, b) => d3.ascending(a.season, b.season)))
+        .attr('fill', 'none').attr('stroke', FX.color(0)).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round').attr('d', line);
+    });
+  };
+  dash.onData(() => { drawShares(); drawDims(); });
+  window.addEventListener('fx-redraw', () => { drawShares(); drawDims(); });
+})();
+</script>
+
+<script>
+// Rate ratios with CIs, attack × defence grid, body areas.
+(() => {
+  const rrBox = document.getElementById('rr'), gridBox = document.getElementById('grid'), bodyBox = document.getElementById('body');
+  const drawRR = () => {
+    if (FX.page !== 'injuries' || FX.failed(rrBox, 'injury_rr')) return;
+    const phase = FX.phase(), order = FX.order(phase);
+    document.getElementById('rr-title').textContent = `Injuries and days lost by ${phase === 'attack' ? 'attacking' : 'defensive'} style and by formation`;
+    const all = dash.data('injury_rr').data;
+    const rows = [...all.filter((r) => r.grouping === phase).sort((a, b) => a.order - b.order), ...all.filter((r) => r.grouping === 'formation').sort((a, b) => a.order - b.order)];
+    const two = rrBox.clientWidth >= 640;
+    const rowH = 30, ph = rows.length * rowH + 40;
+    const height = two ? ph : ph * 2;
+    const { svg, width } = FX.svg(rrBox, height);
+    const lo = d3.min(all, (r) => Math.min(r.rr_low, r.days_rr_low)), hi = d3.max(all, (r) => Math.max(r.rr_high, r.days_rr_high));
+    const tmp = svg.append('text').text('Aggressive duel press');
+    const labelW = tmp.node().getComputedTextLength() + 16; tmp.remove();
+    const panels = [['rr', 'rr_low', 'rr_high', 'Injuries'], ['days_rr', 'days_rr_low', 'days_rr_high', 'Days lost']];
+    const tip = FX.tip(rrBox);
+    panels.forEach(([k, l, h, name], p) => {
+      const pw = two ? width / 2 : width, ox = two ? p * pw : 0, oy = two ? 0 : p * ph;
+      const g = svg.append('g').attr('transform', `translate(${ox},${oy})`);
+      const left = (two && p === 1) ? 12 : labelW;
+      const x = d3.scaleLinear([Math.min(0.8, lo - 0.02), Math.max(1.35, hi + 0.04)], [left, pw - 44]);
+      g.append('text').attr('class', 'lbl').attr('x', left).attr('y', 12).text(name);
+      FX.axis(g.append('g').attr('transform', `translate(0,${ph - 22})`).call(d3.axisBottom(x).ticks(5).tickFormat(d3.format('.1f')).tickSize(-(ph - 44))));
+      g.append('line').attr('x1', x(1)).attr('x2', x(1)).attr('y1', 20).attr('y2', ph - 22).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 3');
+      rows.forEach((r, i) => {
+        const yy = 32 + i * rowH + (i >= order.length ? 8 : 0);
+        const c = r.grouping === 'formation' ? 'var(--cds-chart-muted)' : FX.color(order.indexOf(r.style));
+        if (p === 0 || !two) g.append('text').attr('class', 'lbl').attr('x', left - 8).attr('y', yy + 4).attr('text-anchor', 'end').text(r.style);
+        g.append('line').attr('x1', x(r[l])).attr('x2', x(r[h])).attr('y1', yy).attr('y2', yy).attr('stroke', c).attr('stroke-width', 3).attr('stroke-linecap', 'round');
+        g.append('circle').attr('cx', x(r[k])).attr('cy', yy).attr('r', 5.5).attr('fill', c).attr('stroke', 'var(--color-panel)').attr('stroke-width', 1.5)
+          .on('pointerenter', () => { FX.lines(tip, r.style, [`${name} rate ratio ${FX.fmt2(r[k])} (${FX.fmt2(r[l])}–${FX.fmt2(r[h])})`, `${r.injuries_per_ps.toFixed(2)} injuries and ${r.days_per_ps.toFixed(1)} days lost per player-season`, `${d3.format(',')(r.player_seasons)} player-seasons`]); FX.place(tip, rrBox, (ox + x(r[k])) * rrBox.clientWidth / width, (oy + yy) * rrBox.clientHeight / height); })
+          .on('pointerleave', () => { tip.hidden = true; });
+        g.append('text').attr('class', 'lbl').attr('x', x(r[h]) + 6).attr('y', yy + 4).text(FX.fmt2(r[k]));
+      });
+    });
+  };
+  const heat = (box, rows, xs, ys, label, bottom) => {
+    const tmp = d3.select(box).append('svg');
+    const t = tmp.append('text').text(ys.reduce((a, b) => (a.length > b.length ? a : b)));
+    const lw = t.node().getComputedTextLength() + 12; tmp.remove();
+    const cell = Math.max(46, Math.min(90, (box.clientWidth - lw) / xs.length));
+    const height = ys.length * 40 + bottom;
+    const { svg, width } = FX.svg(box, height);
+    const x = d3.scaleBand(xs, [lw, Math.min(width, lw + cell * xs.length)]).padding(0.06);
+    const y = d3.scaleBand(ys, [8, height - bottom + 8]).padding(0.08);
+    // Blue below 1, orange above; stronger the further from 1 (log scale, full at a factor of about 1.4).
+    svg.append('g').selectAll('rect').data(rows).join('rect')
+      .attr('x', (d) => x(d.x)).attr('y', (d) => y(d.y)).attr('width', x.bandwidth()).attr('height', y.bandwidth()).attr('rx', 4)
+      .attr('fill', (d) => (d.muted ? 'var(--cds-chart-grid)' : d.v < 1 ? dash.colors[0] : dash.colors[1]))
+      .attr('fill-opacity', (d) => (d.muted ? 1 : 0.1 + 0.75 * Math.min(1, Math.abs(Math.log2(d.v)) / 0.5)));
+    svg.append('g').selectAll('text').data(rows).join('text')
+      .attr('x', (d) => x(d.x) + x.bandwidth() / 2).attr('y', (d) => y(d.y) + y.bandwidth() / 2 + 4).attr('text-anchor', 'middle')
+      .attr('class', 'lbl').attr('font-weight', (d) => (d.bold ? 600 : 400)).text((d) => label(d));
+    ys.forEach((s) => svg.append('text').attr('class', 'lbl').attr('x', lw - 8).attr('y', y(s) + y.bandwidth() / 2 + 4).attr('text-anchor', 'end').text(s));
+    xs.forEach((s) => svg.append('text').attr('transform', `translate(${x(s) + x.bandwidth() / 2},${height - bottom + 22}) rotate(35)`).attr('text-anchor', 'start').text(s));
+  };
+  const drawGrid = () => {
+    if (FX.page !== 'injuries' || FX.failed(gridBox, 'grid')) return;
+    const rows = dash.data('grid').data.map((r) => ({ x: r.defence, y: r.attack, v: r.rr, n: r.team_seasons, muted: r.team_seasons < 40 }));
+    heat(gridBox, rows, FX.DEFENCE, FX.ATTACK, (d) => FX.fmt2(d.v), 120);
+  };
+  const drawBody = () => {
+    if (FX.page !== 'injuries' || FX.failed(bodyBox, 'body_areas')) return;
+    const phase = FX.phase(), order = FX.order(phase);
+    document.getElementById('body-title').textContent = `Where players get hurt: ${phase === 'attack' ? 'attacking' : 'defensive'} styles`;
+    const data = dash.data('body_areas').data.filter((r) => r.phase === phase);
+    const areas = [...new Set(data.map((r) => r.area))];
+    const rows = data.map((r) => ({ x: r.area, y: r.style, v: r.relative, k: r.leagues_above, bold: r.leagues_above >= 4 || r.leagues_above <= 1 }));
+    heat(bodyBox, rows, areas, order, (d) => `${FX.fmt2(d.v)} ${d.k}/5`, 140);
+  };
+  dash.onData(() => { drawRR(); drawGrid(); drawBody(); });
+  window.addEventListener('fx-redraw', () => { drawRR(); drawGrid(); drawBody(); });
+})();
+</script>
+
+<script>
+// Season trend, decomposition, league stories.
+(() => {
+  const trendBox = document.getElementById('trend'), decBox = document.getElementById('decomp'), stories = document.getElementById('stories');
+  const EVENTS = [['2019-20', 'COVID restart'], ['2020-21', 'five substitutes'], ['2022-23', 'mid-season World Cup'], ['2024-25', 'new Champions League format']];
+  const drawTrend = () => {
+    if (FX.page !== 'trends' || FX.failed(trendBox, 'season_trend')) return;
+    const rows = dash.data('season_trend').data.slice().sort((a, b) => d3.ascending(a.season, b.season));
+    const height = 300;
+    const { svg, width } = FX.svg(trendBox, height);
+    const m = { t: 34, r: 14, b: 26, l: 40 };
+    const x = d3.scalePoint(rows.map((r) => r.season), [m.l, width - m.r]);
+    const y = d3.scaleLinear([0, d3.max(rows, (r) => r.high) * 1.1], [height - m.b, m.t]).nice();
+    FX.axis(svg.append('g').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(width - m.l - m.r))));
+    const step = width < 520 ? 3 : width < 800 ? 2 : 1;
+    FX.axis(svg.append('g').attr('transform', `translate(0,${height - m.b})`).call(d3.axisBottom(x).tickValues(rows.map((r) => r.season).filter((s, i) => i % step === 0)).tickFormat((s) => s.slice(2))));
+    EVENTS.forEach(([s, label], i) => {
+      svg.append('line').attr('x1', x(s)).attr('x2', x(s)).attr('y1', m.t - 6).attr('y2', height - m.b).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '3 3');
+      if (width >= 560) svg.append('text').attr('x', x(s) + 4).attr('y', i % 2 ? 22 : 10).text(label);
+    });
+    svg.append('path').datum(rows).attr('fill', dash.colors[0]).attr('fill-opacity', 0.14).attr('d', d3.area().x((r) => x(r.season)).y0((r) => y(r.low)).y1((r) => y(r.high)));
+    svg.append('path').datum(rows).attr('fill', 'none').attr('stroke', FX.color(0)).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('d', d3.line().x((r) => x(r.season)).y((r) => y(r.injuries_per_ps)));
+    svg.append('g').selectAll('circle').data(rows).join('circle').attr('cx', (r) => x(r.season)).attr('cy', (r) => y(r.injuries_per_ps)).attr('r', 3.5).attr('fill', FX.color(0));
+    const tip = FX.tip(trendBox);
+    const dot = svg.append('circle').attr('r', 6).attr('fill', 'none').attr('stroke', FX.color(0)).attr('stroke-width', 2).attr('visibility', 'hidden');
+    svg.on('pointermove', (event) => {
+      const [mx] = d3.pointer(event);
+      const r = rows.reduce((a, b) => (Math.abs(x(b.season) - mx) < Math.abs(x(a.season) - mx) ? b : a));
+      dot.attr('cx', x(r.season)).attr('cy', y(r.injuries_per_ps)).attr('visibility', 'visible');
+      FX.lines(tip, r.season, [`${r.injuries_per_ps.toFixed(3)} injuries per player-season (${r.low.toFixed(2)}–${r.high.toFixed(2)})`, `${r.days_per_ps.toFixed(1)} days lost per player-season`, `${FX.pct(r.unknown_area_share)} without a known body area`]);
+      FX.place(tip, trendBox, x(r.season) * trendBox.clientWidth / width, y(r.injuries_per_ps) * trendBox.clientHeight / height);
+    }).on('pointerleave', () => { tip.hidden = true; dot.attr('visibility', 'hidden'); });
+  };
+  const drawDecomp = () => {
+    if (FX.page !== 'trends' || FX.failed(decBox, 'decomposition')) return;
+    const outcome = FX.outcome();
+    const scopes = ['all leagues', 'Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1'];
+    const rows = scopes.map((s) => dash.data('decomposition').data.find((r) => r.scope === s && r.outcome === outcome && r.styles === 'combined style'));
+    const height = scopes.length * 44 + 30;
+    const { svg, width } = FX.svg(decBox, height);
+    const tmp = svg.append('text').text('Premier League'); const lw = tmp.node().getComputedTextLength() + 14; tmp.remove();
+    const ext = d3.extent(rows.flatMap((r) => [r.style_mix, r.within_styles, r.change, 0]));
+    const pad = (ext[1] - ext[0]) * 0.15;
+    const x = d3.scaleLinear([ext[0] - pad, ext[1] + pad], [lw, width - 12]);
+    const y = d3.scaleBand(scopes, [8, height - 30]).padding(0.25);
+    FX.axis(svg.append('g').attr('transform', `translate(0,${height - 30})`).call(d3.axisBottom(x).ticks(5).tickSize(-(height - 38))));
+    svg.append('line').attr('x1', x(0)).attr('x2', x(0)).attr('y1', 8).attr('y2', height - 30).attr('stroke', 'var(--cds-chart-axis)');
+    const bh = y.bandwidth() / 2;
+    const bar = (v, yy, c) => svg.append('rect').attr('x', Math.min(x(0), x(v))).attr('y', yy).attr('width', Math.abs(x(v) - x(0))).attr('height', bh - 2).attr('rx', 3).attr('fill', c);
+    rows.forEach((r) => {
+      svg.append('text').attr('class', 'lbl').attr('x', lw - 8).attr('y', y(r.scope) + y.bandwidth() / 2 + 4).attr('text-anchor', 'end').text(r.scope);
+      bar(r.style_mix, y(r.scope), FX.color(0));
+      bar(r.within_styles, y(r.scope) + bh, FX.color(1));
+      svg.append('circle').attr('cx', x(r.change)).attr('cy', y(r.scope) + bh).attr('r', 4).attr('fill', 'var(--color-fg)');
+    });
+    const legend = document.getElementById('decomp-legend');
+    legend.querySelector('.c0').style.background = FX.color(0);
+    legend.querySelector('.c1').style.background = FX.color(1);
+    legend.querySelector('.cf').style.background = 'var(--color-fg)';
+  };
+  const drawStories = () => {
+    if (FX.page !== 'trends') return;
+    const s = dash.data('league_stories');
+    if (s.status !== 'ok') { stories.replaceChildren(); return; }
+    stories.replaceChildren(...s.data.map((r) => {
+      const li = document.createElement('li');
+      li.dataset.source = 'league_stories'; li.dataset.field = 'story'; li.dataset.where = `league=${r.league}`;
+      li.textContent = r.story;
+      return li;
+    }));
+  };
+  dash.onData(() => { drawTrend(); drawDecomp(); drawStories(); });
+  window.addEventListener('fx-redraw', () => { drawTrend(); drawDecomp(); drawStories(); });
+})();
+</script>
