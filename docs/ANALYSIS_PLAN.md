@@ -62,8 +62,8 @@ Shooting volume (shots on target) was dropped on 2026-10-21; `rest_mean` was dro
 ## Phase 4: Clustering
 - **K-means**, k = 2…10, with several random initialisations and a fixed seed. Report elbow (inertia), silhouette, Davies–Bouldin and Calinski–Harabasz for each k. Choose k from these plus interpretability.
 - **Hierarchical (Ward)** at the same k: show the dendrogram and the adjusted Rand index against K-means.
-- **Stability:** bootstrap resampling, or multiple seeds, and report the mean ARI.
-- **Two variants:** with and without outcome features (npxG/npxGA), to test whether clusters are about style or team strength. Pick one with me.
+- **Stability:** bootstrap resampling: mean ARI and per-cluster Jaccard (Hennig 2007); usable k = every cluster ≥ 0.6.
+- **Two variants:** with and without outcome features (npxG/npxGA), to test whether clusters are about style or team strength. Pick one with me. *Done 2026-10-21: style only, on 8 equal-weight style dimensions; k = 7 main, k = 4 check (see DECISIONS).*
 - **Profiling:** cluster centroids in original units, a radar or heatmap, a descriptive name for each cluster, and example teams.
 - **Output:** `data/04_clusters/team_season_clusters.parquet`, `reports/04_clustering.md` and figures (PCA 2D scatter for visualisation only).
 
@@ -80,12 +80,14 @@ Shooting volume (shots on target) was dropped on 2026-10-21; `rest_mean` was dro
   3. Trends over **seasons**: overall rates, and cluster shares per season per league (stacked area chart).
   4. Differences between **leagues**: rates and body-area mix per league; whether the cluster effect holds within each league.
   5. Breakdowns by **age group and position**, to check that cluster differences aren't just driven by squad age or position mix.
+  6. **Team strength bands** (points per match terciles) and **workload** (exposure features from Phase 3): whether style differences hold within strength bands and how congestion relates to injuries within each style.
 - **Sensitivity checks:**
   - ≥ 900-minute players only
   - severe (> 28 days) only
   - multi-club players excluded
   - COVID seasons excluded
   - injuries > 3 days (adding the mild 4–7 day band)
+  - k = 4 clustering instead of k = 7
 - **Secondary outcome:** *Fitness* absences (non-injuries, mostly reconditioning) per cluster, read mainly within the Bundesliga where they are recorded.
 - **Output:** `data/05_injury_analysis/player_seasons.parquet`, `reports/05_injury_analysis.md` and figures.
 
