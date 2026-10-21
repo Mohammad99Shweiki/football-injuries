@@ -48,3 +48,15 @@ No data changed. Quality problems found here are handled in later phases (see `r
 | 2.9 | 2026-10-21 | cleaning | injuries + label map | Removed non-injuries, kept separately: illness 4,035, fitness 953, rest 334, medical condition 132, not from football 12. Flag `after_injury` = starts within 3 days after an injury ended (fitness 664, illness 84, rest 13, medical 3). | 37,554 → 32,088 (5,466) | `data/02_injuries/non_injuries.parquet` | step 8 |
 | 2.10 | 2026-10-21 | reduction | injuries | Kept injuries lasting more than 7 days (main data). Injuries of 4–7 days (mild) kept in a separate file for the > 3-day sensitivity check; 2,327 of 0–3 days dropped. | 32,088 → 24,581 (7,507 out: 5,180 mild kept separately, 2,327 dropped) | injuries; `data/02_injuries/injuries_mild.parquet` | step 9 |
 | 2.11 | 2026-10-21 | transformation | injuries | Severity bands: moderate 8–28 days (13,588), severe > 28 days (10,993). League, `season_key`, `club` and multi-club flag added from Phase 1 and step 6. | 24,581 | `data/02_injuries/injuries_clean.parquet` | step 9 |
+
+## Phase 3: Team-season features (transformation + reduction)
+
+| # | Date | Type | Input | Operation | Rows affected | Output | Where |
+|---|---|---|---|---|---|---|---|
+| 3.1 | 2026-10-21 | transformation | `us_team_matches` (43,178) | Aggregated to team-seasons: PPDA = Σ passes allowed / Σ defensive actions, opponent PPDA likewise; deep completions for and against, npxG, npxGA per match. | 43,178 → 1,170 | Understat features | `03_features.ipynb` step 2 |
+| 3.2 | 2026-10-21 | transformation | `fd_matches` (21,589) | Each match split into home and away team rows (43,178), aggregated per team-season: fouls committed and suffered, cards (yellow + 2 × red), corners for and against per match; means over matches with the statistic (3 matches lack them). Shots on target computed but not used. | 21,589 → 1,170 | Football-Data features | step 3 |
+| 3.3 | 2026-10-21 | transformation | `tm_fixtures` (52,275) | Per club-season, all official competitions: matches, European/international club matches (types 10 and 13), rest days between consecutive matches; 369 gaps > 21 days (breaks) left out of rest features. | 52,275 → 1,170 | workload features | step 4 |
+| 3.4 | 2026-10-21 | transformation | `02_injuries/player_club_seasons` (36,525) | Share of club minutes (all competitions) played by its top 14 players (HHI checked, r = 0.98). | 36,525 → 1,170 | rotation feature | step 5 |
+| 3.5 | 2026-10-21 | integration | the four feature tables + team-season keys | Joined on Phase 1 keys; 17 features, none missing; league match counts agree between Understat and Football-Data. | 1,170 | features | step 6 |
+| 3.6 | 2026-10-21 | reduction | 17 features | Dropped `rest_mean` (\|r\| > 0.9 with `short_rest_share`). | 17 → 16 features | — | steps 8–9 |
+| 3.7 | 2026-10-21 | transformation | 16 features | Z-scores over all 1,170 team-seasons (global standardisation). Raw values kept alongside. | 1,170 | `data/03_features/team_season_features.parquet` | step 9 |
