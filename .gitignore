@@ -16,8 +16,8 @@ wheels/
 .DS_Store
 
 # Dashboard build output and dependencies
-dashboard/node_modules/
-dashboard/dist/
+scraper/dashboard/node_modules/
+scraper/dashboard/dist/
 
 # Notebooks
 .ipynb_checkpoints/

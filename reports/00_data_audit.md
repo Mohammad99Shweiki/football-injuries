@@ -1,6 +1,6 @@
 # Phase 0: Data audit
 
-Generated 2026-10-21 by `notebooks/00_audit.ipynb` (`src/audit.py`). Raw data is read only.
+Generated 2026-10-21 by `notebooks/00_audit.ipynb` (`analysis/audit.py`). Raw data is read only.
 
 ## Key findings
 
@@ -167,7 +167,7 @@ Full per-column list: `reports/00_missingness.csv`. Columns used later with any 
 - **Duration quantiles (days):** p25 = 7, p50 = 18, p75 = 40, p90 = 90. **> 7 days:** 53,077 (74.4%). **> 28 days:** 24,482 (34.3%).
 - **Labels:** 330 distinct raw labels (348 type ids). **132** labels cover 95% of records. "unknown injury": 8,041 (11.3%).
 - **Non-injuries:** TM's `category` marks only 2,474 records as "Ill" (Corona virus, Virus, Quarantine). Labels such as "Ill", "flu", "cold", "Fitness" and "Rest" sit under "Unknown", so the exclusion list has to be built from labels (Phase 2).
-- **Several diagnoses for one absence:** 427 records share player + start date (205 absences), e.g. Hip injury + Torn muscle fiber. Decided: each record counts as a separate injury (see DECISIONS.md).
+- **Several diagnoses for one absence:** 427 records share player + start date (205 absences), e.g. Hip injury + Torn muscle fiber. Decided: each record counts as a separate injury (see docs/DECISIONS.md).
 
 ### Per season
 

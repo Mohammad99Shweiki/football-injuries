@@ -1,0 +1,15 @@
+# Only source goes into the build context (the repository root); collected data is mounted at run time.
+.git
+.venv
+**/__pycache__
+data
+manifest.csv
+scraper/dashboard/node_modules
+scraper/dashboard/dist
+analysis
+notebooks
+reports
+docs
+mappings
+*.part
+.DS_Store

@@ -1,0 +1,13 @@
+# cd scraper && docker compose up --build   ->  dashboard at http://127.0.0.1:8765
+name: football-injuries # same project name as when compose.yaml sat at the repository root
+services:
+  app:
+    build:
+      context: .. # repository root: the image needs pyproject.toml, uv.lock and README.md from there
+      dockerfile: scraper/Dockerfile
+    image: football-injuries
+    ports:
+      - "127.0.0.1:8765:8765" # localhost only, as the dashboard has no auth
+    volumes:
+      - ../data:/app/data # collected data stays on the host and survives rebuilds
+    stop_grace_period: 15s
