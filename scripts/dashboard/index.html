@@ -113,8 +113,13 @@
   <section class="fx-page" id="injuries" role="tabpanel" aria-labelledby="tab-injuries" hidden>
     <div class="fx-card" id="rr-card">
       <h2 id="rr-title">Injuries and days lost by style</h2>
-      <p class="fx-note">League-adjusted rate ratio with 95% confidence interval (bootstrap over team-seasons): 1 is the league average, 1.2 means 20% more. Injuries lasting more than 7 days.</p>
+      <p class="fx-note">Rate ratio against the league-season average with 95% confidence interval (bootstrap over clubs): 1 is the average, 1.2 means 20% more. Injuries lasting more than 7 days. Association, not cause: see the next card.</p>
       <div class="fx-chart" id="rr" data-source="injury_rr"></div>
+    </div>
+    <div class="fx-card" id="ladder-card">
+      <h2>Style or schedule? Adjusting step by step</h2>
+      <p class="fx-note">The same rate ratio as each adjustment is added: team strength (thirds of points per match), then age and position; and per team match played instead of per player-season. Possession and pressing teams are mostly strong teams with ~10 more matches a season, so most of their excess disappears; what is left is the style's own association. Hover for the 95% CI.</p>
+      <div class="fx-chart" id="ladder" data-source="rr_ladder"></div>
     </div>
     <div class="fx-grid">
       <div class="fx-card" id="grid-card">
@@ -540,8 +545,19 @@ dash.onData(() => {
       tip: [`${r.style}: ${r.group}`, `rate ratio ${FX.fmt2(r.rr)} (${FX.fmt2(r.rr_low)}–${FX.fmt2(r.rr_high)})`, `${r.excess_per_100 > 0 ? '+' : ''}${r.excess_per_100.toFixed(1)} injuries per 100 player-seasons`, `${d3.format(',')(r.player_seasons)} player-seasons`] }));
     heat(bdBox, rows, groups, styles, (d) => FX.fmt2(d.v), 110);
   };
-  dash.onData(() => { drawRR(); drawGrid(); drawBody(); drawBreakdown(); });
-  window.addEventListener('fx-redraw', () => { drawRR(); drawGrid(); drawBody(); drawBreakdown(); });
+  const ladderBox = document.getElementById('ladder');
+  const drawLadder = () => {
+    if (FX.page !== 'injuries' || FX.failed(ladderBox, 'rr_ladder')) return;
+    const phase = FX.phase(), order = FX.order(phase);
+    const label = (r) => `${r.exposure === 'per team match' ? 'per match' : 'per player-season'}: ${r.adjustment}`;
+    const data = dash.data('rr_ladder').data.filter((r) => r.grouping === phase);
+    const steps = [...new Set(data.map(label))];
+    const rows = data.map((r) => ({ x: r.style, y: label(r), v: r.rr, dim: !FX.on(r.style), pick: r.style,
+      tip: [`${r.style}`, `${label(r)}: rate ratio ${FX.fmt2(r.rr)} (${FX.fmt2(r.rr_low)}–${FX.fmt2(r.rr_high)})`, `days lost ${FX.fmt2(r.days_rr)}`] }));
+    heat(ladderBox, rows, order, steps, (d) => FX.fmt2(d.v), 120);
+  };
+  dash.onData(() => { drawRR(); drawLadder(); drawGrid(); drawBody(); drawBreakdown(); });
+  window.addEventListener('fx-redraw', () => { drawRR(); drawLadder(); drawGrid(); drawBody(); drawBreakdown(); });
 })();
 </script>
 
