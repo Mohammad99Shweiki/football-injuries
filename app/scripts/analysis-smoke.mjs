@@ -21,6 +21,8 @@ try {
       ['/analysis/reviews', '.mapping-row'],
       ['/analysis/logs', '.analysis-table tbody tr'],
       ['/analysis/results', '.cluster-chart circle'],
+      ['/analysis/clustering', '.metric-card'],
+      ['/analysis/report', '.check-row'],
     ]) {
       await page.goto(base + path)
       await page.locator(ready).first().waitFor()
@@ -32,8 +34,9 @@ try {
         `${path} overflows at ${width}`,
       )
       if (path === '/analysis/results') {
-        for (const tab of ['Evolution', 'Injuries', 'Trends', 'Leagues']) {
-          await page.getByRole('button', { name: tab, exact: true }).click()
+        for (const tab of ['Evolution', 'Injuries', 'Same club', 'Trends', 'Leagues']) {
+          await page.getByRole('tab', { name: tab, exact: true }).click()
+          if (width === 1440) await page.screenshot({ path: `/tmp/football-results-${tab.replace(' ', '-')}.png`, fullPage: true })
           await page.waitForTimeout(100)
           assert.equal(
             await page.evaluate(
@@ -84,7 +87,7 @@ try {
   await page.unroute('**/api/analysis/run')
   assert.deepEqual(errors, [])
   console.log(
-    'PASS: 3 widths, 5 analysis routes, all results tabs, table filtering, and legacy scraping navigation; no browser or analysis API errors.',
+    'PASS: 3 widths, 7 analysis routes, all results tabs, table filtering, and legacy scraping navigation; no browser or analysis API errors.',
   )
 } finally {
   await browser.close()

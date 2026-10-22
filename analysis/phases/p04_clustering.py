@@ -410,6 +410,11 @@ for ph in PHASES:
 sensitivity_clusters = pd.DataFrame(sens_rows).set_index("phase")
 assert out.notna().all().all()
 out.to_parquet(OUT_DIR / "team_season_clusters.parquet", index=False)
+# Tables for the dashboard's clustering view: agreement between methods, sensitivity clusterings, named centroids.
+agreement.to_csv(OUT_DIR / "agreement.csv")
+sensitivity_clusters.to_csv(OUT_DIR / "sensitivity_clusters.csv")
+pd.concat({ph: profiles[ph]["centroid"].rename(index=NAMES[ph]).loc[ORDER[ph]] for ph in PHASES}, names=["phase", "style"]).to_csv(
+    OUT_DIR / "centroids.csv")
 for ph in PHASES:
     display(pd.crosstab(out[f"{ph}_style"], out[f"{ph}_k3_style"]).loc[ORDER[ph]])
     display(pd.crosstab(out[f"{ph}_style"], out[f"{ph}_rel_style"]).loc[ORDER[ph], ORDER[ph]])

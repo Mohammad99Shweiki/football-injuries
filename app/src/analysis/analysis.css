@@ -88,7 +88,7 @@
 
 .analysis-shell {
   position: relative;
-  z-index: 1;
+  z-index: 3; /* above the decorative prints, whose hover state lifts them to z-index 2 */
   max-width: var(--page-max);
   margin: auto;
   padding: 36px var(--page-gutter);
@@ -661,3 +661,86 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- charts: heatmaps, CI plots, decomposition bars, metric small multiples ---- */
+.heat-table { border-collapse: separate; border-spacing: 3px; font: 12px var(--font-data); min-width: 100%; }
+.heat-table th { font-family: var(--font-ui); font-weight: 500; color: var(--muted); text-align: left; padding: 4px 8px; white-space: nowrap; }
+.heat-table thead th { font-size: 11px; vertical-align: bottom; }
+.heat-table td { text-align: center; padding: 8px 6px; border-radius: 4px; color: var(--chalk); font-variant-numeric: tabular-nums; white-space: nowrap; transition: opacity var(--dur-hover) ease; }
+.heat-table td small { display: block; color: var(--chalk-soft); opacity: 0.8; font-size: 10px; }
+.heat-table td.heat-muted { background: rgba(228, 231, 222, 0.05); color: var(--muted); border: 1px dashed var(--line); }
+.heat-table td.heat-dim { opacity: 0.3; }
+.heat-table td.heat-strong { font-weight: 700; box-shadow: inset 0 0 0 1.5px var(--annotation); }
+.heat-table td.heat-pick { cursor: pointer; }
+.heat-table td.heat-pick:hover { outline: 1px solid var(--chalk-soft); }
+.heat-table td.heat-empty { color: var(--muted); }
+
+.ci-plot { display: flex; flex-direction: column; gap: 2px; }
+.ci-row { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr) minmax(150px, 230px); gap: 12px; align-items: center; transition: opacity var(--dur-hover) ease; }
+.ci-row.is-dim { opacity: 0.3; }
+.ci-row svg { width: 100%; height: 28px; display: block; }
+.ci-axis svg { height: 16px; }
+.ci-axis text, .metric-card text, .line-chart text { fill: var(--muted); font: 11px var(--font-data); }
+.ci-label { font-size: 13px; text-align: left; }
+.ci-value { font: 12px var(--font-data); color: var(--chalk-soft); }
+.ci-value b { color: var(--chalk); font-size: 13px; }
+.chart-event { fill: var(--annotation) !important; font-family: var(--font-hand) !important; font-size: 15px !important; }
+.chart-legend button.is-dim { opacity: 0.45; }
+.chart-legend button[aria-pressed='true'] { color: var(--chalk); text-decoration: underline; text-decoration-color: var(--annotation); text-underline-offset: 4px; }
+
+.split-bars { display: flex; flex-direction: column; gap: 6px; }
+.split-row { display: grid; grid-template-columns: 130px minmax(0, 1fr) 70px; gap: 12px; align-items: center; }
+.split-label { font-size: 13px; }
+.split-value { font: 12px var(--font-data); text-align: right; }
+.split-track { position: relative; height: 34px; background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
+.split-zero { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--muted); }
+.split-bar { position: absolute; height: 8px; border-radius: 2px; }
+.split-total { position: absolute; top: 2px; bottom: 2px; width: 3px; margin-left: -1.5px; background: var(--chalk); border-radius: 2px; }
+.total-mark { background: var(--chalk) !important; width: 3px !important; border-radius: 1px !important; }
+
+.metric-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: 14px; }
+.metric-card { margin: 0; background: var(--well); box-shadow: var(--well-shadow); border-radius: var(--radius-md); padding: 10px 12px; }
+.metric-card figcaption { font-size: 13px; font-weight: 600; }
+.metric-card figcaption small { color: var(--muted); font-weight: 400; }
+.metric-card svg { width: 100%; height: auto; display: block; }
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; }
+.swatch.attack { background: var(--site-fd); }
+.swatch.defence { background: var(--warn); }
+
+.analysis-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr)); gap: 18px; align-items: start; }
+.analysis-grid-2 > section, .analysis-grid-2 > div { min-width: 0; }
+.figure-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 14px; }
+.figure-grid a { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font: 12px var(--font-data); text-decoration: none; }
+.figure-grid img { background: #fcfcfb; border-radius: var(--radius-sm); }
+.league-stories { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 18px; }
+.analysis-kpis.compact strong { font-size: 18px; }
+.style-card .era { font: 11px var(--font-data); color: var(--annotation); margin-right: 6px; }
+.preview-text { max-height: 280px; overflow: auto; }
+.review-note, .finalise-bar label { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 12px 0; }
+.review-note input, .finalise-bar input { min-width: min(360px, 100%); }
+.finalise-bar { align-items: center; margin-top: 12px; }
+
+/* ---- markdown (step notes, reports) ---- */
+.markdown { display: flex; flex-direction: column; gap: 10px; line-height: 1.6; min-width: 0; }
+.markdown p, .markdown ul, .markdown ol { margin: 0; max-width: 85ch; }
+.markdown ul, .markdown ol { padding-left: 1.3em; }
+.markdown h2, .markdown h3, .markdown h4, .markdown h5 { margin: 10px 0 0; }
+.markdown h2 { font-size: 20px; }
+.markdown h3 { font-size: var(--fs-h2); }
+.markdown h4, .markdown h5 { font-size: 14px; }
+.markdown code { font-family: var(--font-data); font-size: 0.9em; background: rgba(228, 231, 222, 0.08); padding: 1px 5px; border-radius: 4px; }
+.markdown hr { border: 0; border-top: 1px dashed var(--line); width: 100%; }
+.markdown img.analysis-figure { max-width: min(100%, 900px); background: #fcfcfb; }
+.report-text { margin-top: 16px; }
+
+@media (max-width: 700px) {
+  .ci-row { grid-template-columns: 1fr; gap: 0; padding: 6px 0; border-top: 1px dashed var(--line); }
+  .ci-axis { display: none; }
+  .split-row { grid-template-columns: 90px minmax(0, 1fr) 56px; gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .heat-table td, .ci-row { transition: none; }
+}
+
+/* Decorative prints only on the overview: data pages stay calm (design brief). */
+.board:has(.analysis-shell:not([data-view='progress'])) .prints { display: none; }

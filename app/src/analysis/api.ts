@@ -109,6 +109,8 @@ export interface Step {
       rows?: unknown[][]
       index?: unknown[]
       text?: string
+      path?: string
+      total_rows?: number
     }[]
   }
 }

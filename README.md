@@ -10,7 +10,7 @@ and compares injuries across clusters, seasons and leagues; see `docs/ANALYSIS_P
 ```
 docs/          ANALYSIS_PLAN.md, DECISIONS.md, PREPROCESSING_LOG.md, scraper/ (spec, dashboard handoff), ui/ (design brief)
 scraper/       step 1, data collection (finished): collect/, parse/, validate.py, serve.py, Docker files
-app/           the dashboard (React): step 1 scraping (run console, validation); step 2 analysis (Progress, Studio, Results, Reviews, Logs)
+app/           the dashboard (React): step 1 scraping (run console, validation); step 2 analysis (Progress, Studio, Clustering, Results, Reviews, Logs, Report)
 analysis/      step 2, analysis:
   phases/        p00_audit.py … p06_report.py: one script per phase, cells in the `# %%` format (source of truth)
   run.py         runs phases step by step, records checks/log rows/outputs in data/NN_*/_run.json, staleness
@@ -131,12 +131,15 @@ No data or phase scripts were moved. The new React screens live in `app/src/anal
 |---|---|
 | `/analysis` | View phase status, stale reasons and exported headline counts; run stale phases in order |
 | `/analysis/studio/phase-02/step-1` | Walk through phase steps, inspect checks, previews, logs, tables, figures and source; run a phase or through a step |
-| `/analysis/results` | Explore styles, PCA membership map, evolution, adjusted injury ratios, body areas, trends and league stories |
-| `/analysis/reviews` | Search and inspect tracked mappings, then explicitly approve the reviewed file hash |
+| `/analysis/clustering` | How k was chosen (quality measures vs k), cluster centres, agreement with Ward/GMM/consensus, sensitivity clusterings |
+| `/analysis/results` | Styles (map, cards), evolution, injuries (adjustment ladder, CIs, attack × defence, body areas, position/age), same club and style switches, trends with decomposition, league stories; pick a style to follow it everywhere |
+| `/analysis/reviews` | Open a mapping, compare it with the phase's proposal and its flagged rows, then approve the current file hash with a note |
 | `/analysis/logs` | Search decisions and preprocessing operations |
+| `/analysis/report` | Checklist before freezing a version, Finalise (writes `reports/releases/<date>-<sha>/manifest.json`), the summary and phase reports, every figure |
 
 Tables support server-side search, sorting, 50-row pages and CSV download. Mapping edits remain in the tracked CSV files;
-approving a file records its date and hash, and rejects approval if the file changed since it was opened.
+approving a file records its date and hash, and rejects approval if the file changed since it was opened. Approvals
+(`mappings/approvals.json`) are not phase inputs, so approving never makes a phase stale; editing a mapping does.
 Run controls are disabled while scraping is active. The server also rejects overlapping scraping and analysis starts.
 Running through a step reruns preceding steps in that phase because they share a Python namespace.
 The UI does not automatically approve reviews or change the selected clustering parameters. Run all currently uses

@@ -60,5 +60,32 @@ class AnalysisAppTests(unittest.TestCase):
         self.assertGreater(len(body.splitlines()), 2)
 
 
+    def test_approvals_do_not_make_phases_stale(self):
+        from analysis import run
+        from analysis.config import get_phase
+        self.assertIn('approvals.json', run.NOT_INPUTS)
+        self.assertFalse(any('approvals' in k for k in run.fingerprint(get_phase('02'))))
+
+    def test_finalise_refuses_when_not_ready(self):
+        with patch.object(api, 'finalise_status', return_value={'ready': False, 'items': [{'item': 'x', 'ok': False}]}):
+            self.assertEqual(api.handle('POST', '/api/analysis/finalise', '', {})[0], 409)
+
+    def test_mapping_diff_contract(self):
+        name = next(iter(api.PROPOSALS))
+        if not api.PROPOSALS[name].exists():
+            self.skipTest('requires local Phase 1 outputs')
+        status, _, body = api.handle('GET', f'/api/analysis/mappings/{name}/diff', '', {})
+        self.assertEqual(status, 200)
+        self.assertTrue({'changes', 'only_reviewed', 'only_proposed', 'flagged'} <= json.loads(body).keys())
+        self.assertEqual(api.handle('GET', '/api/analysis/mappings/../x.csv/diff', '', {})[0], 404)
+
+    def test_figures_and_clustering_export(self):
+        status, _, body = api.handle('GET', '/api/analysis/figures', '', {})
+        self.assertEqual(status, 200)
+        if (api.RESULTS_DIR / 'clustering.json').exists():
+            kinds = {r['kind'] for r in json.loads((api.RESULTS_DIR / 'clustering.json').read_text())}
+            self.assertEqual(kinds, {'k', 'gmm', 'agreement', 'sensitivity', 'centroid'})
+
+
 if __name__ == '__main__':
     unittest.main()

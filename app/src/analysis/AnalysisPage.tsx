@@ -4,8 +4,14 @@ import { CreditsFooter } from '../components/CreditsFooter'
 import { REPORT_SCATTER } from '../data/scatter'
 import { request, useResource } from './api'
 import type { Job, Mapping, Phase, Row, Step } from './api'
+import { CiPlot } from './charts'
+import { Clustering } from './Clustering'
 import { DataTable, Rows } from './DataTable'
+import { Markdown } from './Markdown'
+import { Report } from './Report'
 import { Results } from './Results'
+
+const VIEWS = ['progress', 'studio', 'clustering', 'results', 'reviews', 'logs', 'report']
 
 export function Badge({ status }: { status: string }) {
   return (
@@ -39,7 +45,7 @@ export function AnalysisPage({ path }: { path: string }) {
   return (
     <Board scatter={REPORT_SCATTER}>
       <nav className="workspace-tabs" aria-label="Analysis pages">
-        {['progress', 'studio', 'results', 'reviews', 'logs'].map((v) => (
+        {VIEWS.map((v) => (
           <a
             key={v}
             href={`/analysis/${v === 'progress' ? '' : v}`}
@@ -49,7 +55,7 @@ export function AnalysisPage({ path }: { path: string }) {
           </a>
         ))}
       </nav>
-      <div className="analysis-shell">
+      <div className="analysis-shell" data-view={view}>
         <header className="analysis-heading">
           <div>
             <div className="analysis-kicker">
@@ -60,7 +66,9 @@ export function AnalysisPage({ path }: { path: string }) {
                 {
                   progress: 'The study, at a glance',
                   studio: 'Analysis Studio',
+                  clustering: 'How the styles were found',
                   results: 'Style or schedule?',
+                  report: 'Report and release',
                   reviews: 'Review the evidence',
                   logs: 'The research notebook',
                 } as Record<string, string>
@@ -112,12 +120,12 @@ export function AnalysisPage({ path }: { path: string }) {
         {view === 'studio' && phases.data && (
           <Studio path={path} phases={phases.data} busy={busy} run={run} />
         )}
+        {view === 'clustering' && <Clustering />}
         {view === 'results' && <Results />}
+        {view === 'report' && <Report file={path.split('/')[3] || 'summary.md'} />}
         {view === 'reviews' && <Reviews />}
         {view === 'logs' && <Logs />}
-        {!['progress', 'studio', 'results', 'reviews', 'logs'].includes(
-          view,
-        ) && (
+        {!VIEWS.includes(view) && (
           <p>
             Page not found. <a href="/analysis">Open project progress.</a>
           </p>
@@ -158,6 +166,13 @@ function Progress({
             Cluster clubs by how they attack and defend. Compare injury
             frequency, severity and body areas across styles, seasons and
             leagues.
+          </p>
+          <p>
+            <strong>Finding so far: style or schedule? Mostly schedule.</strong>{' '}
+            Possession and pressing teams have more injuries, but most of it
+            goes with being a strong team that plays more matches; a small
+            possession excess remains, and switching style does not change a
+            club's injury rate.
           </p>
           <a className="text-link" href="/analysis/results">
             Explore the findings ↗
@@ -255,10 +270,17 @@ function Progress({
           are taken into account.
         </p>
         {ladder.data && (
-          <Rows
-            rows={ladder.data.filter(
-              (r) => r.style === 'Positional possession',
-            )}
+          <CiPlot
+            rows={ladder.data
+              .filter((r) => r.style === 'Positional possession')
+              .map((r) => ({
+                label: `${r.exposure}: ${r.adjustment}`,
+                value: Number(r.rr),
+                low: Number(r.rr_low),
+                high: Number(r.rr_high),
+                color: 'var(--site-fd)',
+                note: `${Number(r.excess_per_100) >= 0 ? '+' : ''}${Number(r.excess_per_100).toFixed(1)} per 100`,
+              }))}
           />
         )}
         <p className="analysis-muted">
@@ -366,7 +388,7 @@ function Studio({
           {step.error && <p role="alert">{step.error}</p>}
           {step.data && (
             <>
-              <p className="step-note-text">{step.data.note}</p>
+              <Markdown className="step-note-text" text={step.data.note} />
               {!step.data.run && (
                 <p className="analysis-notice">
                   This step has not run yet. Run the phase to see its outputs.
@@ -425,6 +447,10 @@ function Studio({
                                 loading="lazy"
                               />
                             </a>
+                          ) : o.kind === 'report' && o.path.startsWith('reports/') ? (
+                            <a href={`/analysis/report/${o.path.split('/').pop()}`}>
+                              {o.path} · read the report →
+                            </a>
                           ) : (
                             <span>{o.path}</span>
                           )}
@@ -438,11 +464,35 @@ function Studio({
                       <DataTable key={table} path={table} />
                     </details>
                   )}
+                  {!!step.data.run.previews.length && <h3>What the step shows</h3>}
+                  {step.data.run.previews
+                    .filter((p) => p.kind !== 'table')
+                    .map((p, i) =>
+                      p.kind === 'image' && p.path ? (
+                        <img
+                          key={`i${i}`}
+                          className="analysis-figure"
+                          src={`/api/analysis/figures/${p.path.split('/').pop()}`}
+                          alt={p.path.split('/').pop()?.replaceAll('_', ' ')}
+                          loading="lazy"
+                        />
+                      ) : p.kind === 'markdown' ? (
+                        <Markdown key={`m${i}`} text={p.text || ''} />
+                      ) : (
+                        <pre key={`t${i}`} className="preview-text">
+                          {p.text}
+                        </pre>
+                      ),
+                    )}
                   {step.data.run.previews
                     .filter((p) => p.kind === 'table' && p.rows && p.columns)
                     .map((p, i) => (
-                      <details key={i}>
-                        <summary>Table preview {i + 1}</summary>
+                      <details key={i} open={i === 0}>
+                        <summary>
+                          Table {i + 1}
+                          {p.total_rows ? ` · ${p.total_rows.toLocaleString()} rows` : ''}
+                          {p.total_rows && p.rows && p.total_rows > p.rows.length ? ` (first ${p.rows.length})` : ''}
+                        </summary>
                         <Rows
                           rows={p.rows!.map((r, n) =>
                             Object.fromEntries([
@@ -501,32 +551,47 @@ function Studio({
     </>
   )
 }
+interface MappingDiff {
+  key: string
+  proposal: string
+  changes: { key: string; field: string; proposed: string; reviewed: string }[]
+  only_reviewed: string[]
+  only_proposed: string[]
+  flagged: string[]
+  rows: number
+}
 function Reviews() {
   const mappings = useResource<Mapping[]>('mappings', 3000)
   const [selected, setSelected] = useState('')
+  const [note, setNote] = useState('')
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
+  const file = selected.split('/').pop() || ''
+  const diff = useResource<MappingDiff>(file ? `mappings/${encodeURIComponent(file)}/diff` : 'mappings')
   async function approve(m: Mapping) {
     setPending(true)
     setError('')
     try {
       await request(`mappings/${encodeURIComponent(m.file)}/approve`, {
         hash: m.hash,
-        note: 'Reviewed in the unified analysis app.',
+        note: note || 'Reviewed in the analysis app.',
       })
+      setNote('')
     } catch (e) {
       setError((e as Error).message)
     } finally {
       setPending(false)
     }
   }
+  const d = file && diff.data && 'changes' in diff.data ? diff.data : null
   return (
     <section className="analysis-panel">
       <h2>Hand-reviewed inputs</h2>
       <p>
-        Inspect the team and injury label mappings before approving the current
-        file version. Approval records your review; it does not change the
-        analysis results.
+        Open a mapping, check where it differs from what the phase proposes
+        and its flagged rows, then approve the current version. Approval
+        records the date and file hash; it does not change results. Edits are
+        made in the tracked CSV files; rerun the affected phases after an edit.
       </p>
       {(error || mappings.error) && (
         <p role="alert">{error || mappings.error}</p>
@@ -549,17 +614,45 @@ function Reviews() {
           <button
             className="btn btn-outline review-action"
             disabled={pending || m.approved_current || selected !== m.path}
+            title={selected !== m.path ? 'Open the file first' : undefined}
             onClick={() => approve(m)}
           >
             Approve current version
           </button>
         </div>
       ))}
-      {selected && <DataTable key={selected} path={selected} />}
-      <p className="analysis-muted">
-        Mapping edits are made in the tracked CSV files; rerun affected phases
-        after changing them. Review approvals are read-only on small screens.
-      </p>
+      {selected && (
+        <>
+          <h3>{file}: compared with the proposal</h3>
+          {diff.error && <p role="alert">{diff.error}</p>}
+          {d && (
+            <>
+              <p className="analysis-muted">
+                Proposal: <code>{d.proposal}</code> · {d.changes.length}{' '}
+                field{d.changes.length === 1 ? '' : 's'} changed by review ·{' '}
+                {d.only_reviewed.length} rows only in the reviewed file ·{' '}
+                {d.only_proposed.length} only in the proposal ·{' '}
+                {d.flagged.length} flagged for review
+              </p>
+              {!!d.changes.length && <Rows rows={d.changes} />}
+              {!!d.flagged.length && (
+                <p className="analysis-muted">
+                  Flagged ({d.key}): {d.flagged.join(', ')}
+                </p>
+              )}
+            </>
+          )}
+          <label className="review-note">
+            Review note{' '}
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="What you checked (goes to the decision log)"
+            />
+          </label>
+          <DataTable key={selected} path={selected} />
+        </>
+      )}
     </section>
   )
 }

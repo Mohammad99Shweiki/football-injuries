@@ -242,6 +242,37 @@ files["decomposition"] = [{"scope": q.scope, "outcome": q.outcome, "styles": q.s
 st = pd.read_csv(T / "league_stories.csv")
 files["league_stories"] = [{"league": q.league, "story": q.story.replace("**", "")} for q in st.itertuples()]
 
+# Same club with and without each style (Phase 5 step 8), and style switches.
+sc = pd.read_csv(T / "same_club.csv")
+files["same_club"] = [{"phase": "attack" if q.grouping == "attacking style" else "defence", "style": q["style"], "clubs": int(q.clubs),
+                       "style_seasons": int(q["style seasons"]), "other_seasons": int(q["other seasons"]),
+                       **{f"{key}{part}": r(q[f"{label}, {name}"], 2) for key, name in [("ratio", "league × season"), ("ratio_strength", "+ team strength"),
+                                                                                       ("ratio_match", "per team match, + strength")]
+                          for part, label in [("", "ratio"), ("_low", "low"), ("_high", "high")]}} for _, q in sc.iterrows()]
+sw = pd.read_csv(T / "style_switches.csv")
+files["style_switches"] = [{"phase": "attack" if q.grouping == "attacking style" else "defence", "style": q["style"], "switch": q.switch,
+                            "switches": int(q.switches), "before": r(q["RR season before (+ strength)"], 2),
+                            "after": r(q["RR season after (+ strength)"], 2), "change": r(q.change, 2)} for _, q in sw.iterrows()]
+
+# Clustering view (Phase 4): k selection, GMM, agreement between methods, sensitivity clusterings, named centroids.
+C = DATA_DIR / "04_clusters"
+ks = pd.read_csv(C / "k_selection.csv")
+gm = pd.read_csv(C / "gmm_selection.csv")
+ag = pd.read_csv(C / "agreement.csv", index_col=0)
+sens = pd.read_csv(C / "sensitivity_clusters.csv", index_col=0)
+cen = pd.read_csv(C / "centroids.csv")
+files["clustering"] = [
+    *[{"kind": "k", "phase": q.phase, "k": int(q.k), "inertia": r(q.inertia, 1), "silhouette": r(q.silhouette),
+       "davies_bouldin": r(q.davies_bouldin), "calinski_harabasz": r(q.calinski_harabasz, 1),
+       "stability_ari": r(q["stability (mean ARI)"]), "min_jaccard": r(q["min cluster Jaccard"]),
+       "ward_ari": r(q["Ward vs K-means (ARI)"]), "smallest": int(q["smallest cluster"]), "usable": bool(q.usable)} for _, q in ks.iterrows()],
+    *[{"kind": "gmm", "phase": q.phase, "k": int(q.k), "bic": r(q.BIC, 1), "gmm_ari": r(q["GMM vs K-means (ARI)"])} for _, q in gm.iterrows()],
+    *[{"kind": "agreement", "phase": ph, "measure": m, "value": r(v)} for ph, row in ag.iterrows() for m, v in row.items()],
+    *[{"kind": "sensitivity", "phase": ph, "measure": m, "value": r(v)} for ph, row in sens.iterrows() for m, v in row.items()],
+    *[{"kind": "centroid", "phase": q.phase, "style": q["style"], "dimension": d, "value": r(q[d])}
+      for _, q in cen.iterrows() for d in cen.columns[2:] if pd.notna(q[d])],
+]
+
 for name, rows in files.items():
     (OUT / f"{name}.json").write_text(json.dumps(rows, ensure_ascii=False), encoding="utf-8")
 pd.Series({n: len(v) for n, v in files.items()}, name="rows").to_frame().assign(
