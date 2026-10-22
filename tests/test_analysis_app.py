@@ -19,7 +19,7 @@ class AnalysisAppTests(unittest.TestCase):
         self.assertTrue(all(p['steps'] for p in phases))
         status, _, body = api.handle('GET', '/api/analysis/results-bundle', '', {})
         self.assertEqual(status, 200)
-        self.assertTrue({'styles', 'cluster_map', 'rr_ladder', 'season_trend'} <= json.loads(body).keys())
+        self.assertTrue({'styles', 'cluster_map', 'rr_ladder', 'season_trend', 'body_league'} <= json.loads(body).keys())
 
     def test_raw_and_traversal_downloads_rejected(self):
         for path in ('data/raw/example.csv', '../secret.csv', '/etc/passwd'):

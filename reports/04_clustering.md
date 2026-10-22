@@ -178,7 +178,44 @@ Defence: main style (rows) vs relative style:
 | Aggressive duel press | 6 | 65 | 188 | 27 |
 | Compact mid-block | 5 | 36 | 51 | 197 |
 
-## 6. Density check (HDBSCAN)
+## 6. Plausibility: well-known team-seasons, leagues and outliers
+
+Team-seasons whose coaches' styles are widely described, and the styles the clustering gave them:
+
+| team-season | commonly described as | attacking style | membership (attack) | defensive style | membership (defence) |
+|---|---|---|---|---|---|
+| Manchester City 2017-18 | Guardiola: possession, high press | Positional possession | 0.57 | High press, high line | 0.42 |
+| Liverpool FC 2019-20 | Klopp: high press, fast vertical attacks | Positional possession | 0.55 | High press, high line | 0.51 |
+| Brighton & Hove Albion 2022-23 | De Zerbi: possession build-up, high press | Positional possession | 0.84 | High press, high line | 0.86 |
+| Bayer 04 Leverkusen 2023-24 | Alonso: possession, control | Positional possession | 0.64 | Compact mid-block | 0.43 |
+| SSC Napoli 2017-18 | Sarri: possession, short passing | Positional possession | 0.75 | High press, high line | 0.54 |
+| Atalanta BC 2019-20 | Gasperini: aggressive man-to-man pressing | Build-up into the box | 0.38 | High press, high line | 0.38 |
+| Atlético de Madrid 2015-16 | Simeone: compact deep block, counters | Build-up into the box | 0.8 | Compact mid-block | 0.37 |
+| Leicester City 2015-16 | Ranieri: counter-attack, deep block | Counter-attack | 0.5 | Low block | 0.37 |
+| Burnley FC 2017-18 | Dyche: direct play, low block | Direct play | 0.73 | Low block | 0.66 |
+
+Association of styles with league and season (Cramér's V; 1 = a style is one league or season):
+
+| measure | attack | defence |
+|---|---|---|
+| Cramér's V with league | 0.109 | 0.292 |
+| Cramér's V with season | 0.241 | 0.199 |
+| largest league share in a style | 0.305 | 0.444 |
+
+Outliers (K-means uses Euclidean distance on equal-weight z-scored dimensions):
+
+| dimension | team-seasons beyond 3 SD | largest distance (SD) |
+|---|---|---|
+| attack_possession | 14 | 4.64 |
+| attack_patience | 7 | 5.83 |
+| attack_verticality | 6 | 3.64 |
+| attack_directness | 1 | 3.22 |
+| defence_press | 5 | 3.52 |
+| defence_high_line | 9 | 6.44 |
+| defence_territory_conceded | 1 | 3.03 |
+| defence_aggression | 4 | 3.5 |
+
+## 7. Density check (HDBSCAN)
 
 Over 10 settings per phase, HDBSCAN finds at most 2 dense groups and labels at least 49% of team-seasons as noise (all of them in 13 of 20 runs): the team-seasons form a continuum without separated groups, so the K-means styles are divisions of that continuum, not natural clusters.
 
@@ -205,7 +242,7 @@ Over 10 settings per phase, HDBSCAN finds at most 2 dense groups and labels at l
 | defence | 120 | 120 | 0 | 1.0 | 0.0 | nan |
 | defence | 120 | 5 | 0 | 1.0 | 0.0 | nan |
 
-## 7. Combined styles
+## 8. Combined styles
 
 | attack \ defence | High press, high line | Low block | Aggressive duel press | Compact mid-block |
 |---|---|---|---|---|

@@ -294,6 +294,26 @@ export function Results() {
           )}
 
           {tab === 'Leagues' && (
+            <section className="analysis-panel">
+              <h2>Body areas by league and era</h2>
+              <p className="analysis-muted">
+                Injuries per 100 player-seasons in each body area (orange above, blue below the league's 2014–18 level). Hamstring
+                injuries rose in four of five leagues and knee injuries fell in four. Leagues label injuries differently, so compare
+                eras within a league rather than leagues with each other.
+              </p>
+              <Heatmap corner="league · era"
+                rows={data.body_league.filter((r) => league === 'All leagues' || r.league === league).map((r) => `${r.league} · ${r.era}`).filter((v, i, a) => a.indexOf(v) === i)}
+                cols={[...new Set(data.body_league.map((r) => String(r.area)))]}
+                cell={(row, area) => {
+                  const [lg, era] = row.split(' · ')
+                  const r = data.body_league.find((x) => x.league === lg && x.era === era && x.area === area)
+                  const base = data.body_league.find((x) => x.league === lg && x.era === '2014–18' && x.area === area)
+                  return r && base ? { value: Number(r.per_100) / Math.max(0.1, Number(base.per_100)), label: fmt(r.per_100, 1),
+                    title: `${lg} ${era}, ${area}: ${fmt(r.per_100, 1)} per 100 player-seasons; ${Math.round(Number(r.share_known) * 100)}% of injuries with a known area; ${Math.round(Number(r.unknown_share) * 100)}% of all injuries have no known area` } : null
+                }} caption="Injuries per 100 player-seasons by body area, league and era" />
+            </section>
+          )}
+          {tab === 'Leagues' && (
             <div className="league-stories">
               {data.league_stories.filter((r) => league === 'All leagues' || r.league === league).map((r) => {
                 const d = data.decomposition.find((x) => x.scope === r.league && x.outcome === 'injuries' && x.styles === 'combined style')

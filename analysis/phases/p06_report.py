@@ -73,6 +73,12 @@ numbers |= {
     "attacking style mix beyond strength": round(d.loc["attacking style", "from style mix"], 3),
     "attacking style mix, strength ignored": round(d.loc["attacking style", "style mix, strength ignored"], 3),
     "body-area findings": int(fdr.finding.sum()), "body-area tests": len(fdr),
+    "hamstring per 100, 2014–18": round(100 * ps[ps.era == "2014–18"]["area: hamstring"].mean(), 1),
+    "hamstring per 100, 2022–26": round(100 * ps[ps.era == "2022–26"]["area: hamstring"].mean(), 1),
+    "knee per 100, 2014–18": round(100 * ps[ps.era == "2014–18"]["area: knee"].mean(), 1),
+    "knee per 100, 2022–26": round(100 * ps[ps.era == "2022–26"]["area: knee"].mean(), 1),
+    "leagues with more hamstring injuries": int(sum(100 * (d[d.era == "2022–26"]["area: hamstring"].mean() - d[d.era == "2014–18"]["area: hamstring"].mean()) > 0
+                                                    for _, d in ps.groupby("league"))),
     "same club, possession, + strength": round(pd.read_csv(DATA_DIR / "05_injury_analysis" / "tables" / "same_club.csv")
                                               .set_index("style").loc["Positional possession", "ratio, + team strength"], 2),
 }
@@ -97,6 +103,9 @@ EXPECTED_TEXT = {
     "attacking style mix beyond strength": "+{:.3f} beyond team strength", "attacking style mix, strength ignored": "+{:.3f} when strength is ignored",
     "body-area findings": "{} of", "body-area tests": "of {} patterns",
     "same club, possession, + strength": "{:.2f} after team strength (CI",
+    "hamstring per 100, 2014–18": "rose from {:.1f}", "hamstring per 100, 2022–26": "to {:.1f} per 100 player-seasons",
+    "knee per 100, 2014–18": "fell from {:.1f}", "knee per 100, 2022–26": "to {:.1f} and fell",
+    "leagues with more hamstring injuries": "rose in {} of five leagues",
 }
 rows = []
 for key, pattern in EXPECTED_TEXT.items():
@@ -253,6 +262,13 @@ sw = pd.read_csv(T / "style_switches.csv")
 files["style_switches"] = [{"phase": "attack" if q.grouping == "attacking style" else "defence", "style": q["style"], "switch": q.switch,
                             "switches": int(q.switches), "before": r(q["RR season before (+ strength)"], 2),
                             "after": r(q["RR season after (+ strength)"], 2), "change": r(q.change, 2)} for _, q in sw.iterrows()]
+
+# Body areas by league and era (Phase 5 step 4): injuries per 100 player-seasons and share of known-area injuries.
+bl = pd.read_csv(T / "body_areas_by_league_era.csv", header=[0, 1], index_col=[0, 1])
+files["body_league"] = [{"league": lg, "era": era, "area": area, "per_100": r(bl.loc[(lg, era), ("per 100 player-seasons", area)], 1),
+                         "share_known": r(bl.loc[(lg, era), ("share of known", area)]),
+                         "unknown_share": r(bl.loc[(lg, era), ("unknown", "share of all")])}
+                        for lg, era in bl.index for area in bl["per 100 player-seasons"].columns]
 
 # Clustering view (Phase 4): k selection, GMM, agreement between methods, sensitivity clusterings, named centroids.
 C = DATA_DIR / "04_clusters"

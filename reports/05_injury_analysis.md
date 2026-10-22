@@ -124,6 +124,48 @@ Days lost RR:
 
 ![Body areas](figures/05_body_areas_by_style.png)
 
+### Body areas by league and era
+
+Injuries per 100 player-seasons by body area (all leagues):
+
+| era | unspecified muscle | knee | hamstring | groin/adductor/hip | ankle | calf/achilles/lower leg | thigh | upper body |
+|---|---|---|---|---|---|---|---|---|
+| 2014–18 | 11.0 | 10.5 | 8.3 | 6.0 | 5.5 | 4.8 | 2.5 | 2.9 |
+| 2018–22 | 12.9 | 9.9 | 8.2 | 6.8 | 6.0 | 5.1 | 2.9 | 2.7 |
+| 2022–26 | 11.9 | 9.4 | 10.1 | 6.1 | 6.2 | 5.6 | 3.4 | 2.8 |
+
+Change 2014–18 → 2022–26 per league (injuries per 100 player-seasons):
+
+| league | unspecified muscle | knee | hamstring | groin/adductor/hip | ankle | calf/achilles/lower leg | thigh | upper body |
+|---|---|---|---|---|---|---|---|---|
+| Premier League | 3.5 | -0.3 | 2.5 | 0.5 | -0.5 | 0.7 | 0.5 | 0.1 |
+| La Liga | -5.2 | -3.7 | -3.1 | -1.8 | -0.7 | -1.4 | -0.6 | -2.2 |
+| Serie A | 2.6 | -0.6 | 4.9 | 2.2 | 2.1 | 2.0 | 0.1 | 1.2 |
+| Bundesliga | 0.3 | -4.0 | 2.6 | -2.3 | -0.8 | -0.7 | -1.1 | -0.8 |
+| Ligue 1 | 2.5 | 2.7 | 2.0 | 1.6 | 3.4 | 3.4 | 6.1 | 1.2 |
+
+Share of injuries with a known area, and the share with no known area, by league and era:
+
+| league | era | unspecified muscle | knee | hamstring | groin/adductor/hip | ankle | calf/achilles/lower leg | thigh | upper body | unknown (share of all) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Premier League | 2014–18 | 0.05 | 0.216 | 0.218 | 0.097 | 0.138 | 0.102 | 0.047 | 0.045 | 0.063 |
+| Premier League | 2018–22 | 0.075 | 0.176 | 0.214 | 0.149 | 0.118 | 0.099 | 0.025 | 0.049 | 0.177 |
+| Premier League | 2022–26 | 0.101 | 0.183 | 0.23 | 0.092 | 0.112 | 0.099 | 0.049 | 0.04 | 0.151 |
+| La Liga | 2014–18 | 0.267 | 0.153 | 0.179 | 0.091 | 0.078 | 0.084 | 0.025 | 0.053 | 0.069 |
+| La Liga | 2018–22 | 0.389 | 0.149 | 0.138 | 0.079 | 0.08 | 0.068 | 0.006 | 0.034 | 0.063 |
+| La Liga | 2022–26 | 0.276 | 0.142 | 0.193 | 0.094 | 0.098 | 0.092 | 0.023 | 0.029 | 0.068 |
+| Serie A | 2014–18 | 0.269 | 0.18 | 0.145 | 0.09 | 0.075 | 0.083 | 0.041 | 0.041 | 0.221 |
+| Serie A | 2018–22 | 0.246 | 0.152 | 0.155 | 0.101 | 0.082 | 0.111 | 0.052 | 0.041 | 0.199 |
+| Serie A | 2022–26 | 0.251 | 0.136 | 0.184 | 0.103 | 0.089 | 0.094 | 0.034 | 0.05 | 0.194 |
+| Bundesliga | 2014–18 | 0.237 | 0.201 | 0.046 | 0.117 | 0.107 | 0.07 | 0.039 | 0.067 | 0.128 |
+| Bundesliga | 2018–22 | 0.248 | 0.185 | 0.069 | 0.109 | 0.116 | 0.064 | 0.044 | 0.057 | 0.089 |
+| Bundesliga | 2022–26 | 0.271 | 0.165 | 0.09 | 0.097 | 0.109 | 0.068 | 0.027 | 0.064 | 0.096 |
+| Ligue 1 | 2014–18 | 0.064 | 0.187 | 0.186 | 0.165 | 0.092 | 0.093 | 0.092 | 0.042 | 0.147 |
+| Ligue 1 | 2018–22 | 0.096 | 0.178 | 0.098 | 0.146 | 0.113 | 0.076 | 0.16 | 0.047 | 0.086 |
+| Ligue 1 | 2022–26 | 0.08 | 0.153 | 0.14 | 0.121 | 0.113 | 0.114 | 0.161 | 0.045 | 0.062 |
+
+![Body areas by league and era](figures/05_body_areas_by_league_era.png)
+
 ## 3. Seasons
 
 | season | player-seasons | injuries / player-season | days lost / player-season | severe share | unknown body area |

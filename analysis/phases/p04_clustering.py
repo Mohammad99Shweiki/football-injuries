@@ -104,6 +104,12 @@ X = {ph: style_dims[cols].to_numpy() for ph, cols in DIMS.items()}
 assert not any(np.isnan(x).any() for x in X.values())
 style_dims[DIMS["attack"] + DIMS["defence"]].describe().round(2).T
 
+# %%
+# Outliers: K-means uses Euclidean distance on equal-weight z-scored dimensions, so extreme team-seasons pull centroids.
+outliers = pd.DataFrame({"team-seasons beyond 3 SD": (style_dims[DIMS["attack"] + DIMS["defence"]].abs() > 3).sum(),
+                         "largest distance (SD)": style_dims[DIMS["attack"] + DIMS["defence"]].abs().max().round(2)})
+outliers
+
 # %% [markdown]
 # ## Step 2. Choosing k per phase
 #
@@ -422,6 +428,44 @@ for ph in PHASES:
 sensitivity_clusters.round(3)
 
 # %% [markdown]
+# **Face validity and leagues.** Two plausibility checks on the final styles. (1) Team-seasons whose coaches' styles are
+# widely described in football writing, with the style the clustering gave them; the descriptions were written before
+# looking up the assignments. (2) How strongly styles go with leagues (Cramér's V): if styles were just leagues, V would be
+# close to 1.
+
+# %%
+FACE = [("Manchester City", "2017-18", "Guardiola: possession, high press"),
+        ("Liverpool FC", "2019-20", "Klopp: high press, fast vertical attacks"),
+        ("Brighton & Hove Albion", "2022-23", "De Zerbi: possession build-up, high press"),
+        ("Bayer 04 Leverkusen", "2023-24", "Alonso: possession, control"),
+        ("SSC Napoli", "2017-18", "Sarri: possession, short passing"),
+        ("Atalanta BC", "2019-20", "Gasperini: aggressive man-to-man pressing"),
+        ("Atlético de Madrid", "2015-16", "Simeone: compact deep block, counters"),
+        ("Leicester City", "2015-16", "Ranieri: counter-attack, deep block"),
+        ("Burnley FC", "2017-18", "Dyche: direct play, low block")]
+face = pd.DataFrame([{"team-season": f"{club} {season}", "commonly described as": desc,
+                      "attacking style": r.attack_style.iloc[0], "membership (attack)": round(float(r.attack_membership.iloc[0]), 2),
+                      "defensive style": r.defence_style.iloc[0], "membership (defence)": round(float(r.defence_membership.iloc[0]), 2)}
+                     for club, season, desc in FACE for r in [out[(out.club == club) & (out.season_key == season)]]])
+assert len(face) == len(FACE)
+
+
+def cramers_v(a: pd.Series, b: pd.Series) -> float:
+    from scipy.stats import chi2_contingency
+    table = pd.crosstab(a, b)
+    stat = chi2_contingency(table)[0]
+    return float(np.sqrt(stat / (table.to_numpy().sum() * (min(table.shape) - 1))))
+
+
+league_assoc = pd.DataFrame({ph: {"Cramér's V with league": cramers_v(out[f"{ph}_style"], out.league),
+                                  "Cramér's V with season": cramers_v(out[f"{ph}_style"], out.season_key),
+                                  "largest league share in a style": pd.crosstab(out[f"{ph}_style"], out.league, normalize="index").max(axis=1).max()}
+                             for ph in PHASES}).round(3)
+face.to_csv(OUT_DIR / "face_validity.csv", index=False)
+display(face)
+league_assoc
+
+# %% [markdown]
 # ## Step 7. Density check: HDBSCAN
 #
 # K-means always returns k groups, whether or not the data has them. **HDBSCAN** (density-based, Campello et al. 2013)
@@ -564,14 +608,21 @@ text += ["## 5. Sensitivity clusterings (used in Phase 5 checks)", "",
            md_table(pd.crosstab(out[f"{ph}_style"], out[f"{ph}_k3_style"]).loc[ORDER[ph]].rename_axis(f"{ph} style")), "",
            f"{ph.capitalize()}: main style (rows) vs relative style:", "",
            md_table(pd.crosstab(out[f"{ph}_style"], out[f"{ph}_rel_style"]).loc[ORDER[ph], ORDER[ph]].rename_axis(f"{ph} style")), "")]]
-text += ["## 6. Density check (HDBSCAN)", "",
+text += ["## 6. Plausibility: well-known team-seasons, leagues and outliers", "",
+         "Team-seasons whose coaches' styles are widely described, and the styles the clustering gave them:", "",
+         md_table(face, index=False), "",
+         "Association of styles with league and season (Cramér's V; 1 = a style is one league or season):", "",
+         md_table(league_assoc.rename_axis("measure")), "",
+         "Outliers (K-means uses Euclidean distance on equal-weight z-scored dimensions):", "",
+         md_table(outliers.rename_axis("dimension")), ""]
+text += ["## 7. Density check (HDBSCAN)", "",
          "Over 10 settings per phase, HDBSCAN finds at most "
          f"{int(hdb_summary.most_clusters.max())} dense groups and labels at least "
          f"{hdb_summary.min_noise.min():.0%} of team-seasons as noise (all of them in "
          f"{int(hdb_summary.settings_all_noise.sum())} of {int(hdb_summary.settings.sum())} runs): the team-seasons form a "
          "continuum without separated groups, so the K-means styles are divisions of that continuum, not natural clusters.", "",
          md_table(hdbscan.round(3), index=False), ""]
-text += ["## 7. Combined styles", "", md_table(combo.rename_axis("attack \\ defence")), "",
+text += ["## 8. Combined styles", "", md_table(combo.rename_axis("attack \\ defence")), "",
          md_table(combos.rename_axis("style")), "", f"![Centroids](figures/{heat_fig})", "", f"![PCA](figures/{pca_fig})", ""]
 (REPORTS_DIR / "04_clustering.md").write_text("\n".join(text), encoding="utf-8")
 print("wrote", REPORTS_DIR / "04_clustering.md")

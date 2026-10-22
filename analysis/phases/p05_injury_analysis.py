@@ -403,6 +403,53 @@ fig.tight_layout()
 area_fig = save(fig, "05_body_areas_by_style.png")
 
 # %% [markdown]
+# **Body areas across leagues and eras.** The research question also asks whether the body areas affected differ
+# between leagues and change over time. For each league and era: injuries per 100 player-seasons in each area
+# (frequency), each area's share of the injuries with a known area, and the share with no known area. Shares are
+# compared within a league across eras; between leagues they mostly reflect how each league's injuries are labelled.
+
+# %%
+area_cols = [f"area: {a}" for a in AREAS]
+g = ps.groupby(["league", "era"])
+body_league = pd.concat({
+    "per 100 player-seasons": (100 * g[area_cols].sum().div(g.size(), axis=0)).rename(columns=lambda c: c[6:]),
+    "share of known": g[area_cols].sum().div(g.injuries.sum() - g["area: unknown"].sum(), axis=0).rename(columns=lambda c: c[6:]),
+}, axis=1).reindex(pd.MultiIndex.from_product([LEAGUES, ERA_ORDER], names=["league", "era"]))
+body_league[("unknown", "share of all")] = (g["area: unknown"].sum() / g.injuries.sum()).reindex(body_league.index)
+rate_change = (body_league["per 100 player-seasons"].xs(ERA_ORDER[-1], level="era")
+               - body_league["per 100 player-seasons"].xs(ERA_ORDER[0], level="era")).loc[LEAGUES]
+all_leagues = ps.groupby("era")[area_cols].sum().div(ps.groupby("era").size(), axis=0).mul(100).rename(columns=lambda c: c[6:]).loc[ERA_ORDER]
+assert body_league.notna().all().all()
+display(body_league["per 100 player-seasons"].round(1))
+display(all_leagues.round(1))
+rate_change.round(1)
+
+# %%
+fig, axes = plt.subplots(1, 2, figsize=(18, 6.5), gridspec_kw={"width_ratios": [1.15, 1]})
+shares = body_league["share of known"]
+ax = axes[0]
+ax.imshow(shares.to_numpy(dtype=float), cmap="Blues", vmin=0, vmax=0.45, aspect="auto")
+ax.set_xticks(range(len(AREAS)), AREAS, rotation=40, ha="right")
+ax.set_yticks(range(len(shares)), [f"{lg} {era}" for lg, era in shares.index])
+ax.grid(False)
+for (i, j), v in np.ndenumerate(shares.to_numpy(dtype=float)):
+    ax.text(j, i, f"{v:.0%}", ha="center", va="center", fontsize=7, color="white" if v > 0.28 else INK)
+for k in range(1, len(LEAGUES)):
+    ax.axhline(k * len(ERA_ORDER) - 0.5, color=SURFACE, linewidth=3)
+ax.set_title("Share of injuries with a known area, by league and era", loc="left")
+ax = axes[1]
+lim = np.abs(rate_change.to_numpy()).max()
+ax.imshow(rate_change.to_numpy(dtype=float), cmap=DIVERGING, vmin=-lim, vmax=lim, aspect="auto")
+ax.set_xticks(range(len(AREAS)), AREAS, rotation=40, ha="right")
+ax.set_yticks(range(len(LEAGUES)), LEAGUES)
+ax.grid(False)
+for (i, j), v in np.ndenumerate(rate_change.to_numpy(dtype=float)):
+    ax.text(j, i, f"{v:+.1f}", ha="center", va="center", fontsize=8, color=INK)
+ax.set_title(f"Change in injuries per 100 player-seasons, {ERA_ORDER[0]} → {ERA_ORDER[-1]}", loc="left")
+fig.tight_layout()
+body_league_fig = save(fig, "05_body_areas_by_league_era.png")
+
+# %% [markdown]
 # ## Step 5. Seasons
 #
 # Injuries per player-season by season (with 95% CIs and calendar events) and the share of each attacking and
@@ -1123,6 +1170,7 @@ trend.join(trend_rolling).to_csv(TABLES / "season_trend_rolling.csv")
 league_rolling.to_csv(TABLES / "season_league_rolling.csv")
 body_fdr.to_csv(TABLES / "body_areas_fdr.csv", index=False)
 breakdown.to_csv(TABLES / "breakdown_position_age.csv", index=False)
+body_league.to_csv(TABLES / "body_areas_by_league_era.csv")
 ladder.to_csv(TABLES / "rr_adjustment_ladder.csv", index=False)
 same_club.to_csv(TABLES / "same_club.csv")
 switches.to_csv(TABLES / "style_switches.csv")
@@ -1154,7 +1202,15 @@ for name in ["attacking style", "defensive style", "formation"]:
     b = body[name]
     text += [f"### {name.capitalize()} (pooled chi² p = {b['p']:.2g}, Cramér's V = {b['V']:.3f})", "",
              md_table(b["median"].round(2).rename_axis(name)), "", md_table(b["above"].rename_axis(name)), ""]
-text += [f"![Body areas](figures/{area_fig})", "", "## 3. Seasons", "",
+text += [f"![Body areas](figures/{area_fig})", "",
+         "### Body areas by league and era", "",
+         "Injuries per 100 player-seasons by body area (all leagues):", "", md_table(all_leagues.round(1).rename_axis("era")), "",
+         f"Change {ERA_ORDER[0]} → {ERA_ORDER[-1]} per league (injuries per 100 player-seasons):", "",
+         md_table(rate_change.round(1).rename_axis("league")), "",
+         "Share of injuries with a known area, and the share with no known area, by league and era:", "",
+         md_table(body_league["share of known"].join(body_league[("unknown", "share of all")].rename("unknown (share of all)"))
+                  .round(3).reset_index(), index=False), "",
+         f"![Body areas by league and era](figures/{body_league_fig})", "", "## 3. Seasons", "",
          md_table(fmt(by_season)[["player-seasons", "injuries / player-season", "days lost / player-season", "severe share"]].join(unknown_share.round(3)).rename_axis("season")), "",
          f"![Trend](figures/{trend_fig})", "", f"![Shares](figures/{shares_fig})", "", "## 4. Leagues", "",
          md_table(fmt(by_league)[COLS].rename_axis("league")), ""]
