@@ -51,7 +51,7 @@ export function ReportPage() {
         <Chalky progress={report ? 100 : 0} hurt={false} fail={!!report && !clean} />
         <div className="header-actions">
           <span className="hand-note">post-match analysis</span>
-          <a href="/" className="btn btn-outline">
+          <a href="/scraping" className="btn btn-outline">
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
             Back to run console
           </a>

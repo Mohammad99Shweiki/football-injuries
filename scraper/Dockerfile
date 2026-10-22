@@ -9,8 +9,8 @@ RUN npm ci --no-audit --no-fund
 COPY app/ ./
 RUN npm run build
 
-# ---- 2. Runtime: Python 3.13 + the collectors, parsers and server ------------------------------------------------
-FROM python:3.13-alpine AS runtime
+# ---- 2. Runtime: Python 3.13 + collection, analysis and server ------------------------------------------------
+FROM python:3.13-slim AS runtime
 COPY --from=ghcr.io/astral-sh/uv:0.13 /uv /usr/local/bin/uv
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never \
     PYTHONUNBUFFERED=1 PATH="/app/.venv/bin:$PATH"
@@ -18,16 +18,20 @@ WORKDIR /app
 
 # Dependencies first so code changes don't reinstall them.
 COPY pyproject.toml uv.lock .python-version ./
-RUN uv sync --frozen --no-install-project && rm /usr/local/bin/uv
+RUN uv sync --frozen --no-install-project --group analysis
 
 # Same layout as the repository: code in scraper/, README.md and data/ at the root (collect.config.ROOT).
 COPY README.md ./
+COPY analysis/ analysis/
+COPY mappings/ mappings/
+COPY docs/ docs/
+COPY reports/ reports/
 COPY scraper/collect/ scraper/collect/
 COPY scraper/parse/ scraper/parse/
 COPY scraper/pipeline.py scraper/serve.py scraper/run_all.py scraper/validate.py scraper/
 COPY --from=dashboard /app/app/dist app/dist
 
-RUN adduser -D -u 1000 app && mkdir -p data && chown app:app data
+RUN useradd --create-home --uid 1000 app && mkdir -p data && chown -R app:app data mappings docs reports
 USER app
 
 # Raw data, tables, manifest and run state live on the mounted volume.

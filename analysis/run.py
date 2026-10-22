@@ -38,6 +38,7 @@ from analysis.steps import read_cells, to_steps
 
 RUN_FILE = "_run.json"
 SHARED_CODE = ("config.py", "load.py", "report.py", "audit.py", "steps.py")
+NOT_INPUTS = {"approvals.json"}  # review records in mappings/ that no phase reads
 MAX_PREVIEWS = 6
 MAX_ROWS = 50
 MAX_TEXT = 6000
@@ -68,7 +69,7 @@ def fingerprint(phase: Phase) -> dict[str, str]:
     fp = {"script": _sha(phase.script.read_bytes()),
           "shared code": _sha(b"".join((ROOT / "analysis" / f).read_bytes() for f in SHARED_CODE))}
     for f in sorted(MAPPINGS_DIR.glob("*")):
-        if f.is_file():
+        if f.is_file() and f.name not in NOT_INPUTS:
             fp[f"mapping {f.name}"] = _sha(f.read_bytes())
     tables = sorted(TABLES_DIR.glob("*.csv"))
     fp["tables"] = _sha("".join(f"{t.name}:{t.stat().st_size}:{int(t.stat().st_mtime)}" for t in tables).encode())
@@ -215,6 +216,7 @@ def run_phase(phase: Phase, until: int | None = None, echo: bool = True) -> dict
     namespace = {"__name__": "__main__", "__check__": check, "__show__": show, "display": show}  # display: a Jupyter built-in
     saved = (ipy_display.display, display_functions.display, os.getcwd())
     ipy_display.display = display_functions.display = show
+    (ROOT / "notebooks").mkdir(exist_ok=True)  # absent in the Docker image
     os.chdir(ROOT / "notebooks")  # the phase code finds the project root as Path.cwd().parent, as in the notebook
     status = "passed"
     try:

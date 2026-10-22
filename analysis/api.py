@@ -20,9 +20,11 @@ a time and never while a scrape is running.
 """
 
 import hashlib
+import importlib.util
 import json
 import re
 import subprocess
+import sys
 import threading
 import time
 from collections import deque
@@ -156,11 +158,42 @@ def mappings() -> Response:
     return _json(rows)
 
 
+PROPOSALS = {"team_map.csv": DATA_DIR / "01_entities" / "team_map_proposed.csv",
+             "injury_label_map.csv": DATA_DIR / "02_injuries" / "injury_label_map_proposed.csv"}
+COUNT_COLUMNS = {"records", "over_7_days", "share_over_7_days", "cum_share_over_7_days", "n_seasons", "first_season", "last_season"}
+
+
+def mapping_diff(name: str) -> Response:
+    """Where the reviewed file differs from what the phase proposes (key = first column; counts ignored)."""
+    import csv
+    reviewed, proposal = MAPPINGS_DIR / name, PROPOSALS.get(name)
+    if not reviewed.is_file() or proposal is None:
+        return _error(f"no proposal to compare for {name}", HTTPStatus.NOT_FOUND)
+    if not proposal.is_file():
+        return _error(f"run the phase that writes {proposal.name} first", HTTPStatus.NOT_FOUND)
+    def rows(path: Path) -> tuple[str, dict[str, dict]]:
+        with path.open(encoding="utf-8", newline="") as fh:
+            reader = csv.DictReader(fh)
+            key = reader.fieldnames[0]
+            return key, {r[key]: r for r in reader}
+    key, rev = rows(reviewed)
+    _, prop = rows(proposal)
+    changes = [{"key": k, "field": f, "proposed": prop[k].get(f, ""), "reviewed": v}
+               for k in rev if k in prop for f, v in rev[k].items()
+               if f not in COUNT_COLUMNS and (prop[k].get(f) or "") != (v or "")]
+    flagged = [k for k, r in rev.items() if str(r.get("review", "")).lower() == "true"]
+    return _json({"file": name, "key": key, "proposal": str(proposal.relative_to(ROOT)), "changes": changes,
+                  "only_reviewed": sorted(set(rev) - set(prop)), "only_proposed": sorted(set(prop) - set(rev)),
+                  "flagged": flagged, "rows": len(rev)})
+
+
 def approve(name: str, body: dict) -> Response:
     f = MAPPINGS_DIR / name
     if f.suffix != ".csv" or not f.is_file() or f.parent.resolve() != MAPPINGS_DIR.resolve():
         return _error(f"no mapping {name}", HTTPStatus.NOT_FOUND)
     digest = hashlib.sha256(f.read_bytes()).hexdigest()[:16]
+    if body.get("hash") != digest:
+        return _error("mapping changed since it was opened; reload and review the current version", HTTPStatus.CONFLICT)
     approvals = _approvals()
     approvals[name] = {"date": date.today().isoformat(), "hash": digest, "note": str(body.get("note") or "")[:500]}
     APPROVALS.write_text(json.dumps(approvals, indent=1) + "\n", encoding="utf-8")
@@ -206,6 +239,72 @@ def results(name: str | None) -> Response:
     return HTTPStatus.OK, "application/json", f.read_bytes()
 
 
+def results_bundle() -> Response:
+    files = sorted(RESULTS_DIR.glob("*.json"))
+    if not files:
+        return _error("No results export yet. Run Phase 6 to produce it.", HTTPStatus.NOT_FOUND)
+    return _json({f.stem: json.loads(f.read_text(encoding="utf-8")) for f in files})
+
+
+def download(query: dict[str, list[str]]) -> Response:
+    path = _safe_path((query.get("path") or [""])[0])
+    if path is None:
+        return _error("choose a table under data/ or mappings/", HTTPStatus.BAD_REQUEST)
+    if path.suffix == ".csv":
+        return HTTPStatus.OK, "text/csv; charset=utf-8", path.read_bytes()
+    try:
+        import pandas as pd
+    except ImportError:
+        return _error("CSV export requires the analysis dependencies", HTTPStatus.SERVICE_UNAVAILABLE)
+    return HTTPStatus.OK, "text/csv; charset=utf-8", pd.read_parquet(path).to_csv(index=False).encode("utf-8")
+
+
+def figures() -> Response:
+    return _json([{"name": f.name, "phase": f.name[:2], "bytes": f.stat().st_size} for f in sorted(FIGURES_DIR.glob("*.png"))])
+
+
+def finalise_status() -> dict:
+    """Everything the report needs before a version can be frozen."""
+    phases_ok = [{"phase": p.id, "title": p.title, "ok": not stale_reasons(p), "reasons": stale_reasons(p)} for p in PIPELINE]
+    rec6 = read_record(get_phase("06")) or {"steps": []}
+    checks = [c for s in rec6["steps"] for c in s.get("checks", [])]
+    approvals = _approvals()
+    maps = [{"file": f.name, "ok": bool(approvals.get(f.name)) and approvals[f.name]["hash"] == hashlib.sha256(f.read_bytes()).hexdigest()[:16]}
+            for f in sorted(MAPPINGS_DIR.glob("*.csv"))]
+    cited = sorted(set(re.findall(r"figures/([\w.-]+\.png)", (REPORTS_DIR / "summary.md").read_text(encoding="utf-8"))))
+    missing = [f for f in cited if not (FIGURES_DIR / f).exists()]
+    items = [
+        {"item": "Every phase passed and is up to date", "ok": all(p["ok"] for p in phases_ok),
+         "detail": "; ".join(f"{p['phase']}: {', '.join(p['reasons'])}" for p in phases_ok if not p["ok"]) or "7 of 7"},
+        {"item": "Summary numbers match the data (Phase 6 checks)", "ok": bool(checks) and all(c["failed"] == 0 for c in checks),
+         "detail": f"{sum(c['failed'] == 0 for c in checks)} of {len(checks)} checks passed"},
+        {"item": "Hand-reviewed mappings approved in their current version", "ok": all(m["ok"] for m in maps),
+         "detail": ", ".join(f"{m['file']} {'approved' if m['ok'] else 'not approved'}" for m in maps)},
+        {"item": "Every figure cited by the summary exists", "ok": not missing,
+         "detail": f"{len(cited)} cited" + (f"; missing {', '.join(missing)}" if missing else "")},
+    ]
+    releases = sorted((p.name for p in (REPORTS_DIR / "releases").glob("*") if p.is_dir()), reverse=True) if (REPORTS_DIR / "releases").exists() else []
+    return {"items": items, "ready": all(i["ok"] for i in items), "phases": phases_ok, "releases": releases}
+
+
+def finalise(body: dict) -> Response:
+    status = finalise_status()
+    if not status["ready"]:
+        return _error("not ready: " + "; ".join(i["item"] for i in status["items"] if not i["ok"]), HTTPStatus.CONFLICT)
+    from analysis.run import _git
+    git = _git()
+    name = f"{date.today().isoformat()}-{git['sha'] or 'nogit'}{'-dirty' if git['dirty'] else ''}"
+    out = REPORTS_DIR / "releases" / name
+    out.mkdir(parents=True, exist_ok=True)
+    manifest = {"release": name, "created": datetime.now(timezone.utc).isoformat(timespec="seconds"), "git": git,
+                "note": str(body.get("note") or "")[:500], "checklist": status["items"],
+                "phases": {p.id: {k: (read_record(p) or {}).get(k) for k in ("run_id", "finished", "seed", "inputs")} for p in PIPELINE},
+                "mappings": _approvals(),
+                "summary_sha256": hashlib.sha256((REPORTS_DIR / "summary.md").read_bytes()).hexdigest()}
+    (out / "manifest.json").write_text(json.dumps(manifest, indent=1, default=str) + "\n", encoding="utf-8")
+    return _json({"ok": True, "release": name, "path": str((out / "manifest.json").relative_to(ROOT))})
+
+
 def figure(name: str) -> Response:
     f = FIGURES_DIR / name
     if not re.fullmatch(r"[\w.-]+\.png", name) or not f.is_file():
@@ -247,7 +346,9 @@ class Job:
         with self.lock:
             if self.running():
                 raise RuntimeError("an analysis run is already in progress")
-            cmd = ["uv", "run", "--group", "analysis", "python", "-m", "analysis.run", target]
+            # This interpreter if it has the analysis dependencies (Docker, `uv run --group analysis`), else via uv.
+            python = [sys.executable] if importlib.util.find_spec("pandas") else ["uv", "run", "--group", "analysis", "python"]
+            cmd = [*python, "-m", "analysis.run", target]
             if until is not None:
                 cmd += ["--until", str(until)]
             if force:
@@ -309,22 +410,34 @@ def handle(method: str, path: str, query: str, body: dict, scrape_busy: bool = F
                 return step(key, int(n))
             case "GET", ["table"]:
                 return table(q)
+            case "GET", ["download"]:
+                return download(q)
             case "GET", ["mappings"]:
                 return mappings()
+            case "GET", ["mappings", name, "diff"]:
+                return mapping_diff(name)
             case "POST", ["mappings", name, "approve"]:
                 return approve(name, body)
             case "GET", ["logs", kind]:
                 return logs(kind)
             case "GET", ["results"]:
                 return results(None)
+            case "GET", ["results-bundle"]:
+                return results_bundle()
             case "GET", ["results", name]:
                 return results(name)
+            case "GET", ["figures"]:
+                return figures()
+            case "GET", ["finalise"]:
+                return _json(finalise_status())
+            case "POST", ["finalise"]:
+                return finalise(body)
             case "GET", ["figures", name]:
                 return figure(name)
             case "GET", ["reports", name]:
                 return report(name)
             case "GET", ["run"]:
-                return _json(JOB.snapshot())
+                return _json(JOB.snapshot() | {"scrape_busy": scrape_busy})
             case "POST", ["run"]:
                 return start_run(body, scrape_busy)
         return _error("not found", HTTPStatus.NOT_FOUND)

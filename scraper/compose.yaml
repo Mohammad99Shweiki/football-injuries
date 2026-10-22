@@ -6,8 +6,12 @@ services:
       context: .. # repository root: the image needs pyproject.toml, uv.lock and README.md from there
       dockerfile: scraper/Dockerfile
     image: football-injuries
+    restart: unless-stopped
     ports:
       - "127.0.0.1:8765:8765" # localhost only, as the dashboard has no auth
     volumes:
       - ../data:/app/data # collected data stays on the host and survives rebuilds
+      - ../mappings:/app/mappings # reviewed inputs and approvals
+      - ../docs:/app/docs # decisions and preprocessing logs
+      - ../reports:/app/reports # generated reports and figures
     stop_grace_period: 15s

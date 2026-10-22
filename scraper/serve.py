@@ -32,6 +32,8 @@ from validate import build_report
 HOST = os.environ.get("DASHBOARD_HOST", "127.0.0.1")
 PORT = int(os.environ.get("DASHBOARD_PORT", "8765"))
 DIST = ROOT / "app" / "dist"
+# Serialize run starts across the scraping and analysis APIs.
+RUN_START_LOCK = threading.Lock()
 
 
 def _analysis_api():
@@ -146,11 +148,14 @@ def make_handler(controller: RunController) -> type[SimpleHTTPRequestHandler]:
                     body = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
                 except ValueError:
                     return self._json({"error": "invalid JSON"}, HTTPStatus.BAD_REQUEST)
-            status, ctype, data = api.handle(method, path, query, body, scrape_busy=controller.busy)
+            with RUN_START_LOCK:
+                status, ctype, data = api.handle(method, path, query, body, scrape_busy=controller.busy)
             self.send_response(status)
             self.send_header("Content-Type", ctype)
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(data)))
+            if ctype.startswith("text/csv"):
+                self.send_header("Content-Disposition", 'attachment; filename="table.csv"')
             self.end_headers()
             self.wfile.write(data)
 
@@ -181,13 +186,19 @@ def make_handler(controller: RunController) -> type[SimpleHTTPRequestHandler]:
                 if limit is not None and (not isinstance(limit, int) or limit < 1):
                     return self._json({"error": "limit must be an integer >= 1"}, HTTPStatus.BAD_REQUEST)
                 if action in ("start", "smoke_test"):
-                    controller.start(mode="smoke" if action == "smoke_test" else "full", dry_run=bool(flags.get("dry_run")), limit=limit)
+                    with RUN_START_LOCK:
+                        if _analysis_api().JOB.running():
+                            raise Busy("an analysis run is in progress; wait until it finishes")
+                        controller.start(mode="smoke" if action == "smoke_test" else "full", dry_run=bool(flags.get("dry_run")), limit=limit)
                 elif action == "pause":
                     controller.pause()
                 elif action == "resume":
                     controller.resume()
                 elif action == "requeue":
-                    return self._json({"ok": True, "removed": controller.requeue(list(body.get("ids") or []))})
+                    with RUN_START_LOCK:
+                        if _analysis_api().JOB.running():
+                            raise Busy("an analysis run is in progress; wait until it finishes")
+                        return self._json({"ok": True, "removed": controller.requeue(list(body.get("ids") or []))})
                 else:
                     return self._json({"error": f"unknown action {action!r}"}, HTTPStatus.BAD_REQUEST)
                 return self._json({"ok": True})
