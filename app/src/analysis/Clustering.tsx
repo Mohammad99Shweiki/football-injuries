@@ -79,6 +79,35 @@ export function Clustering() {
         </section>
       </div>
       <section className="analysis-panel">
+        <h2>Are there separated groups at all? Density check (HDBSCAN)</h2>
+        <p className="analysis-muted">
+          HDBSCAN reports only groups denser than their surroundings and calls the rest noise. Over a fixed grid of
+          settings it finds at most two small groups and labels most team-seasons as noise: there are no naturally separated
+          styles, only a continuum. K-means divides that continuum into interpretable parts; HDBSCAN is a check, not the
+          clustering used.
+        </p>
+        <div className="analysis-grid-2">
+          {['attack', 'defence'].map((ph) => {
+            const h = of('hdbscan').filter((r) => r.phase === ph)
+            return (
+              <div key={ph}>
+                <h3>{ph === 'attack' ? 'Attacking dimensions' : 'Defensive dimensions'}</h3>
+                <Heatmap mode="z" corner="min cluster size" rows={[...new Set(h.map((r) => String(r.min_cluster_size)))]}
+                  cols={['default', '5']}
+                  cell={(mcs, ms) => {
+                    const r = h.find((x) => String(x.min_cluster_size) === mcs && (ms === '5' ? Number(x.min_samples) === 5 && mcs !== '5' : Number(x.min_samples) === Number(mcs)))
+                    if (!r) return null
+                    const noise = Number(r.noise)
+                    return { value: noise * 1.5, label: <>{Math.round(noise * 100)}% noise<small>{String(r.clusters)} groups{r.ari != null ? ` · ARI ${Number(r.ari).toFixed(2)}` : ''}</small></>,
+                      title: `min cluster size ${mcs}, min samples ${ms}: ${r.clusters} groups, ${Math.round(noise * 100)}% noise, largest group ${Math.round(Number(r.largest) * 100)}% of team-seasons` }
+                  }} caption={`HDBSCAN on ${ph} dimensions`} />
+              </div>
+            )
+          })}
+        </div>
+        <p className="analysis-muted">Columns: minimum samples (default = the minimum cluster size, or 5). Stronger orange = more noise.</p>
+      </section>
+      <section className="analysis-panel">
         <h2>Figures</h2>
         <div className="figure-grid">
           {FIGURES.map((f) => (

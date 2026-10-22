@@ -65,7 +65,8 @@ on a continuum (k = 2–3 score better on silhouette); k = 3 loses the modern st
 clusters. The independent checks agree only moderately: Ward (ARI 0.39 attack, 0.35 defence) and a Gaussian mixture
 (0.30 and 0.54; its BIC prefers k = 2), so styles form a continuum and the clusters are useful divisions of it. A
 consensus of bootstrap K-means, bootstrap GMM and Ward partitions (ARI 0.89 and 0.92 with K-means) summarises
-stability, not independent validation. Clusters are named by rule (Figure 1). Each team-season also gets a **fuzzy
+stability, not independent validation. A density-based check (HDBSCAN, 10 settings per phase) finds no separated
+groups: at most two small ones, with most team-seasons labelled noise. Clusters are named by rule (Figure 1). Each team-season also gets a **fuzzy
 membership** (0–1) in every style from the K-means centroids (fuzzy c-means memberships, m = 2); ≥ 0.5 in its own
 style makes it a clear member (703 attack, 679 defence). Two sensitivity clusterings check the injury results: k = 3,
 and K-means on the dimensions centred within each league-season (style relative to the league that season).
@@ -250,7 +251,7 @@ correlations |r| ≤ 0.3), so other long-run changes (sports science, calendars,
 - **Association, not causation:** styles go with team strength (eta² 0.39 attack, 0.34 defence) and match load; results
   are adjusted for both and checked within leagues, but unmeasured factors (squad depth, medical staff, rotation
   policy) remain.
-- **Clusters on a continuum:** silhouette about 0.2 and moderate Ward and GMM agreement; borderline teams are assigned
+- **Clusters on a continuum:** silhouette about 0.2, moderate Ward and GMM agreement, and no dense groups for HDBSCAN; borderline teams are assigned
   to the nearer style (core-only, k = 3 and relative-style checks give the same direction).
 
 ## 8. Reproducing

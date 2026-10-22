@@ -178,7 +178,34 @@ Defence: main style (rows) vs relative style:
 | Aggressive duel press | 6 | 65 | 188 | 27 |
 | Compact mid-block | 5 | 36 | 51 | 197 |
 
-## 6. Combined styles
+## 6. Density check (HDBSCAN)
+
+Over 10 settings per phase, HDBSCAN finds at most 2 dense groups and labels at least 49% of team-seasons as noise (all of them in 13 of 20 runs): the team-seasons form a continuum without separated groups, so the K-means styles are divisions of that continuum, not natural clusters.
+
+| phase | min_cluster_size | min_samples | clusters | noise share | largest cluster share | K-means agreement (ARI, non-noise) |
+|---|---|---|---|---|---|---|
+| attack | 10 | 10 | 2 | 0.526 | 0.461 | 0.05 |
+| attack | 10 | 5 | 2 | 0.488 | 0.502 | 0.037 |
+| attack | 20 | 20 | 0 | 1.0 | 0.0 | nan |
+| attack | 20 | 5 | 2 | 0.703 | 0.278 | 0.058 |
+| attack | 40 | 40 | 0 | 1.0 | 0.0 | nan |
+| attack | 40 | 5 | 0 | 1.0 | 0.0 | nan |
+| attack | 80 | 80 | 0 | 1.0 | 0.0 | nan |
+| attack | 80 | 5 | 0 | 1.0 | 0.0 | nan |
+| attack | 120 | 120 | 0 | 1.0 | 0.0 | nan |
+| attack | 120 | 5 | 0 | 1.0 | 0.0 | nan |
+| defence | 10 | 10 | 2 | 0.964 | 0.023 | 0.599 |
+| defence | 10 | 5 | 2 | 0.732 | 0.257 | -0.005 |
+| defence | 20 | 20 | 0 | 1.0 | 0.0 | nan |
+| defence | 20 | 5 | 2 | 0.882 | 0.071 | 0.311 |
+| defence | 40 | 40 | 0 | 1.0 | 0.0 | nan |
+| defence | 40 | 5 | 2 | 0.882 | 0.071 | 0.311 |
+| defence | 80 | 80 | 0 | 1.0 | 0.0 | nan |
+| defence | 80 | 5 | 0 | 1.0 | 0.0 | nan |
+| defence | 120 | 120 | 0 | 1.0 | 0.0 | nan |
+| defence | 120 | 5 | 0 | 1.0 | 0.0 | nan |
+
+## 7. Combined styles
 
 | attack \ defence | High press, high line | Low block | Aggressive duel press | Compact mid-block |
 |---|---|---|---|---|

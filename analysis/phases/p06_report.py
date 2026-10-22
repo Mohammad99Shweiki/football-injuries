@@ -261,6 +261,7 @@ gm = pd.read_csv(C / "gmm_selection.csv")
 ag = pd.read_csv(C / "agreement.csv", index_col=0)
 sens = pd.read_csv(C / "sensitivity_clusters.csv", index_col=0)
 cen = pd.read_csv(C / "centroids.csv")
+hdb = pd.read_csv(C / "hdbscan.csv")
 files["clustering"] = [
     *[{"kind": "k", "phase": q.phase, "k": int(q.k), "inertia": r(q.inertia, 1), "silhouette": r(q.silhouette),
        "davies_bouldin": r(q.davies_bouldin), "calinski_harabasz": r(q.calinski_harabasz, 1),
@@ -269,6 +270,9 @@ files["clustering"] = [
     *[{"kind": "gmm", "phase": q.phase, "k": int(q.k), "bic": r(q.BIC, 1), "gmm_ari": r(q["GMM vs K-means (ARI)"])} for _, q in gm.iterrows()],
     *[{"kind": "agreement", "phase": ph, "measure": m, "value": r(v)} for ph, row in ag.iterrows() for m, v in row.items()],
     *[{"kind": "sensitivity", "phase": ph, "measure": m, "value": r(v)} for ph, row in sens.iterrows() for m, v in row.items()],
+    *[{"kind": "hdbscan", "phase": q.phase, "min_cluster_size": int(q.min_cluster_size), "min_samples": int(q.min_samples),
+       "clusters": int(q.clusters), "noise": r(q["noise share"]), "largest": r(q["largest cluster share"]),
+       "ari": r(q["K-means agreement (ARI, non-noise)"])} for _, q in hdb.iterrows()],
     *[{"kind": "centroid", "phase": q.phase, "style": q["style"], "dimension": d, "value": r(q[d])}
       for _, q in cen.iterrows() for d in cen.columns[2:] if pd.notna(q[d])],
 ]

@@ -17,9 +17,10 @@
 # 4. Names (by rule) and the combined style; saved clusters
 # 5. Soft memberships (Gaussian mixture) and consensus clustering
 # 6. Sensitivity clusterings: k = 3, and style relative to the league-season
-# 7. How the attacking and defensive styles combine
-# 8. 2-D views (PCA, for visualisation only)
-# 9. Report
+# 7. Density check: HDBSCAN (are there separated groups at all?)
+# 8. How the attacking and defensive styles combine
+# 9. 2-D views (PCA, for visualisation only)
+# 10. Report
 #
 # **Input:** `data/03_features/` (phase dimensions, features), `us_team_matches` (points, strength check only).
 # **Outputs:** `data/04_clusters/`, `reports/04_clustering.md`, `reports/figures/04_*.png`.
@@ -38,7 +39,7 @@ import pandas as pd
 from IPython.display import Image, display
 from matplotlib.colors import LinearSegmentedColormap
 from scipy.cluster.hierarchy import dendrogram, linkage
-from sklearn.cluster import AgglomerativeClustering, KMeans
+from sklearn.cluster import HDBSCAN, AgglomerativeClustering, KMeans
 from sklearn.decomposition import PCA
 from sklearn.metrics import adjusted_rand_score, calinski_harabasz_score, davies_bouldin_score, silhouette_score
 from sklearn.mixture import GaussianMixture
@@ -421,7 +422,38 @@ for ph in PHASES:
 sensitivity_clusters.round(3)
 
 # %% [markdown]
-# ## Step 7. How the attacking and defensive styles combine
+# ## Step 7. Density check: HDBSCAN
+#
+# K-means always returns k groups, whether or not the data has them. **HDBSCAN** (density-based, Campello et al. 2013)
+# only reports groups that are denser than their surroundings and labels the rest as noise, so it answers a different
+# question: are there clearly separated styles at all? It runs over a fixed grid of settings (minimum cluster size
+# 10–120, minimum samples default or 5), chosen before looking at the results. It is a **check**, not the clustering
+# used later: if it finds a few dense groups that K-means splits or merges, the styles should be revisited; if it finds
+# mostly noise, the team-seasons form a continuum and K-means divides it into interpretable parts.
+
+# %%
+HDB_GRID = [(mcs, ms) for mcs in (10, 20, 40, 80, 120) for ms in (None, 5)]
+hdb_rows = []
+for ph in PHASES:
+    ref = kmeans[(ph, MAIN_K[ph])].labels_
+    for mcs, ms in HDB_GRID:
+        lab = HDBSCAN(min_cluster_size=mcs, min_samples=ms, copy=True).fit(X[ph]).labels_
+        found = lab != -1
+        n_clusters = len(set(lab[found]))
+        sizes = np.bincount(lab[found]) if found.any() else np.array([0])
+        hdb_rows.append({"phase": ph, "min_cluster_size": mcs, "min_samples": ms or mcs, "clusters": n_clusters,
+                         "noise share": 1 - found.mean(), "largest cluster share": sizes.max() / len(lab),
+                         "K-means agreement (ARI, non-noise)": adjusted_rand_score(ref[found], lab[found]) if n_clusters > 1 else np.nan})
+hdbscan = pd.DataFrame(hdb_rows)
+hdbscan.to_csv(OUT_DIR / "hdbscan.csv", index=False)
+hdb_summary = hdbscan.groupby("phase").agg(
+    settings=("clusters", "size"), most_clusters=("clusters", "max"), min_noise=("noise share", "min"),
+    settings_all_noise=("clusters", lambda c: int((c == 0).sum())))
+display(hdbscan.round(3))
+hdb_summary
+
+# %% [markdown]
+# ## Step 8. How the attacking and defensive styles combine
 #
 # Team-seasons, points per match and back-three minutes per combination. Typical teams are the ones closest to the
 # combination's centre in both phases.
@@ -457,7 +489,7 @@ fig.tight_layout()
 heat_fig = save(fig, "04_centroids.png")
 
 # %% [markdown]
-# ## Step 8. 2-D views
+# ## Step 9. 2-D views
 #
 # PCA of each phase's four dimensions, **only to draw** the clusters. Marker shapes and labels carry identity
 # alongside colour.
@@ -484,7 +516,7 @@ fig.tight_layout()
 pca_fig = save(fig, "04_pca.png")
 
 # %% [markdown]
-# ## Step 9. Report
+# ## Step 10. Report
 
 # %%
 cols = ["phase", "k", "silhouette", "davies_bouldin", "calinski_harabasz", "stability (mean ARI)", "min cluster Jaccard",
@@ -532,7 +564,14 @@ text += ["## 5. Sensitivity clusterings (used in Phase 5 checks)", "",
            md_table(pd.crosstab(out[f"{ph}_style"], out[f"{ph}_k3_style"]).loc[ORDER[ph]].rename_axis(f"{ph} style")), "",
            f"{ph.capitalize()}: main style (rows) vs relative style:", "",
            md_table(pd.crosstab(out[f"{ph}_style"], out[f"{ph}_rel_style"]).loc[ORDER[ph], ORDER[ph]].rename_axis(f"{ph} style")), "")]]
-text += ["## 6. Combined styles", "", md_table(combo.rename_axis("attack \\ defence")), "",
+text += ["## 6. Density check (HDBSCAN)", "",
+         "Over 10 settings per phase, HDBSCAN finds at most "
+         f"{int(hdb_summary.most_clusters.max())} dense groups and labels at least "
+         f"{hdb_summary.min_noise.min():.0%} of team-seasons as noise (all of them in "
+         f"{int(hdb_summary.settings_all_noise.sum())} of {int(hdb_summary.settings.sum())} runs): the team-seasons form a "
+         "continuum without separated groups, so the K-means styles are divisions of that continuum, not natural clusters.", "",
+         md_table(hdbscan.round(3), index=False), ""]
+text += ["## 7. Combined styles", "", md_table(combo.rename_axis("attack \\ defence")), "",
          md_table(combos.rename_axis("style")), "", f"![Centroids](figures/{heat_fig})", "", f"![PCA](figures/{pca_fig})", ""]
 (REPORTS_DIR / "04_clustering.md").write_text("\n".join(text), encoding="utf-8")
 print("wrote", REPORTS_DIR / "04_clustering.md")

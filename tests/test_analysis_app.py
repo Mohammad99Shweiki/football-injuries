@@ -84,7 +84,7 @@ class AnalysisAppTests(unittest.TestCase):
         self.assertEqual(status, 200)
         if (api.RESULTS_DIR / 'clustering.json').exists():
             kinds = {r['kind'] for r in json.loads((api.RESULTS_DIR / 'clustering.json').read_text())}
-            self.assertEqual(kinds, {'k', 'gmm', 'agreement', 'sensitivity', 'centroid'})
+            self.assertEqual(kinds, {'k', 'gmm', 'agreement', 'sensitivity', 'hdbscan', 'centroid'})
 
 
 if __name__ == '__main__':
