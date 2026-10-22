@@ -412,8 +412,7 @@ files exported by Phase 6 to `data/06_report/dashboard/`.
   300–305. doi:10.1016/j.jsams.2021.11.038
 - Mavriopoulos, N., Sarlis, V. & Tjortjis, C. (2026). *Do high-possession teams have greater reported injury burden? A
   machine learning cross-league analysis of Europe's Big Five football competitions.* Big Data and Cognitive Computing
-  10(9), 298. doi:10.3390/bdcc10090298 (author list as announced by the authors' university; check against the
-  journal page).
+  10(9), 298. doi:10.3390/bdcc10090298
 - Plakias, S. et al. (2025). *A grounded theory for professional soccer teams' playing styles: towards a consensus.*
   International Journal of Sports Science & Coaching 20(1), 159–172.
 
