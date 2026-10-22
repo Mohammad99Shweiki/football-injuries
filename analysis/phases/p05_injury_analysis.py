@@ -568,6 +568,28 @@ display(*mix.values())
 display(fmt(summarise(ps.dropna(subset=["age_band"]), "age_band"))[["player-seasons", "injuries / player-season", "days lost / player-season", "severe share"]])
 fmt(summarise(ps.dropna(subset=["position"]), "position"))[["player-seasons", "injuries / player-season", "days lost / player-season", "severe share"]]
 
+# %%
+# Figure: how each style's rate ratio moves as adjustments are added (the "style or schedule?" picture).
+fig, axes = plt.subplots(1, 2, figsize=(14, 4.6), sharey=True)
+steps = [f"{e}\n{a}" for e, a, _ in LADDER]
+for ax, name in zip(axes, ["attacking style", "defensive style"]):
+    t = ladder[ladder.grouping == name]
+    for i, style in enumerate(GROUPINGS[name][1]):
+        r = t[t["style"] == style].set_index(["exposure", "adjustment"]).loc[[(e, a) for e, a, _ in LADDER]]
+        x = np.arange(len(LADDER)) + (i - 1.5) * 0.08
+        ax.errorbar(x, r.RR, yerr=[r.RR - r["RR low"], r["RR high"] - r.RR], color=SERIES[i], marker="o", capsize=0,
+                    linewidth=2, elinewidth=1.2, label=style)
+    ax.axhline(1, color=MUTED, linestyle="--", linewidth=1)
+    ax.axvspan(2.5, 4.5, color=GRID, alpha=0.5, zorder=0)
+    ax.set_xticks(range(len(LADDER)), steps, fontsize=8)
+    ax.set_title(name.capitalize(), loc="left")
+    ax.legend(frameon=False, fontsize=8, loc="upper right")
+axes[0].set_ylabel("injury rate ratio (1 = expected)")
+fig.suptitle("Style or schedule? Each style's injury rate ratio as team strength, squad make-up and matches played are taken into account",
+             x=0.01, ha="left", fontsize=11)
+fig.tight_layout()
+ladder_fig = save(fig, "05_adjustment_ladder.png")
+
 # %% [markdown]
 # ## Step 8. Team strength and workload
 #
@@ -630,6 +652,45 @@ same_club = pd.DataFrame(same_rows).set_index(["grouping", "style"])
 switches = pd.DataFrame(switch_rows).set_index(["grouping", "style", "switch"])
 display(same_club.round(2))
 switches.round(2)
+
+# %%
+# Figure: same club with and without each style (after team strength), and the change around style switches.
+fig, axes = plt.subplots(1, 2, figsize=(14, 4.4), gridspec_kw={"width_ratios": [1.2, 1]})
+ax = axes[0]
+rows = same_club.reset_index()
+y = np.arange(len(rows))[::-1]
+for yi, (_, r) in zip(y, rows.iterrows()):
+    color = SERIES[(ATTACK + DEFENCE).index(r["style"]) % 4]
+    ax.plot([r["low, + team strength"], r["high, + team strength"]], [yi, yi], color=color, linewidth=2.5, solid_capstyle="round")
+    ax.scatter(r["ratio, + team strength"], yi, color=color, s=50, zorder=3, edgecolors=SURFACE)
+    ax.text(r["high, + team strength"] + 0.01, yi, f"{r['ratio, + team strength']:.2f} ({int(r['clubs'])} clubs)", va="center", fontsize=8)
+ax.axvline(1, color=MUTED, linestyle="--", linewidth=1)
+ax.axhline(3.5, color=GRID, linewidth=1)
+ax.set_yticks(y, rows["style"])
+ax.set_xlabel("injuries in the style's seasons ÷ the same clubs' other seasons (after team strength)")
+ax.set_title("Same club, with and without the style", loc="left")
+ax.grid(axis="y", visible=False)
+ax = axes[1]
+sw = switches.reset_index()
+order = list(dict.fromkeys(sw["style"]))
+for _, r in sw.iterrows():
+    yv = len(order) - 1 - order.index(r["style"]) + (0.17 if r.switch == "into" else -0.17)
+    before, after = r["RR season before (+ strength)"], r["RR season after (+ strength)"]
+    color = SERIES[0] if r.switch == "into" else SERIES[1]
+    ax.annotate("", xy=(after, yv), xytext=(before, yv), arrowprops={"arrowstyle": "-|>", "color": color, "linewidth": 2, "mutation_scale": 12})
+    ax.scatter(before, yv, color=color, s=14, zorder=3)
+    ax.text(max(before, after) + 0.01, yv, f"{before:.2f} → {after:.2f}", va="center", fontsize=7.5, color=MUTED)
+values = sw[["RR season before (+ strength)", "RR season after (+ strength)"]].to_numpy()
+ax.set_xlim(values.min() - 0.03, values.max() + 0.09)
+ax.set_ylim(-0.6, len(order) - 0.4)
+ax.axhline(3.5, color=GRID, linewidth=1)
+ax.set_yticks(range(len(order))[::-1], order)
+ax.axvline(1, color=MUTED, linestyle="--", linewidth=1)
+ax.set_xlabel("rate ratio the season before → after (blue: switched into, orange: out of)")
+ax.set_title("Rate ratio before and after a club switches style", loc="left")
+ax.grid(axis="y", visible=False)
+fig.tight_layout()
+same_club_fig = save(fig, "05_same_club.png")
 
 # %% [markdown]
 # ## Step 9. Fitness absences (secondary outcome)

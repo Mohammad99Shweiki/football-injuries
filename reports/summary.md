@@ -56,6 +56,11 @@ tested within leagues; the comparison is **adjusted step by step** for team stre
 with a same-club comparison; and the injury **trend** is decomposed into the part that goes with the changing style
 mix.
 
+![Analysis pipeline](figures/06_pipeline.png)
+
+*Figure 0. The pipeline, from the three raw sources to the report, following the KDD steps; each box is one phase of
+`analysis/phases/` with what it produces.*
+
 ## 2. Data
 
 Collected raw from three public sources and combined for the first time (`docs/scraper/scraper-spec.md`).
@@ -91,6 +96,11 @@ Sources: understat.com, football-data.co.uk, transfermarkt.com (collected Octobe
 | Injury cleaning (Phase 2) | Dates and durations parsed; injuries tied to the club the player was at on the injury date (per-match records); Big Five membership (≥ 1 appearance or marked injured); 315 labels mapped to injury vs non-injury and 12 body areas (reviewed); summer-2020 season rule | 82,075 → 24,581 injuries > 7 days (13,588 moderate, 10,993 severe); 5,466 non-injuries and 5,180 mild injuries kept separately |
 | Features (Phase 3) | Per team-season: pressing, ball progression, attack type and shape, physical intensity (style); npxG (outcome); matches, European games, short rest, rotation (exposure); global z-scores; correlated features combined into phase-of-play dimensions | 4 attacking + 4 defensive style dimensions; shots on target dropped (Serie A source error); rest gaps > 21 days excluded |
 
+![Injury cleaning funnel](figures/06_injury_funnel.png)
+
+*Figure P1. Injury records through each cleaning step (Phase 2): most records drop out because the player was not at a
+Big Five club that season, or the absence was not an injury or lasted 7 days or less.*
+
 Missing values: none in the 1,170 team-season features; 179 injuries still open when collected were dropped, and 21
 players without a date of birth have no age (left out of the age-adjusted comparison only). Every step with its exact
 row counts is in `docs/PREPROCESSING_LOG.md`.
@@ -119,6 +129,12 @@ groups: at most two small ones, with most team-seasons labelled noise. Clusters 
 membership** (0–1) in every style from the K-means centroids (fuzzy c-means memberships, m = 2); ≥ 0.5 in its own
 style makes it a clear member (703 attack, 679 defence). Two sensitivity clusterings check the injury results: k = 3,
 and K-means on the dimensions centred within each league-season (style relative to the league that season).
+
+![Choosing k](figures/04_k_selection.png)
+
+*Figure M1. Cluster quality against the number of clusters k for each phase of play: within-cluster spread (elbow),
+silhouette, Davies–Bouldin, Calinski–Harabasz and bootstrap stability. k = 4 is usable for both phases (every cluster's
+Jaccard ≥ 0.6) and gives interpretable styles; the measures change gradually, as expected for a continuum.*
 
 **Injury analysis.** Unit: player-club-season. Rates: injuries and days lost per player-season (overlapping
 absences merged so no day counts twice), injuries per 1,000 minutes, severe share. Because Transfermarkt records
@@ -161,6 +177,8 @@ Counter-attack with a low block; Burnley 2017-18 is Direct play with a low block
 compact mid-block but not as counter-attacking. Styles are not just leagues or seasons (Cramér's V with league 0.11
 for attack and 0.29 for defence; with season 0.24 and 0.20).
 
+![04 centroids](figures/04_centroids.png)
+
 *Figure 1. Style centroids (`figures/04_centroids.png`): the mean of each standardised dimension per style, orange
 above and blue below the all-team average; the defining dimension of each style stands out (e.g. possession +1.6 for
 Positional possession). Figure A4 (`figures/04_pca.png`) places every team-season on the first two principal
@@ -180,6 +198,8 @@ components of its phase, coloured by style: the styles touch, consistent with a 
 Style mix: Positional possession 6% → 25% of team-seasons and Build-up into the box 17% → 42%, while Direct play
 40% → 18% and Counter-attack 36% → 14%; Low block 19% → 41%, Aggressive duel press 38% → 13%, High press steady at
 about 20%. Clubs keep their attacking style from one season to the next about half the time.
+
+![05 style shares by league](figures/05_style_shares_by_league.png)
 
 *Figure 2. Style shares per league and season (`figures/05_style_shares_by_league.png`): the share of team-seasons in
 each attacking and defensive style; Positional possession and the low block grow in every league while direct and
@@ -211,6 +231,12 @@ Rate ratios against the league-season average (95% CI over clubs):
 | per team match, league × season | 1.06 (0.98–1.13) | 1.02 (0.96–1.08) |
 | per team match, + team strength | 1.05 (1.00–1.10) | 1.02 (0.97–1.05) |
 
+![Adjusting step by step](figures/05_adjustment_ladder.png)
+
+*Figure 3b. Each style's injury rate ratio (95% CI) as the comparison is made stricter, left to right: league-season
+average, then teams of the same strength, then the same age and position mix; shaded, per team match played. The
+possession and high-press excess shrinks towards 1; the other styles stay close to 1 throughout.*
+
 - **Team strength and match load explain most of the style differences.** 88% of possession team-seasons are in the
   strongest third, and these teams play 51.7 matches a season against 41.8 for counter-attacking teams. Compared with
   teams of the same strength, Positional possession is 1.09 after team strength, 1.08 after age and position, and
@@ -229,6 +255,18 @@ Rate ratios against the league-season average (95% CI over clubs):
   average, 1.08 after team strength (CI 0.99–1.17) and 1.07 per match (0.99–1.14). Clubs switching into possession go
   from 1.06 to 1.08 the next season, and clubs switching out from 1.08 to 1.10: no consistent change. For every other
   style the same-club ratio after strength is 0.95–1.03.
+
+![Same club](figures/05_same_club.png)
+
+*Figure 3c. Left: injuries in a style's seasons divided by the same clubs' injuries in their other seasons, after team
+strength (95% CI over clubs); every interval includes or nearly touches 1. Right: the rate ratio the season before and
+after a club switched into (blue) or out of (orange) a style. For Positional possession both moves change little
+(1.06 → 1.08 in, 1.08 → 1.10 out). Only the low block moves the way a style effect would (0.96 → 1.06 in, 0.97 → 0.91
+out), although its overall and same-club ratios are about 1; with 76–98 switches each, this is read as noise.*
+
+![05 rates by style](figures/05_rates_by_style.png)
+
+![05 attack defence grid](figures/05_attack_defence_grid.png)
 
 *Figure 3. Injury and days-lost rate ratios by style with 95% confidence intervals (`figures/05_rates_by_style.png`;
 1 = the league-season average), and the attack × defence grid (`figures/05_attack_defence_grid.png`): reading along a
@@ -251,6 +289,10 @@ injured than in **where**.
 2022–26 and rose in 4 of five leagues (all but La Liga); knee injuries fell from 10.5 to 9.4 and fell in four of five
 (all but Ligue 1). The shares of the other areas move with each league's labelling (unspecified muscle is common in La
 Liga), so areas are compared over time within a league rather than between leagues.
+
+![05 body areas by style](figures/05_body_areas_by_style.png)
+
+![05 body areas by league era](figures/05_body_areas_by_league_era.png)
 
 *Figure 4. Body areas by style (`figures/05_body_areas_by_style.png`): each style's share of injuries in an area relative
 to its league's share (median over leagues; x/5 = leagues above 1). Figure 4b (`figures/05_body_areas_by_league_era.png`):
@@ -276,6 +318,10 @@ ignored), against +0.007 from the defensive shift. The style-mix part is positiv
 (points per match 2.19 → 1.86), so it is not the same group of teams in each era. The within-style part differs by
 league, partly because of recording changes.
 
+![05 season trend](figures/05_season_trend.png)
+
+![05 trend decomposition](figures/05_trend_decomposition.png)
+
 *Figure 5. Injuries per player-season by season with 95% confidence intervals and calendar events
 (`figures/05_season_trend.png`), and the decomposition of the change between eras into style mix and change within
 styles, overall and per league (`figures/05_trend_decomposition.png`).*
@@ -290,6 +336,8 @@ styles, overall and per league (`figures/05_trend_decomposition.png`).*
   0.74 → 0.89, hamstring injuries 0.083 → 0.133.
 - **Bundesliga:** low block 15% → 61%, direct play 44% → 6%; injuries fell within styles.
 - **Ligue 1:** build-up into the box 12% → 41%, counter-attack 41% → 9%; injuries 0.37 → 0.60.
+
+![05 style within league](figures/05_style_within_league.png)
 
 *Figure 6. Style rate ratios within each league (`figures/05_style_within_league.png`): the same comparison as Figure 3,
 league by league, to show which patterns hold everywhere.*
@@ -384,14 +432,19 @@ files exported by Phase 6 to `data/06_report/dashboard/`.
 
 | # | File | Shows |
 |---|---|---|
+| 0 | `figures/06_pipeline.png` | Analysis pipeline (KDD steps) |
+| P1 | `figures/06_injury_funnel.png` | Injury-cleaning funnel |
+| M1 | `figures/04_k_selection.png` | Choosing k |
 | 1 | `figures/04_centroids.png` | Attacking and defensive style centroids |
 | 2 | `figures/05_style_shares_by_league.png` | Style shares per league over time |
 | 3 | `figures/05_rates_by_style.png`, `figures/05_attack_defence_grid.png` | Injury and days-lost rate ratios by style |
+| 3b | `figures/05_adjustment_ladder.png` | Rate ratios as adjustments are added |
+| 3c | `figures/05_same_club.png` | Same club with and without each style; style switches |
 | 4 | `figures/05_body_areas_by_style.png` | Body areas by style, within leagues |
 | 4b | `figures/05_body_areas_by_league_era.png` | Body areas by league and era |
 | 5 | `figures/05_season_trend.png`, `figures/05_trend_decomposition.png` | Injury trend with calendar events; decomposition |
 | 6 | `figures/05_style_within_league.png` | Style effect within each league |
-| A1 | `figures/04_k_selection.png`, `figures/04_dendrograms.png` | Choosing k; Ward |
+| A1 | `figures/04_dendrograms.png` | Ward dendrograms |
 | A2 | `figures/05_style_dimensions_over_time.png` | Style dimensions per league and season |
 | A3 | `figures/00_injury_records_per_season.png` | Raw injury records (audit) |
 | A4 | `figures/04_pca.png` | Team-seasons on the first two principal components, by style |

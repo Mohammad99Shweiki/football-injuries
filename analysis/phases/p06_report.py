@@ -118,6 +118,74 @@ check
 
 # %% [markdown]
 # ## Step 3. Figures cited by the summary
+#
+# Two figures for the report are drawn here from earlier phases' saved outputs: the analysis pipeline and the
+# injury-cleaning funnel (Phase 2 row counts). Then every figure the summary cites must exist.
+
+# %%
+import matplotlib
+import matplotlib.ticker
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.patches import FancyBboxPatch
+
+from analysis.config import FIGURES_DIR
+
+INK, MUTED, SURFACE = "#0b0b0b", "#52514e", "#fcfcfb"
+SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"]
+
+# Pipeline: raw sources to results, with what each phase produces.
+fig, ax = plt.subplots(figsize=(14, 3.6), facecolor=SURFACE)
+ax.set_xlim(0, 14)
+ax.set_ylim(0, 3.6)
+ax.axis("off")
+boxes = [("Raw data", "Understat\nFootball-Data\nTransfermarkt\n27,197 files", SERIES[0]),
+         ("1 Integrate", "clubs matched across\nsources: 1,170\nteam-seasons", SERIES[0]),
+         ("2 Clean", "82,075 records →\n24,581 injuries\n> 7 days", SERIES[0]),
+         ("3 Transform", "4 attacking + 4\ndefensive style\ndimensions", SERIES[2]),
+         ("4 Cluster", "K-means k = 4\nper phase; Ward, GMM,\nHDBSCAN checks", SERIES[1]),
+         ("5 Evaluate", "injuries by style:\nrate ratios, adjustments,\nsame club, trends", SERIES[3]),
+         ("6 Report", "summary checked\nagainst the data;\ndashboard", SERIES[3])]
+w, gap = 1.75, 0.22
+for i, (title, body, color) in enumerate(boxes):
+    x = 0.15 + i * (w + gap)
+    ax.add_patch(FancyBboxPatch((x, 0.5), w, 2.5, boxstyle="round,pad=0.02,rounding_size=0.12", facecolor=color, alpha=0.14,
+                                edgecolor=color, linewidth=1.5))
+    ax.text(x + w / 2, 2.6, title, ha="center", va="center", fontsize=11, fontweight="bold", color=INK)
+    ax.text(x + w / 2, 1.5, body, ha="center", va="center", fontsize=8.5, color=INK, linespacing=1.4)
+    if i < len(boxes) - 1:
+        ax.annotate("", xy=(x + w + gap - 0.02, 1.75), xytext=(x + w + 0.02, 1.75), arrowprops={"arrowstyle": "->", "color": MUTED, "linewidth": 1.5})
+ax.text(0.15, 0.15, "KDD steps: selection and integration → preprocessing → transformation → data mining (clustering) → evaluation",
+        fontsize=8.5, color=MUTED)
+fig.savefig(FIGURES_DIR / "06_pipeline.png", dpi=160, bbox_inches="tight")
+plt.close(fig)
+
+# Funnel: injury records through each cleaning step (Phase 2 counts).
+counts = pd.read_csv(DATA_DIR / "02_injuries" / "preprocessing_counts.csv")
+counts = counts[counts["rows before"] != counts["rows after"]]
+labels = ["Transfermarkt injury records"] + [o.split(" (")[0] for o in counts.operation]
+values = [int(counts["rows before"].iloc[0])] + counts["rows after"].astype(int).tolist()
+fig, ax = plt.subplots(figsize=(11, 4.2), facecolor=SURFACE)
+ax.set_facecolor(SURFACE)
+y = np.arange(len(values))[::-1]
+ax.barh(y, values, color=[SERIES[0]] * (len(values) - 1) + [SERIES[1]], height=0.62)
+for yi, v, lab in zip(y, values, labels):
+    ax.text(v + 800, yi, f"{v:,}", va="center", fontsize=9, color=INK)
+ax.set_yticks(y, [lab[0].upper() + lab[1:] for lab in labels], fontsize=9)
+ax.set_axisbelow(True)
+ax.grid(axis="x", color="#e4e3df", linewidth=0.8)
+ax.grid(axis="y", visible=False)
+ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:,.0f}"))
+ax.set_xlim(0, values[0] * 1.15)
+for side in ("top", "right"):
+    ax.spines[side].set_visible(False)
+ax.set_xlabel("injury records")
+ax.set_title("From 82,075 Transfermarkt records to 24,581 injuries lasting more than 7 days", loc="left", fontsize=11)
+fig.tight_layout()
+fig.savefig(FIGURES_DIR / "06_injury_funnel.png", dpi=160, bbox_inches="tight")
+plt.close(fig)
+
 
 # %%
 cited = sorted(set(re.findall(r"figures/([\w.-]+\.png)", SUMMARY)))
