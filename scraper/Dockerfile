@@ -31,7 +31,7 @@ COPY scraper/parse/ scraper/parse/
 COPY scraper/pipeline.py scraper/serve.py scraper/run_all.py scraper/validate.py scraper/
 COPY --from=dashboard /app/app/dist app/dist
 
-RUN useradd --create-home --uid 1000 app && mkdir -p data && chown -R app:app data mappings docs reports
+RUN useradd --create-home --uid 1000 app && mkdir -p data notebooks && chown -R app:app data notebooks mappings docs reports  # notebooks/: the runner's working folder
 USER app
 
 # Raw data, tables, manifest and run state live on the mounted volume.
