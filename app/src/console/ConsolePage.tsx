@@ -87,7 +87,7 @@ export function ConsolePage() {
             {finished && !status.flags.dry_run && (
               <div className="callout ok" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
                 <b style={{ fontSize: 14 }}>Run finished. The validation report is ready.</b>
-                <a className="btn btn-primary" href="/validation">Open validation report</a>
+                <a className="btn btn-primary" href="/scraping/validation">Open validation report</a>
               </div>
             )}
             <Collectors status={status} />

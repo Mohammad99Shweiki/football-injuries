@@ -10,7 +10,7 @@ and compares injuries across clusters, seasons and leagues; see `docs/ANALYSIS_P
 ```
 docs/          ANALYSIS_PLAN.md, DECISIONS.md, PREPROCESSING_LOG.md, scraper/ (spec, dashboard handoff), ui/ (design brief)
 scraper/       step 1, data collection (finished): collect/, parse/, validate.py, serve.py, Docker files
-app/           the dashboard (React): step 1 scraping (run console, validation); step 2 analysis (to be designed)
+app/           the dashboard (React): step 1 scraping (run console, validation); step 2 analysis (Progress, Studio, Results, Reviews, Logs)
 analysis/      step 2, analysis:
   phases/        p00_audit.py … p06_report.py: one script per phase, cells in the `# %%` format (source of truth)
   run.py         runs phases step by step, records checks/log rows/outputs in data/NN_*/_run.json, staleness
@@ -53,7 +53,7 @@ uv sync                  # Python 3.13 + dependencies (transfermarkt-api pinned 
 
 ## Docker (easiest)
 
-Needs only Docker Desktop. One image (~176 MB, Python 3.13 on Alpine) holds the collectors, parsers and the built dashboard.
+Needs only Docker Desktop. One image (Python 3.13 on Debian slim) holds the collectors, parsers, analysis dependencies and the built dashboard. The scientific Python dependencies make this larger than the earlier scraping-only image.
 
 ```sh
 cd scraper
@@ -74,7 +74,7 @@ Scraper commands run from `scraper/`:
 ```sh
 cd scraper
 (cd ../app && npm install && npm run build)    # once: build the dashboard (needs Node.js)
-uv run python run_all.py                     # dashboard at http://127.0.0.1:8765; start runs from there
+uv run --group analysis python run_all.py    # dashboard at http://127.0.0.1:8765; start runs from there
 uv run python run_all.py --start             # dashboard + start a full run right away
 uv run python run_all.py --headless          # no dashboard: collect -> retry -> parse -> validate in the terminal
 uv run python run_all.py --headless --dry-run --limit 2   # what would be fetched for 2 league-seasons
@@ -112,7 +112,7 @@ Differences from the handoff, agreed during the build:
 - Live totals replace the fixed estimates.
 - Extras: an ETA, the progress % in the browser tab title, a fixtures check in Team sheets, an FD/Understat toggle on the Results sheet, and hover details on the coverage magnets and tempo bars.
 
-Development: run `uv run python run_all.py` and `npm run dev` in `app/`; Vite proxies `/api` to the server.
+Development: run `uv run --group analysis python run_all.py` and `npm run dev` in `app/`; Vite proxies `/api` to the server.
 
 Screenshot checks against fake data use your installed Chrome through playwright-core:
 ```sh
@@ -120,6 +120,40 @@ npm run build && npx vite preview --port 4173 &
 node scripts/screens.mjs <outDir>
 ```
 The script covers widths 375/768/1280/1440 and all 7 Chalky states.
+
+## One app: Scraping → Analysis
+
+The existing tactics-board app now has shared navigation between **01 Scraping** and **02 Analysis**.
+Old `/` and `/validation` links still work; the canonical scraping routes are `/scraping` and `/scraping/validation`.
+No data or phase scripts were moved. The new React screens live in `app/src/analysis/` and use the existing server.
+
+| Route | What you can do |
+|---|---|
+| `/analysis` | View phase status, stale reasons and exported headline counts; run stale phases in order |
+| `/analysis/studio/phase-02/step-1` | Walk through phase steps, inspect checks, previews, logs, tables, figures and source; run a phase or through a step |
+| `/analysis/results` | Explore styles, PCA membership map, evolution, adjusted injury ratios, body areas, trends and league stories |
+| `/analysis/reviews` | Search and inspect tracked mappings, then explicitly approve the reviewed file hash |
+| `/analysis/logs` | Search decisions and preprocessing operations |
+
+Tables support server-side search, sorting, 50-row pages and CSV download. Mapping edits remain in the tracked CSV files;
+approving a file records its date and hash, and rejects approval if the file changed since it was opened.
+Run controls are disabled while scraping is active. The server also rejects overlapping scraping and analysis starts.
+Running through a step reruns preceding steps in that phase because they share a Python namespace.
+The UI does not automatically approve reviews or change the selected clustering parameters. Run all currently uses
+the existing runner's staleness/failure rules; review approvals are recorded separately, rather than added as new execution gates.
+
+Docker now includes analysis and mounts `mappings/`, `docs/`, and `reports/` alongside `data/`, so approvals and generated
+reports survive rebuilds. Local startup: build `app/`, then run `uv run --group analysis python run_all.py` from `scraper/`.
+
+Verification:
+```sh
+.venv/bin/python -m unittest discover -s tests -v
+cd app && npm run build && npm run lint
+# Start the local server first; the browser check performs read-only UI interactions.
+npx playwright-core install chromium
+DASHBOARD_URL=http://127.0.0.1:8765 node scripts/analysis-smoke.mjs
+```
+`CHROME_PATH` can select an existing Chrome executable. The smoke check covers 1440, 768 and 375 px.
 
 ## Scraper layout
 

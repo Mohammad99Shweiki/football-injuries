@@ -161,6 +161,8 @@ def approve(name: str, body: dict) -> Response:
     if f.suffix != ".csv" or not f.is_file() or f.parent.resolve() != MAPPINGS_DIR.resolve():
         return _error(f"no mapping {name}", HTTPStatus.NOT_FOUND)
     digest = hashlib.sha256(f.read_bytes()).hexdigest()[:16]
+    if body.get("hash") != digest:
+        return _error("mapping changed since it was opened; reload and review the current version", HTTPStatus.CONFLICT)
     approvals = _approvals()
     approvals[name] = {"date": date.today().isoformat(), "hash": digest, "note": str(body.get("note") or "")[:500]}
     APPROVALS.write_text(json.dumps(approvals, indent=1) + "\n", encoding="utf-8")
@@ -204,6 +206,26 @@ def results(name: str | None) -> Response:
     if not re.fullmatch(r"[a-z_]+", name) or not f.is_file():
         return _error(f"no results file {name}", HTTPStatus.NOT_FOUND)
     return HTTPStatus.OK, "application/json", f.read_bytes()
+
+
+def results_bundle() -> Response:
+    files = sorted(RESULTS_DIR.glob("*.json"))
+    if not files:
+        return _error("No results export yet. Run Phase 6 to produce it.", HTTPStatus.NOT_FOUND)
+    return _json({f.stem: json.loads(f.read_text(encoding="utf-8")) for f in files})
+
+
+def download(query: dict[str, list[str]]) -> Response:
+    path = _safe_path((query.get("path") or [""])[0])
+    if path is None:
+        return _error("choose a table under data/ or mappings/", HTTPStatus.BAD_REQUEST)
+    if path.suffix == ".csv":
+        return HTTPStatus.OK, "text/csv; charset=utf-8", path.read_bytes()
+    try:
+        import pandas as pd
+    except ImportError:
+        return _error("CSV export requires the analysis dependencies", HTTPStatus.SERVICE_UNAVAILABLE)
+    return HTTPStatus.OK, "text/csv; charset=utf-8", pd.read_parquet(path).to_csv(index=False).encode("utf-8")
 
 
 def figure(name: str) -> Response:
@@ -309,6 +331,8 @@ def handle(method: str, path: str, query: str, body: dict, scrape_busy: bool = F
                 return step(key, int(n))
             case "GET", ["table"]:
                 return table(q)
+            case "GET", ["download"]:
+                return download(q)
             case "GET", ["mappings"]:
                 return mappings()
             case "POST", ["mappings", name, "approve"]:
@@ -317,6 +341,8 @@ def handle(method: str, path: str, query: str, body: dict, scrape_busy: bool = F
                 return logs(kind)
             case "GET", ["results"]:
                 return results(None)
+            case "GET", ["results-bundle"]:
+                return results_bundle()
             case "GET", ["results", name]:
                 return results(name)
             case "GET", ["figures", name]:
@@ -324,7 +350,7 @@ def handle(method: str, path: str, query: str, body: dict, scrape_busy: bool = F
             case "GET", ["reports", name]:
                 return report(name)
             case "GET", ["run"]:
-                return _json(JOB.snapshot())
+                return _json(JOB.snapshot() | {"scrape_busy": scrape_busy})
             case "POST", ["run"]:
                 return start_run(body, scrape_busy)
         return _error("not found", HTTPStatus.NOT_FOUND)

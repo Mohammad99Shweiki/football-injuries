@@ -5,10 +5,6 @@
 data
 app/node_modules
 app/dist
-analysis
 notebooks
-reports
-docs
-mappings
 *.part
 .DS_Store
