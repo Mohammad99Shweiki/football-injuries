@@ -22,7 +22,7 @@ try {
       ['/analysis/logs', '.analysis-table tbody tr'],
       ['/analysis/results', '.cluster-chart circle'],
       ['/analysis/clustering', '.metric-card'],
-      ['/analysis/report', '.check-row'],
+      ['/analysis/report', '.analysis-more summary'],
     ]) {
       await page.goto(base + path)
       await page.locator(ready).first().waitFor()

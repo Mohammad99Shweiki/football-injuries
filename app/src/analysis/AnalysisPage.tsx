@@ -4,10 +4,10 @@ import { CreditsFooter } from '../components/CreditsFooter'
 import { REPORT_SCATTER } from '../data/scatter'
 import { request, useResource } from './api'
 import type { Job, Mapping, Phase, Row, Step } from './api'
-import { CiPlot } from './charts'
 import { Clustering } from './Clustering'
 import { DataTable, Rows } from './DataTable'
 import { Markdown } from './Markdown'
+import { More } from './More'
 import { Report } from './Report'
 import { Results } from './Results'
 
@@ -130,7 +130,7 @@ export function AnalysisPage({ path }: { path: string }) {
             Page not found. <a href="/analysis">Open project progress.</a>
           </p>
         )}
-        <CreditsFooter />
+        <CreditsFooter compact />
       </div>
     </Board>
   )
@@ -145,7 +145,6 @@ function Progress({
   run: (phase: string) => Promise<void>
 }) {
   const styles = useResource<Row[]>('results/styles')
-  const ladder = useResource<Row[]>('results/rr_ladder')
   const rr = useResource<Row[]>('results/injury_rr')
   const teamSeasons = styles.data
     ?.filter((s) => s.phase === 'attack')
@@ -163,17 +162,8 @@ function Progress({
             Does the way a team plays relate to how its players get injured?
           </h2>
           <p>
-            Cluster clubs by how they attack and defend. Compare the number and the kind of
-            injuries (type, body area, severity) across styles, seasons and
-            leagues, and cluster team-seasons a second time by injury mix.
-          </p>
-          <p>
-            <strong>Finding: style changes the kind of injury more than the number, but most of it travels with team strength.</strong>{' '}
-            Ball-dominant, pressing teams' injuries lean to muscle injuries and
-            are less often severe; reactive, deep and duel-seeking teams' lean to
-            contact and joint injuries. Possession and pressing teams also have
-            more injuries, mostly because they are strong teams that play more
-            matches.
+            <strong>Style changes the kind of injury more than the number, but
+            most of it travels with team strength.</strong>
           </p>
           <a className="text-link" href="/analysis/results">
             Explore the findings ↗
@@ -207,12 +197,7 @@ function Progress({
       </div>
       <section className="analysis-panel">
         <div className="analysis-toolbar">
-          <div>
-            <h2>The analysis pipeline</h2>
-            <p className="analysis-muted">
-              Run all reruns stale phases in order and stops on failure.
-            </p>
-          </div>
+          <h2>The analysis pipeline</h2>
           <button
             className="btn btn-primary"
             disabled={busy}
@@ -241,53 +226,10 @@ function Progress({
                 <Badge status={p.stale ? 'stale' : p.status} />
               </div>
               <h3>{p.title}</h3>
-              <p>
-                {p.steps.filter((s) => s.status === 'passed').length} /{' '}
-                {p.steps.length} steps passed
-              </p>
-              <div className="phase-track">
-                <i
-                  style={{
-                    width: `${(100 * p.steps.filter((s) => s.status === 'passed').length) / Math.max(1, p.steps.length)}%`,
-                  }}
-                />
-              </div>
-              <small>
-                {p.finished
-                  ? `Last run ${new Date(p.finished).toLocaleString()}`
-                  : 'Ready for its first run'}
-              </small>
+              <small>{p.steps.length} steps</small>
             </a>
           ))}
         </div>
-      </section>
-      <section className="analysis-panel">
-        <div className="analysis-toolbar">
-          <h2>Possession: follow the adjustments</h2>
-          <a href="/analysis/results">Open results →</a>
-        </div>
-        <p>
-          Most of the initial excess shrinks after team strength and match load
-          are taken into account.
-        </p>
-        {ladder.data && (
-          <CiPlot
-            rows={ladder.data
-              .filter((r) => r.style === 'Positional possession')
-              .map((r) => ({
-                label: `${r.exposure}: ${r.adjustment}`,
-                value: Number(r.rr),
-                low: Number(r.rr_low),
-                high: Number(r.rr_high),
-                color: 'var(--site-fd)',
-                note: `${Number(r.excess_per_100) >= 0 ? '+' : ''}${Number(r.excess_per_100).toFixed(1)} per 100`,
-              }))}
-          />
-        )}
-        <p className="analysis-muted">
-          Association, not cause. Transfermarkt under-reports injuries, with
-          uneven coverage across leagues and seasons.
-        </p>
       </section>
     </>
   )
@@ -382,10 +324,6 @@ function Studio({
               Run through this step
             </button>
           </div>
-          <p className="analysis-muted">
-            Steps share state, so running through a step executes its
-            prerequisites in this phase.
-          </p>
           {step.error && <p role="alert">{step.error}</p>}
           {step.data && (
             <>
@@ -478,7 +416,13 @@ function Studio({
                           loading="lazy"
                         />
                       ) : p.kind === 'markdown' ? (
-                        <Markdown key={`m${i}`} text={p.text || ''} />
+                        (p.text || '').length > 600 ? (
+                          <More key={`m${i}`} label={(p.text || '').match(/^#+ (.+)$/m)?.[1] || 'Step report'}>
+                            <Markdown text={p.text || ''} />
+                          </More>
+                        ) : (
+                          <Markdown key={`m${i}`} text={p.text || ''} />
+                        )
                       ) : (
                         <pre key={`t${i}`} className="preview-text">
                           {p.text}

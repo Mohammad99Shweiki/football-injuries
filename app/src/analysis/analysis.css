@@ -744,3 +744,71 @@
 
 /* Decorative prints only on the overview: data pages stay calm (design brief). */
 .board:has(.analysis-shell:not([data-view='progress'])) .prints { display: none; }
+
+/* Minimal layout: one main view per section, one-line captions, the rest folded. */
+.analysis-caption {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+.analysis-shell .analysis-more {
+  margin-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.analysis-shell .analysis-more > summary {
+  font-size: 14px;
+  padding: 10px 0 2px;
+}
+.analysis-more-body {
+  padding-top: 10px;
+}
+.analysis-more-body > * + * {
+  margin-top: 14px;
+}
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.segmented button {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.segmented button + button {
+  border-left: 1px solid var(--line);
+}
+.segmented button[aria-pressed='true'] {
+  background: var(--line);
+  color: var(--chalk);
+}
+.check-label {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+.style-card .analysis-more dl {
+  margin: 0;
+}
+.phase-card small {
+  color: var(--muted);
+}
+.league-stories article h3 {
+  margin: 0 0 6px;
+}
+.credits-compact {
+  margin-top: 28px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.credits-compact summary {
+  color: var(--muted);
+}

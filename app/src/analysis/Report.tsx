@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { request, useResource } from './api'
 import { Markdown } from './Markdown'
+import { More } from './More'
 
 interface Finalise {
   items: { item: string; ok: boolean; detail: string }[]
@@ -15,6 +16,7 @@ const REPORTS = [
   ['03_features.md', '03 Features'],
   ['04_clustering.md', '04 Clustering'],
   ['05_injury_analysis.md', '05 Injury analysis'],
+  ['06_injury_profiles.md', '06 Injury profiles'],
 ]
 
 function useText(path: string) {
@@ -56,18 +58,22 @@ export function Report({ file }: { file: string }) {
         <div className="analysis-toolbar">
           <div>
             <h2>Ready to finalise?</h2>
-            <p className="analysis-muted">Finalising freezes this version: a manifest with every phase's run id and input hashes, the approvals, the git commit and the seed, in <code>reports/releases/</code>. It changes no result.</p>
+            <p className="analysis-caption">Freezes this version (run ids, input hashes, approvals, commit) in <code>reports/releases/</code>; changes no result.</p>
           </div>
           <span className={`analysis-badge ${status.data?.ready ? 'passed' : 'review'}`}>{status.data?.ready ? 'ready' : 'not ready'}</span>
         </div>
         {status.error && <p role="alert">{status.error}</p>}
-        {status.data?.items.map((i) => (
-          <div className="check-row" key={i.item}>
-            <span className={`analysis-badge ${i.ok ? 'passed' : 'failed'}`}>{i.ok ? 'done' : 'to do'}</span>
-            <span>{i.item}</span>
-            <small>{i.detail}</small>
-          </div>
-        ))}
+        {status.data && (
+          <More label={`Checklist · ${status.data.items.filter((i) => i.ok).length} of ${status.data.items.length} done`} open={!status.data.ready}>
+            {status.data.items.map((i) => (
+              <div className="check-row" key={i.item}>
+                <span className={`analysis-badge ${i.ok ? 'passed' : 'failed'}`}>{i.ok ? 'done' : 'to do'}</span>
+                <span>{i.item}</span>
+                <small>{i.detail}</small>
+              </div>
+            ))}
+          </More>
+        )}
         <div className="analysis-actions finalise-bar">
           <label>Note{' '}<input value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. version handed in" /></label>
           <button className="btn btn-primary" disabled={!status.data?.ready || pending} onClick={finalise}>Finalise this version</button>
@@ -84,10 +90,9 @@ export function Report({ file }: { file: string }) {
         </nav>
         {report.error && <p role="alert">{report.error}</p>}
         {!report.text && !report.error && <p role="status">Loading {name}…</p>}
-        {report.text && <Markdown text={report.text} className="report-text" />}
+        {report.text && <FoldedReport text={report.text} />}
       </section>
-      <section className="analysis-panel">
-        <h2>All figures</h2>
+      <More label="All figures">
         <div className="figure-grid">
           {figures.data?.map((f) => (
             <a key={f.name} href={`/api/analysis/figures/${f.name}`} target="_blank" rel="noreferrer">
@@ -96,7 +101,25 @@ export function Report({ file }: { file: string }) {
             </a>
           ))}
         </div>
-      </section>
+      </More>
     </>
+  )
+}
+
+/** A long report as its title and intro, then one fold per `## ` section (the first one open). */
+function FoldedReport({ text }: { text: string }) {
+  const [head, ...sections] = text.split(/^(?=## )/m)
+  return (
+    <div className="report-text">
+      <Markdown text={head} />
+      {sections.map((sec, i) => {
+        const [title, ...rest] = sec.split('\n')
+        return (
+          <More key={i} label={title.replace(/^##\s*/, '')} open={i === 0}>
+            <Markdown text={rest.join('\n')} />
+          </More>
+        )
+      })}
+    </div>
   )
 }
