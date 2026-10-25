@@ -120,7 +120,7 @@ Broken cheekbone,31,27,0.001,0.942,injury,,head/neck,fracture/bone,no,cervical|n
 Cartilage damage,27,27,0.001,0.943,injury,,unknown,ligament/joint,no,,
 Metacarpal fracture,33,26,0.001,0.944,injury,,upper body,fracture/bone,no,shoulder|collarbone|\barm\b|forearm|elbow|wrist|hand|finger|thumb|metacarp|scaphoid|\bribs?\b|chest|abdom|lung|pneumothorax|acromio|humer|splen,
 Internal ligament tear,27,26,0.001,0.945,injury,,knee,ligament/joint,no,knee|cruciate|menisc|patell|tibial head|inner ligament|internal ligament|collateral ligament,
-Appendectomy,26,26,0.001,0.946,injury,,unknown,other,no,,
+Appendectomy,26,26,0.001,0.946,non_injury,medical condition,,,,,Fable review 2026-10-25
 Bruised knee,45,25,0.0009,0.9469,injury,,knee,impact,no,knee|cruciate|menisc|patell|tibial head|inner ligament|internal ligament|collateral ligament,
 Stress reaction of the bone,38,25,0.0009,0.9478,injury,,unknown,fracture/bone,no,,
 Internal ligament strain,32,24,0.0009,0.9487,injury,,knee,ligament/joint,no,knee|cruciate|menisc|patell|tibial head|inner ligament|internal ligament|collateral ligament,
@@ -206,7 +206,7 @@ Bruise on the ankle joint,11,6,0.0002,0.9903,injury,,ankle,impact,no,ankle|synde
 Sciatica problems,11,6,0.0002,0.9905,injury,,back/spine,other,no,back|lumb|spine|vertebra|disc|sciatica|coccyx,
 Arch problems,10,6,0.0002,0.9907,injury,,foot/toe,unspecified,no,foot|\btoe|metatars|tarsus|heel|plantar|arch problems|sole,
 Capsular tear of ankle joint,8,6,0.0002,0.9909,injury,,ankle,ligament/joint,no,ankle|syndesm,
-Inflammation of the sole of the foot,8,6,0.0002,0.9911,injury,,foot/toe,other,no,foot|\btoe|metatars|tarsus|heel|plantar|arch problems|sole,
+Inflammation of the sole of the foot,8,6,0.0002,0.9911,injury,,foot/toe,tendon,no,foot|\btoe|metatars|tarsus|heel|plantar|arch problems|sole,Fable review 2026-10-25
 malaria,7,6,0.0002,0.9913,non_injury,illness,,,,^ill$|corona|^virus$|flu$|influenza|^cold$|fever|^infection$|tonsil|angina|bronchitis|pneumonia|mononucleation|malaria|chickenpox|shingles|meningitis|tuberculosis|intestinal virus|food poisoning|stomach|quarantin,
 Adductor tear,6,6,0.0002,0.9915,injury,,groin/adductor/hip,muscle,no,adductor|groin|pubalg|pubic|inguinal|\bhip\b|pelvi|testic,
 Fissure of the fibula,6,6,0.0002,0.9917,injury,,calf/achilles/lower leg,fracture/bone,no,achilles|calf|shin|tibia|fibula|lower leg|peroneus|compartment|broken leg,
@@ -234,7 +234,7 @@ Broken shoulder,4,4,0.0001,0.9952,injury,,upper body,fracture/bone,no,shoulder|c
 Dislocation fracture of the ankle joint,4,4,0.0001,0.9953,injury,,ankle,fracture/bone,no,ankle|syndesm,
 Eyebow fracture,4,4,0.0001,0.9954,injury,,head/neck,fracture/bone,no,cervical|neck|head|concussion|skull|face|facial|nose|cheek|jaw|eye|whiplash|eardrum|petrous|frontal,
 Partial tear of the plantar fascia,4,4,0.0001,0.9955,injury,,foot/toe,tendon,no,foot|\btoe|metatars|tarsus|heel|plantar|arch problems|sole,
-Patellar tendon dislocation,4,4,0.0001,0.9956,injury,,knee,tendon,no,knee|cruciate|menisc|patell|tibial head|inner ligament|internal ligament|collateral ligament,
+Patellar tendon dislocation,4,4,0.0001,0.9956,injury,,knee,ligament/joint,no,knee|cruciate|menisc|patell|tibial head|inner ligament|internal ligament|collateral ligament,Fable review 2026-10-25
 Intestinal virus,16,3,0.0001,0.9957,non_injury,illness,,,,^ill$|corona|^virus$|flu$|influenza|^cold$|fever|^infection$|tonsil|angina|bronchitis|pneumonia|mononucleation|malaria|chickenpox|shingles|meningitis|tuberculosis|intestinal virus|food poisoning|stomach|quarantin,
 bronchitis,12,3,0.0001,0.9958,non_injury,illness,,,,^ill$|corona|^virus$|flu$|influenza|^cold$|fever|^infection$|tonsil|angina|bronchitis|pneumonia|mononucleation|malaria|chickenpox|shingles|meningitis|tuberculosis|intestinal virus|food poisoning|stomach|quarantin,
 Shoulder joint contusion,10,3,0.0001,0.9959,injury,,upper body,impact,no,shoulder|collarbone|\barm\b|forearm|elbow|wrist|hand|finger|thumb|metacarp|scaphoid|\bribs?\b|chest|abdom|lung|pneumothorax|acromio|humer|splen,
@@ -244,7 +244,7 @@ Food poisoning,5,3,0.0001,0.9962,non_injury,illness,,,,^ill$|corona|^virus$|flu$
 Tibial head contusion,5,3,0.0001,0.9963,injury,,knee,impact,no,knee|cruciate|menisc|patell|tibial head|inner ligament|internal ligament|collateral ligament,
 open wound,5,3,0.0001,0.9964,injury,,unknown,impact,no,,
 Elbow fracture,4,3,0.0001,0.9965,injury,,upper body,fracture/bone,no,shoulder|collarbone|\barm\b|forearm|elbow|wrist|hand|finger|thumb|metacarp|scaphoid|\bribs?\b|chest|abdom|lung|pneumothorax|acromio|humer|splen,
-Pubic bone bruise,4,3,0.0001,0.9966,injury,,groin/adductor/hip,other,no,adductor|groin|pubalg|pubic|inguinal|\bhip\b|pelvi|testic,
+Pubic bone bruise,4,3,0.0001,0.9966,injury,,groin/adductor/hip,impact,no,adductor|groin|pubalg|pubic|inguinal|\bhip\b|pelvi|testic,Fable review 2026-10-25
 Cyst in the knee,3,3,0.0001,0.9967,injury,,knee,other,no,knee|cruciate|menisc|patell|tibial head|inner ligament|internal ligament|collateral ligament,
 Fracture of fibula shaft,3,3,0.0001,0.9968,injury,,calf/achilles/lower leg,fracture/bone,no,achilles|calf|shin|tibia|fibula|lower leg|peroneus|compartment|broken leg,
 Partial patellar tendon tear,3,3,0.0001,0.9969,injury,,knee,tendon,no,knee|cruciate|menisc|patell|tibial head|inner ligament|internal ligament|collateral ligament,
@@ -266,7 +266,7 @@ Bruise on shinbone,2,2,0.0001,0.9984,injury,,calf/achilles/lower leg,impact,no,a
 Cancer,2,2,0.0001,0.9985,non_injury,medical condition,,,,heart|appendi|dental|tooth|kidney|cancer|tumor|circulation|allergic|pancreas|intestinal surgery|vein occlusion|stroke|blood clots|blood poisoning|cerebral hemorrhage|skin disease|leg skin|abscess|nerval disease|balance disorder|hearing damage|cyst on jaw|depression|umbilical,
 Cervical vertebra fracture,2,2,0.0001,0.9986,injury,,head/neck,fracture/bone,no,cervical|neck|head|concussion|skull|face|facial|nose|cheek|jaw|eye|whiplash|eardrum|petrous|frontal,
 Femoral fracture,2,2,0.0001,0.9987,injury,,thigh,fracture/bone,no,thigh|dead leg|femoral|gluteal,
-Hairline fracture in the muscles,2,2,0.0001,0.9988,injury,,unspecified muscle,fracture/bone,no,muscle|muscular|strain|contracture|stiffness|overstretching,
+Hairline fracture in the muscles,2,2,0.0001,0.9988,injury,,unspecified muscle,muscle,no,muscle|muscular|strain|contracture|stiffness|overstretching,Fable review 2026-10-25
 Inflammation in the head of the fibula,2,2,0.0001,0.9989,injury,,calf/achilles/lower leg,other,no,achilles|calf|shin|tibia|fibula|lower leg|peroneus|compartment|broken leg,
 Inner ankle ligament tear,2,2,0.0001,0.999,injury,,ankle,ligament/joint,no,ankle|syndesm,
 Intestinal surgery,2,2,0.0001,0.9991,non_injury,medical condition,,,,heart|appendi|dental|tooth|kidney|cancer|tumor|circulation|allergic|pancreas|intestinal surgery|vein occlusion|stroke|blood clots|blood poisoning|cerebral hemorrhage|skin disease|leg skin|abscess|nerval disease|balance disorder|hearing damage|cyst on jaw|depression|umbilical,
@@ -298,7 +298,7 @@ Kidney tumor,1,1,0.0,0.9996,non_injury,medical condition,,,,heart|appendi|dental
 Lymphatic cancer,1,1,0.0,0.9996,non_injury,medical condition,,,,heart|appendi|dental|tooth|kidney|cancer|tumor|circulation|allergic|pancreas|intestinal surgery|vein occlusion|stroke|blood clots|blood poisoning|cerebral hemorrhage|skin disease|leg skin|abscess|nerval disease|balance disorder|hearing damage|cyst on jaw|depression|umbilical,
 Midfacial fracture,1,1,0.0,0.9996,injury,,head/neck,fracture/bone,no,cervical|neck|head|concussion|skull|face|facial|nose|cheek|jaw|eye|whiplash|eardrum|petrous|frontal,
 Patellar tendinopathy syndrome,1,1,0.0,0.9996,injury,,knee,tendon,no,knee|cruciate|menisc|patell|tibial head|inner ligament|internal ligament|collateral ligament,
-Scaphoid surgery,1,1,0.0,0.9996,injury,,upper body,unspecified,yes,shoulder|collarbone|\barm\b|forearm|elbow|wrist|hand|finger|thumb|metacarp|scaphoid|\bribs?\b|chest|abdom|lung|pneumothorax|acromio|humer|splen,
+Scaphoid surgery,1,1,0.0,0.9996,injury,,upper body,fracture/bone,yes,shoulder|collarbone|\barm\b|forearm|elbow|wrist|hand|finger|thumb|metacarp|scaphoid|\bribs?\b|chest|abdom|lung|pneumothorax|acromio|humer|splen,Fable review 2026-10-25
 Shingles,1,1,0.0,0.9996,non_injury,illness,,,,^ill$|corona|^virus$|flu$|influenza|^cold$|fever|^infection$|tonsil|angina|bronchitis|pneumonia|mononucleation|malaria|chickenpox|shingles|meningitis|tuberculosis|intestinal virus|food poisoning|stomach|quarantin,
 Skin disease,1,1,0.0,0.9996,non_injury,medical condition,,,,heart|appendi|dental|tooth|kidney|cancer|tumor|circulation|allergic|pancreas|intestinal surgery|vein occlusion|stroke|blood clots|blood poisoning|cerebral hemorrhage|skin disease|leg skin|abscess|nerval disease|balance disorder|hearing damage|cyst on jaw|depression|umbilical,
 Skull base fracture,1,1,0.0,0.9996,injury,,head/neck,fracture/bone,no,cervical|neck|head|concussion|skull|face|facial|nose|cheek|jaw|eye|whiplash|eardrum|petrous|frontal,

@@ -270,7 +270,7 @@ NON_INJURY = [
      r"malaria|chickenpox|shingles|meningitis|tuberculosis|intestinal virus|food poisoning|stomach|quarantin", "illness"),
     (r"^fitness$", "fitness"),
     (r"^rest$", "rest"),
-    (r"heart|appendi|dental|tooth|kidney|cancer|tumor|circulation|allergic|pancreas|intestinal surgery|vein occlusion|"
+    (r"heart|append|dental|tooth|kidney|cancer|tumor|circulation|allergic|pancreas|intestinal surgery|vein occlusion|"
      r"stroke|blood clots|blood poisoning|cerebral hemorrhage|skin disease|leg skin|abscess|nerval disease|"
      r"balance disorder|hearing damage|cyst on jaw|depression|umbilical", "medical condition"),
     (r"traffic accident|combustion|insect bite", "not from football"),

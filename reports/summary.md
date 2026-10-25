@@ -12,7 +12,7 @@ We clustered all 1,170 team-seasons of the Premier League, La Liga, Serie A, Bun
 2025/26 by **playing style per phase of play**: an attacking style (K-means on possession, patience, verticality and
 directness) and a defensive style (K-means on pressing, line height, territory conceded and aggression), each with
 four clusters and compared against Ward clustering. Every player-season (36,525) inherits its team's styles, and
-24,581 injuries lasting more than seven days from Transfermarkt were compared across styles, seasons and leagues.
+24,555 injuries lasting more than seven days from Transfermarkt were compared across styles, seasons and leagues.
 Football changed markedly: patient positional possession grew from 6% to 25% of team-seasons, direct and
 counter-attacking play shrank, pressing and fouling declined, and back-three systems rose from 13% to 31% of minutes.
 Players in **positional-possession** teams had 21% more injuries per player-season than the league-season average
@@ -27,13 +27,13 @@ and high-press teams lean to muscle injuries and are less often severe (possessi
 profile ratio 0.87), while those of low-block, duel-pressing and counter-attacking teams lean to contact and joint
 injuries and are more often severe; 18 of 184 style × injury-category patterns survive the false-discovery-rate
 correction. A second clustering of team-seasons by injury mix finds two weak but real groups, a muscle-heavy one and a
-joint- and contact-heavy one (silhouette 0.12 vs 0.08 for shuffled data), which line up with the defensive styles
-(Cramér's V 0.11, p = 0.005). Most of this travels with team strength: with strength in the expected mix only 1 pattern
-remains (Build-up into the box: fewer thigh contusions) and the agreement with style is no longer significant
-(p = 0.07). Body-area differences alone are small: only 2 of 72 patterns survive a permutation test with correction for multiple comparisons (the low block has
+joint- and contact-heavy one (silhouette 0.12 vs 0.07 for shuffled data), which line up weakly with the defensive
+styles (Cramér's V 0.09, p = 0.038). Most of this travels with team strength: with strength in the expected mix only 1
+pattern remains (Build-up into the box: fewer thigh contusions) and the agreement with style is no longer significant
+(p = 0.17). Body-area differences alone are small: only 2 of 72 patterns survive a permutation test with correction for multiple comparisons (the low block has
 fewer hamstring injuries, the high press fewer knee injuries). Between 2014–18 and 2022–26 injuries rose by
 +0.043 per player-season; a Kitagawa decomposition attributes +0.038 to the shift in attacking styles beyond team
-strength (+0.073 when strength is ignored).
+strength (+0.072 when strength is ignored).
 
 ## 1. Research questions and related work
 
@@ -107,7 +107,7 @@ Sources: understat.com, football-data.co.uk, transfermarkt.com (collected Octobe
 | Step | What was done | Result |
 |---|---|---|
 | Integration (Phase 1) | Clubs matched across the three sources within each league-season (exact → normalised → fuzzy, one-to-one Hungarian assignment), verified on fixtures | 1,170 team-seasons; all 21,589 matches found in all three sources |
-| Injury cleaning (Phase 2) | Dates and durations parsed; injuries tied to the club the player was at on the injury date (per-match records); Big Five membership (≥ 1 appearance or marked injured); 315 labels mapped to injury vs non-injury and 12 body areas (reviewed); summer-2020 season rule | 82,075 → 24,581 injuries > 7 days (13,588 moderate, 10,993 severe); 5,466 non-injuries and 5,180 mild injuries kept separately |
+| Injury cleaning (Phase 2) | Dates and durations parsed; injuries tied to the club the player was at on the injury date (per-match records); Big Five membership (≥ 1 appearance or marked injured); 315 labels mapped to injury vs non-injury and 12 body areas (reviewed); summer-2020 season rule | 82,075 → 24,555 injuries > 7 days (13,566 moderate, 10,989 severe); 5,492 non-injuries and 5,180 mild injuries kept separately |
 | Features (Phase 3) | Per team-season: pressing, ball progression, attack type and shape, physical intensity (style); npxG (outcome); matches, European games, short rest, rotation (exposure); global z-scores; correlated features combined into phase-of-play dimensions | 4 attacking + 4 defensive style dimensions; shots on target dropped (Serie A source error); rest gaps > 21 days excluded |
 
 ![Injury cleaning funnel](figures/07_injury_funnel.png)
@@ -265,7 +265,7 @@ possession and high-press excess shrinks towards 1; the other styles stay close 
 - **Team strength and match load explain most of the style differences.** 88% of possession team-seasons are in the
   strongest third, and these teams play 51.7 matches a season against 41.8 for counter-attacking teams. Compared with
   teams of the same strength, Positional possession is 1.09 after team strength, 1.08 after age and position, and
-  1.05 per team match after strength. For the high press: 1.05 after team strength and 1.02 per match.
+  1.05 per team match after strength. For the high press: 1.05 after team strength and 1.01 per match.
   Counter-attack, direct play, the duel press and the low block are all within 0.96–1.01 once strength and matches
   are taken into account.
 - What remains is a **small, consistent possession excess**: above 1 in every adjusted version, with every
@@ -306,10 +306,10 @@ patterns survive the false-discovery-rate correction, and they form one picture:
 
 | Style | Leans towards (profile ratio, 95% CI) | With team strength in the expected mix |
 |---|---|---|
-| Positional possession | fewer severe injuries, 0.87 (0.82–0.92) | 0.95 (0.90–1.00) |
+| Positional possession | fewer severe injuries, 0.87 (0.83–0.92) | 0.96 (0.91–1.00) |
 | High press, high line | fewer severe (0.92), fewer knee (0.92), more ankle ligament (1.26) | 0.98, 0.97, 1.12 |
 | Low block | more severe (1.06), fewer hamstring (0.91), more thigh contusions (1.37) | 1.00, 0.95, 1.11 |
-| Aggressive duel press | more ligament/joint (1.10), more severe (1.07) | 1.07, 1.04 |
+| Aggressive duel press | more ligament/joint (1.10), more severe (1.07) | 1.06, 1.04 |
 | Counter-attack | more severe (1.06), more thigh contusions (1.68) | 1.00, 1.34 |
 | Build-up into the box | fewer thigh contusions, 0.62 (0.40–0.89) | 0.71 (0.50–0.99): the only robust pattern |
 
@@ -325,14 +325,15 @@ location pattern and severity relative to the mix of the same leagues and season
 ★ survives the false-discovery-rate correction).*
 
 **Do team-seasons group by injury mix?** Yes, weakly. Clustering 1,023 team-seasons by their injury mix gives two
-stable groups (bootstrap Jaccard 0.89) that separate better than shuffled data (silhouette 0.12 vs 0.08 for shuffled data, 95th
+stable groups (bootstrap Jaccard 0.88) that separate better than shuffled data (silhouette 0.12 vs 0.07 for shuffled data, 95th
 percentile): a **muscle-heavy** group (591 team-seasons: more muscle, hamstring and groin injuries, fewer severe) and a
 **joint- and contact-heavy** group (432: more ligament, knee, ankle and impact injuries, more severe). The groups
-line up with the defensive styles (Cramér's V 0.11, p = 0.005): 65% of high-press and 62% of mid-block team-seasons are
-in the muscle-heavy group against 52% of duel-press and 54% of low-block ones; they barely follow the attacking styles
-(V 0.07, p = 0.11), the league (0.04) or the era (0.05), so they are not a recording habit of one league. They follow
-team strength about as much as defensive style (V 0.10), and with style labels shuffled only within strength thirds
-the agreement is no longer significant (p = 0.07).
+line up weakly with the defensive styles (Cramér's V 0.09, p = 0.038): 63% of high-press and 61% of mid-block
+team-seasons are in the muscle-heavy group against 53% of duel-press and 55% of low-block ones; they barely follow the
+attacking styles (V 0.06, p = 0.23), the league (0.04) or the era (0.04), so they are not a recording habit of one
+league. They follow team strength about as much as defensive style (V 0.08), and with style labels shuffled only within
+strength thirds the agreement is no longer significant (p = 0.17). The link is also fragile: before the label-map
+review moved 42 injuries (0.17%), it was V 0.11, p = 0.005.
 
 ![06 profile clusters](figures/06_profile_clusters.png)
 
@@ -369,18 +370,18 @@ first and last era.*
 
 ### 5.5 Injury trends and the style shift
 
-Injuries rose from 0.646 to 0.689 per player-season and days lost from 30.1 to 31.8 between 2014–18 and 2022–26
+Injuries rose from 0.645 to 0.688 per player-season and days lost from 30.1 to 31.8 between 2014–18 and 2022–26
 (Figure 5). The Kitagawa decomposition, with cells league × strength third × style, splits the change into the
 strength mix, the style mix beyond strength, and change within styles:
 
 | Outcome per player-season | Change | Strength mix | Style mix (beyond strength) | Within styles | Style mix, strength ignored |
 |---|---|---|---|---|---|
-| Injuries | +0.043 | +0.008 | +0.046 | −0.011 | +0.065 |
-| Days lost | +1.7 | +0.1 | +1.6 | +0.1 | +2.5 |
+| Injuries | +0.043 | +0.008 | +0.047 | −0.012 | +0.066 |
+| Days lost | +1.7 | +0.1 | +1.6 | +0.0 | +2.5 |
 | Hamstring injuries | +0.018 (+22%) | +0.002 | +0.008 | +0.008 | +0.010 |
 | Knee injuries | −0.011 | 0.000 | +0.004 | −0.016 | +0.009 |
 
-Most of the style-mix part comes from the **attacking** shift: +0.038 beyond team strength (+0.073 when strength is
+Most of the style-mix part comes from the **attacking** shift: +0.038 beyond team strength (+0.072 when strength is
 ignored), against +0.007 from the defensive shift. The style-mix part is positive in four of five leagues (La Liga
 −0.009). It is an upper bound on the role of style: the possession cluster itself got weaker on average over time
 (points per match 2.19 → 1.86), so it is not the same group of teams in each era. The within-style part differs by
@@ -462,6 +463,9 @@ correlations |r| ≤ 0.3), so other long-run changes (sports science, calendars,
 - **The injury-mix analysis came last:** it was added after the rate results were known, with its questions and tests
   written down before its results; after the first run two criteria were made stricter (robustness needs the adjusted
   CI to exclude 1; the cluster–style agreement is also tested within strength thirds), which can only remove findings.
+- **Borderline labels:** "Muscle fatigue" (305 injuries over 7 days) counts as an injury, although some of these
+  absences may be load management; an independent review of both mappings (2026-10-25) found the team map correct
+  and changed 6 injury labels (42 injuries), one of them a non-injury (appendectomy).
 - **Multiple comparisons:** the false-discovery-rate correction covers the 72 body-area tests and the 184 injury-mix
   tests; the eight style rate
   ratios and their sensitivity variants are not corrected, so single borderline intervals (several touch 1 after
@@ -484,10 +488,10 @@ correlations |r| ≤ 0.3), so other long-run changes (sports science, calendars,
 - **RQ3:** Styles differ in the kind of injury, slightly but consistently: proactive, ball-dominant styles lean to
   muscle injuries and fewer severe ones, reactive and duel-seeking styles to contact and joint injuries and more severe
   ones (18 of 184 patterns after correction), and team-seasons form two injury-mix groups (muscle-heavy; joint- and
-  contact-heavy) that line up with the defensive styles. With team strength taken into account only one pattern
+  contact-heavy) that line up weakly with the defensive styles. With team strength taken into account only one pattern
   remains and the agreement is no longer significant. Body areas alone: two patterns hold (low block: fewer hamstring
   injuries; high press: fewer knee injuries).
-- **RQ4:** Injuries rose slightly between 2014–18 and 2022–26 (0.646 → 0.689 per player-season), hamstring injuries
+- **RQ4:** Injuries rose slightly between 2014–18 and 2022–26 (0.645 → 0.688 per player-season), hamstring injuries
   rose in four of five leagues and knee injuries fell in four. The shift in styles goes with part of the rise, but
   the link holds across eras, not season to season, and leagues differ, partly through recording.
 

@@ -91,7 +91,8 @@ numbers |= {
     "injury-mix findings": f"{int(prof.finding.sum())} of {len(prof)}",
     "injury-mix robust findings": int((prof.finding & prof.robust).sum()),
     "possession severe profile ratio": round(prof.loc[("Positional possession", "severe"), "ratio"], 2),
-    "possession severe, + strength": round(prof.loc[("Positional possession", "severe"), "ratio + position + strength"], 2),
+    "possession severe, + strength": "{:.2f} ({:.2f}–{:.2f}) | {:.2f} ({:.2f}–{:.2f})".format(
+        *prof.loc[("Positional possession", "severe"), ["ratio", "low", "high", "ratio + position + strength", "adjusted low", "adjusted high"]]),
     "injury-profile groups": K_PROF,
     "injury-profile silhouette": round(k_prof.loc[K_PROF, "silhouette"], 2),
     "null silhouette (95th pct)": round(k_prof.loc[K_PROF, "null silhouette (95th pct)"], 2),
@@ -108,7 +109,7 @@ pd.Series(numbers, name="value").to_frame()
 
 # %%
 EXPECTED_TEXT = {
-    "team-seasons": "1,170 team-seasons", "player-club-seasons": "36,525", "injuries > 7 days": "24,581",
+    "team-seasons": "{:,} team-seasons", "player-club-seasons": "{:,}", "injuries > 7 days": "{:,} injuries",
     "positional possession share 2014–18 (%)": "from {}% to", "positional possession share 2022–26 (%)": "to {}% of team-seasons",
     "back-three minutes 2014–18 (%)": "rose from {}%", "back-three minutes 2022–26 (%)": "to {}% of minutes",
     "RR positional possession": "rate ratio {:.2f}", "RR counter-attack": "**{:.2f} (", "RR high press, high line": "**{:.2f} (",
@@ -124,10 +125,10 @@ EXPECTED_TEXT = {
     "knee per 100, 2014–18": "fell from {:.1f}", "knee per 100, 2022–26": "to {:.1f} and fell",
     "leagues with more hamstring injuries": "rose in {} of five leagues",
     "injury-mix findings": "{} style × injury-category patterns", "injury-mix robust findings": "only {} pattern",
-    "possession severe profile ratio": "profile ratio {:.2f}", "possession severe, + strength": "0.87 (0.82–0.92) | {:.2f} (",
+    "possession severe profile ratio": "profile ratio {:.2f}", "possession severe, + strength": "fewer severe injuries, {} |",
     "injury-profile groups": "two weak but real groups", "injury-profile silhouette": "silhouette {:.2f} vs",
     "null silhouette (95th pct)": "vs {:.2f} for shuffled data", "profile groups × defensive style, V": "(Cramér's V {:.2f}, p",
-    "profile groups × defensive style, p": "V 0.11, p = {:.3f})", "profile groups × defensive style, p within strength": "significant (p = {:.2f})",
+    "profile groups × defensive style, p": "V 0.09, p = {:.3f})", "profile groups × defensive style, p within strength": "significant (p = {:.2f})",
 }
 assert numbers["injury-profile groups"] == 2, "the summary describes two injury-profile groups"
 rows = []
@@ -165,7 +166,7 @@ ax.set_ylim(0, 3.6)
 ax.axis("off")
 boxes = [("Raw data", "Understat\nFootball-Data\nTransfermarkt\n27,197 files", SERIES[0]),
          ("1 Integrate", "clubs matched across\nsources: 1,170\nteam-seasons", SERIES[0]),
-         ("2 Clean", "82,075 records →\n24,581 injuries\n> 7 days", SERIES[0]),
+         ("2 Clean", f"82,075 records →\n{numbers['injuries > 7 days']:,} injuries\n> 7 days", SERIES[0]),
          ("3 Transform", "4 attacking + 4\ndefensive style\ndimensions", SERIES[2]),
          ("4 Cluster", "K-means k = 4\nper phase; Ward, GMM,\nHDBSCAN checks", SERIES[1]),
          ("5 Evaluate", "injuries by style:\nrate ratios, adjustments,\nsame club, trends", SERIES[3]),
@@ -205,7 +206,7 @@ ax.set_xlim(0, values[0] * 1.15)
 for side in ("top", "right"):
     ax.spines[side].set_visible(False)
 ax.set_xlabel("injury records")
-ax.set_title("From 82,075 Transfermarkt records to 24,581 injuries lasting more than 7 days", loc="left", fontsize=11)
+ax.set_title(f"From {values[0]:,} Transfermarkt records to {values[-1]:,} injuries lasting more than 7 days", loc="left", fontsize=11)
 fig.tight_layout()
 fig.savefig(FIGURES_DIR / "07_injury_funnel.png", dpi=160, bbox_inches="tight")
 plt.close(fig)
