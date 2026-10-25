@@ -275,7 +275,7 @@ def finalise_status() -> dict:
     missing = [f for f in cited if not (FIGURES_DIR / f).exists()]
     items = [
         {"item": "Every phase passed and is up to date", "ok": all(p["ok"] for p in phases_ok),
-         "detail": "; ".join(f"{p['phase']}: {', '.join(p['reasons'])}" for p in phases_ok if not p["ok"]) or "7 of 7"},
+         "detail": "; ".join(f"{p['phase']}: {', '.join(p['reasons'])}" for p in phases_ok if not p["ok"]) or f"{len(phases_ok)} of {len(phases_ok)}"},
         {"item": "Summary numbers match the data (Phase 7 checks)", "ok": bool(checks) and all(c["failed"] == 0 for c in checks),
          "detail": f"{sum(c['failed'] == 0 for c in checks)} of {len(checks)} checks passed"},
         {"item": "Hand-reviewed mappings approved in their current version", "ok": all(m["ok"] for m in maps),
@@ -293,6 +293,8 @@ def finalise(body: dict) -> Response:
         return _error("not ready: " + "; ".join(i["item"] for i in status["items"] if not i["ok"]), HTTPStatus.CONFLICT)
     from analysis.run import _git
     git = _git()
+    if not git["sha"]:  # no git inside the container: use the commit the report phase was run from
+        git = (read_record(get_phase("07")) or {}).get("git") or git
     name = f"{date.today().isoformat()}-{git['sha'] or 'nogit'}{'-dirty' if git['dirty'] else ''}"
     out = REPORTS_DIR / "releases" / name
     out.mkdir(parents=True, exist_ok=True)
