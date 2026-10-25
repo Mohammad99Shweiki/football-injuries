@@ -614,11 +614,10 @@ function Reviews() {
           <Badge status={m.approved_current ? 'passed' : 'review'} />
           <button
             className="btn btn-outline review-action"
-            disabled={pending || m.approved_current || selected !== m.path}
-            title={selected !== m.path ? 'Open the file first' : undefined}
-            onClick={() => approve(m)}
+            disabled={pending || m.approved_current}
+            onClick={() => (selected === m.path ? approve(m) : setSelected(m.path))}
           >
-            Approve current version
+            {m.approved_current ? 'Approved' : selected === m.path ? 'Approve current version' : 'Open to review'}
           </button>
         </div>
       ))}
