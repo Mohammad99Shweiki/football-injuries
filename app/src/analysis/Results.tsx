@@ -5,7 +5,7 @@ import { CiPlot, Heatmap, SplitBars, TrendChart } from './charts'
 import { STYLE_COLORS } from './colors'
 import { Rows } from './DataTable'
 
-const TABS = ['Styles', 'Evolution', 'Injuries', 'Same club', 'Trends', 'Leagues'] as const
+const TABS = ['Styles', 'Injury mix', 'Evolution', 'Injuries', 'Same club', 'Trends', 'Leagues'] as const
 type Tab = (typeof TABS)[number]
 const GROUPS = ['Defender', 'Midfielder', 'Forward', 'Goalkeeper', '≤21', '22–25', '26–29', '30+']
 const OUTCOMES = ['injuries', 'days lost', 'severe injuries', 'hamstring injuries', 'knee injuries']
@@ -22,7 +22,8 @@ export function Results() {
   const [sameClub, setSameClub] = useState('ratio_strength')
   const [outcome, setOutcome] = useState('injuries')
   const [cells, setCells] = useState('combined style')
-  // The export changes only when Phase 6 reruns: load once.
+  const [mixAdjusted, setMixAdjusted] = useState(false)
+  // The export changes only when Phase 7 reruns: load once.
   const source = useResource<Record<string, Row[]>>('results-bundle')
   const data = source.data
   const styles = (data?.styles.filter((r) => r.phase === phase) || []).sort((a, b) => Number(a.order) - Number(b.order))
@@ -37,11 +38,12 @@ export function Results() {
   return (
     <>
       <div className="analysis-notice">
-        Association, not cause. Team strength and match load account for most of the initial difference between styles.
+        Association, not cause. Style goes with the kind of injury more than the number, and team strength accounts for
+        most of both.
         Transfermarkt under-reports injuries and records them unevenly by league.
       </div>
       {source.error && <p className="analysis-alert" role="alert">{source.error}</p>}
-      {!data && !source.error && <p role="status">Loading the Phase 6 results export…</p>}
+      {!data && !source.error && <p role="status">Loading the Phase 7 results export…</p>}
       {data && (
         <>
           <div className="analysis-panel results-controls">
@@ -116,6 +118,81 @@ export function Results() {
             </>
           )}
 
+          {tab === 'Injury mix' && (() => {
+            const mix = data.injury_mix || []
+            const ratios = mix.filter((r) => r.kind === 'ratio' && r.phase === phase)
+            const cats = [...new Set(ratios.map((r) => `${r.family}: ${r.category}`))]
+            const omni = mix.filter((r) => r.kind === 'omnibus' && r.phase === phase)
+            const centres = mix.filter((r) => r.kind === 'centre')
+            const groups = [...new Set(centres.map((r) => String(r.group)))]
+            const shares = mix.filter((r) => r.kind === 'share' && r.phase === phase)
+            const assoc = mix.find((r) => r.kind === 'association' && r.with === `${phase} style`)
+            const strength = mix.find((r) => r.kind === 'association' && r.with === 'strength')
+            const chosen = mix.filter((r) => r.kind === 'k').find((r) => Number(r.k) === groups.length)
+            return (
+              <>
+                <section className="analysis-panel">
+                  <div className="analysis-toolbar">
+                    <h2>What kind of injuries each style gets</h2>
+                    <label>Expected from{' '}
+                      <select value={mixAdjusted ? 'adjusted' : 'main'} onChange={(e) => setMixAdjusted(e.target.value === 'adjusted')}>
+                        <option value="main">league × season</option>
+                        <option value="adjusted">+ position + team strength</option>
+                      </select>
+                    </label>
+                  </div>
+                  <p className="analysis-muted">
+                    Profile ratio: a style's injuries of each kind ÷ the number expected from the mix of the same leagues and
+                    seasons (1 = usual mix; orange more, blue fewer). ★ survives the false-discovery-rate correction over all
+                    184 tests; ✓ also holds with position and team strength in the expected mix. Omnibus tests ({phase}):{' '}
+                    {omni.map((r) => `${r.family} p ${Number(r.p) < 0.001 ? '< 0.001' : `= ${fmt(r.p, 3)}`}`).join(' · ')}.
+                  </p>
+                  <Heatmap
+                    corner="style"
+                    rows={order}
+                    cols={cats}
+                    cell={(st, c) => {
+                      const r = ratios.find((x) => x.style === st && `${x.family}: ${x.category}` === c)
+                      if (!r) return null
+                      const v = Number(mixAdjusted ? r.ratio_adjusted : r.ratio)
+                      const mark = r.finding ? (r.robust ? '★✓' : '★') : ''
+                      return { value: v, label: `${fmt(v)}${mark}`, strong: Boolean(r.finding), dim: !on(st),
+                        title: `${st}, ${c}: ${r.observed} observed vs ${fmt(r.expected, 1)} expected; ratio ${fmt(r.ratio)} (95% CI ${fmt(r.low)}–${fmt(r.high)}), q = ${fmt(r.q, 3)}; with position and strength ${fmt(r.ratio_adjusted)} (${fmt(r.adjusted_low)}–${fmt(r.adjusted_high)})` }
+                    }}
+                    onPick={(st) => pick(st)}
+                    caption="Injury mix by style"
+                  />
+                </section>
+                <section className="analysis-panel">
+                  <h2>Do team-seasons group by injury mix? The second clustering</h2>
+                  <p className="analysis-muted">
+                    K-means on each team-season's departure from its league-season's injury mix (team-seasons with at least
+                    10 injuries). {groups.length} stable groups{chosen ? `: silhouette ${fmt(chosen.silhouette)} vs ${fmt(chosen.null_silhouette)} for shuffled data, weakest cluster Jaccard ${fmt(chosen.min_jaccard)}` : ''}.
+                    {assoc ? ` Agreement with ${phase} style: Cramér's V ${fmt(assoc.v)}, p = ${fmt(assoc.p, 3)}; with style labels shuffled only within strength thirds p = ${fmt(assoc.p_within_strength, 2)}.` : ''}
+                    {strength ? ` With team strength: V ${fmt(strength.v)}.` : ''}
+                  </p>
+                  <div className="analysis-grid-2">
+                    <div>
+                      <h3>Group centres (z)</h3>
+                      <Heatmap mode="z" corner="group" rows={groups} cols={[...new Set(centres.map((r) => String(r.feature)))]}
+                        cell={(g, f) => {
+                          const r = centres.find((x) => x.group === g && x.feature === f)
+                          return r ? { value: Number(r.value), label: signed(r.value) } : null
+                        }} caption="Injury-profile group centres" />
+                    </div>
+                    <div>
+                      <h3>Share of each {phase === 'attack' ? 'attacking' : 'defensive'} style in each group</h3>
+                      <Heatmap mode="z" corner="group" rows={groups} cols={order}
+                        cell={(g, st) => {
+                          const r = shares.find((x) => x.group === g && x.style === st)
+                          return r ? { value: (Number(r.share) - 1 / groups.length) * 4, label: `${Math.round(Number(r.share) * 100)}%`, dim: !on(st) } : null
+                        }} onPick={(_, st) => pick(st)} caption="Style shares per injury-profile group" />
+                    </div>
+                  </div>
+                </section>
+              </>
+            )
+          })()}
           {tab === 'Evolution' && (
             <>
               <section className="analysis-panel">
@@ -336,10 +413,10 @@ export function Results() {
           )}
           <details className="analysis-panel">
             <summary>Data behind this view</summary>
-            <Rows rows={(tab === 'Styles' ? data.styles : tab === 'Evolution' ? data.style_shares : tab === 'Injuries' ? data.rr_ladder : tab === 'Same club' ? data.same_club : tab === 'Trends' ? data.decomposition : data.league_stories)
+            <Rows rows={(tab === 'Styles' ? data.styles : tab === 'Injury mix' ? (data.injury_mix || []).filter((r) => r.kind === 'ratio') : tab === 'Evolution' ? data.style_shares : tab === 'Injuries' ? data.rr_ladder : tab === 'Same club' ? data.same_club : tab === 'Trends' ? data.decomposition : data.league_stories)
               .filter((r) => (!r.phase || r.phase === phase) && (!r.grouping || r.grouping === phase || tab !== 'Injuries')).slice(0, 200)} />
           </details>
-          <p className="analysis-muted">Source: Phase 6 export · <a href="/analysis/studio/phase-06/step-4">How it was built →</a></p>
+          <p className="analysis-muted">Source: Phase 7 export · <a href="/analysis/studio/phase-07/step-4">How it was built →</a></p>
         </>
       )}
     </>

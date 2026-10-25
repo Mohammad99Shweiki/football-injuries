@@ -4,12 +4,12 @@ Work one phase at a time. At the end of each phase, give a short summary (what w
 
 Structure:
 ```
-analysis/phases/  # p00_audit.py … p06_report.py: each phase's steps as `# %%` cells (note + code + check), source of truth
+analysis/phases/  # p00_audit.py … p07_report.py: each phase's steps as `# %%` cells (note + code + check), source of truth
 analysis/         # run.py (runner, run records, staleness), api.py (dashboard API), steps.py, shared config/load/report
-notebooks/        # 00_audit … 06_report, generated from analysis/phases/, run top to bottom
+notebooks/        # 00_audit … 07_report, generated from analysis/phases/, run top to bottom
 mappings/       # hand-reviewed CSVs (tracked in git): team_map, injury_label_map, non-injury labels
 data/raw/, data/tables/          # scraper output, read only
-data/00_audit/ … data/06_report/   # each phase's output (analysis.config.phase_dir) and its run record _run.json
+data/00_audit/ … data/07_report/   # each phase's output (analysis.config.phase_dir) and its run record _run.json
 reports/        # NN_*.md per phase, figures/NN_*.png
 docs/DECISIONS.md, docs/PREPROCESSING_LOG.md
 ```
@@ -96,7 +96,20 @@ Shooting volume (shots on target) was dropped on 2026-10-21; `rest_mean` was dro
   sensitivity clusterings (k = 3, style relative to the league-season); days lost with overlapping absences merged.
 - **Output:** `data/05_injury_analysis/player_seasons.parquet`, `data/05_injury_analysis/tables/`, `reports/05_injury_analysis.md` and figures.
 
-## Phase 6: Report material
+## Phase 6: Injury profiles per style (added 2026-10-25, the new headline)
+- **Question:** does a style change *which* injuries its players get (type, location, severity), not how many?
+- **Research questions (fixed before results):**
+  - **RQ-P1:** does the injury mix differ between attacking styles, and between defensive styles? Omnibus permutation
+    test per family (type, location, type × location pattern, severity).
+  - **RQ-P2:** which style × injury-category patterns? Profile ratio = observed ÷ expected count, expected from the
+    league × season mix (then + position, + team strength); 95% CI over clubs; permutation test (style labels shuffled
+    among team-seasons within league-seasons, 10,000 times); Benjamini–Hochberg over all tests.
+  - **RQ-P3:** do team-seasons form groups by injury profile (second clustering, K-means on smoothed deviations from the
+    league-season mix), and do those groups line up with the style clusters? Compared with a no-structure null; Cramér's
+    V and ARI with styles, strength and league.
+- **Output:** `data/06_injury_profiles/`, `reports/06_injury_profiles.md` and figures.
+
+## Phase 7: Report material
 - **Key figures:**
   - cluster shares over time per league
   - injury rate by cluster
@@ -104,9 +117,10 @@ Shooting volume (shots on target) was dropped on 2026-10-21; `rest_mean` was dro
   - injury trend with calendar events annotated
   - league comparison
 - **Limitations:** Transfermarkt under-reporting, proxies for physical load, league-only style data from Understat, no training exposure data, and association rather than causation.
-- **Output:** `reports/summary.md` (checked against the data by `p06_report.py`), figures ready for the course report, and
-  the results files for the dashboard (`data/06_report/dashboard/`).
+- **Output:** `reports/summary.md` (checked against the data by `p07_report.py`), figures ready for the course report, and
+  the results files for the dashboard (`data/07_report/dashboard/`).
 
-## Status (2026-10-22)
-All phases done and reviewed; framing: "style or schedule?" (possession's excess is mostly team strength and match
-load). Remaining: the analysis screens of the dashboard (step 2 in `app/`), from `docs/ui/analysis-studio-design-brief.md`.
+## Status (2026-10-25)
+All phases done. Framing: "style changes the kind of injury more than the number, but most of it travels with team
+strength" (Phase 6); the rate results ("style or schedule? mostly schedule", Phase 5) are kept as the second result.
+The earlier state is tagged `v1-rates`.

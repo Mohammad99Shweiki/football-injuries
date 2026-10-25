@@ -1,7 +1,7 @@
-"""Phase 06: Report. Cells in the percent format; run with `python -m analysis.run 06`, notebook built by `scripts/notebooks/build_notebook.py`."""
+"""Phase 07: Report. Cells in the percent format; run with `python -m analysis.run 07`, notebook built by `scripts/notebooks/build_notebook.py`."""
 
 # %% [markdown]
-# # Phase 6: Report material
+# # Phase 7: Report material
 #
 # `reports/summary.md` is the text for the course report. This notebook keeps it honest: it recomputes the headline
 # numbers from the phase outputs and checks them against the values written in the summary, and it checks that every
@@ -82,6 +82,23 @@ numbers |= {
     "same club, possession, + strength": round(pd.read_csv(DATA_DIR / "05_injury_analysis" / "tables" / "same_club.csv")
                                               .set_index("style").loc["Positional possession", "ratio, + team strength"], 2),
 }
+P6 = DATA_DIR / "06_injury_profiles" / "tables"
+prof = pd.read_csv(P6 / "profile_ratios.csv").set_index(["style", "category"])
+assoc = pd.read_csv(P6 / "profile_association.csv", index_col=0)
+k_prof = pd.read_csv(P6 / "profile_k.csv", index_col=0)
+K_PROF = int(len(pd.read_csv(P6 / "profile_centres.csv")))
+numbers |= {
+    "injury-mix findings": f"{int(prof.finding.sum())} of {len(prof)}",
+    "injury-mix robust findings": int((prof.finding & prof.robust).sum()),
+    "possession severe profile ratio": round(prof.loc[("Positional possession", "severe"), "ratio"], 2),
+    "possession severe, + strength": round(prof.loc[("Positional possession", "severe"), "ratio + position + strength"], 2),
+    "injury-profile groups": K_PROF,
+    "injury-profile silhouette": round(k_prof.loc[K_PROF, "silhouette"], 2),
+    "null silhouette (95th pct)": round(k_prof.loc[K_PROF, "null silhouette (95th pct)"], 2),
+    "profile groups × defensive style, V": round(assoc.loc["defence style", "Cramér's V"], 2),
+    "profile groups × defensive style, p": round(assoc.loc["defence style", "permutation p"], 3),
+    "profile groups × defensive style, p within strength": round(assoc.loc["defence style", "permutation p (within strength)"], 2),
+}
 pd.Series(numbers, name="value").to_frame()
 
 # %% [markdown]
@@ -106,7 +123,13 @@ EXPECTED_TEXT = {
     "hamstring per 100, 2014–18": "rose from {:.1f}", "hamstring per 100, 2022–26": "to {:.1f} per 100 player-seasons",
     "knee per 100, 2014–18": "fell from {:.1f}", "knee per 100, 2022–26": "to {:.1f} and fell",
     "leagues with more hamstring injuries": "rose in {} of five leagues",
+    "injury-mix findings": "{} style × injury-category patterns", "injury-mix robust findings": "only {} pattern",
+    "possession severe profile ratio": "profile ratio {:.2f}", "possession severe, + strength": "0.87 (0.82–0.92) | {:.2f} (",
+    "injury-profile groups": "two weak but real groups", "injury-profile silhouette": "silhouette {:.2f} vs",
+    "null silhouette (95th pct)": "vs {:.2f} for shuffled data", "profile groups × defensive style, V": "(Cramér's V {:.2f}, p",
+    "profile groups × defensive style, p": "V 0.11, p = {:.3f})", "profile groups × defensive style, p within strength": "significant (p = {:.2f})",
 }
+assert numbers["injury-profile groups"] == 2, "the summary describes two injury-profile groups"
 rows = []
 for key, pattern in EXPECTED_TEXT.items():
     value = numbers[key]
@@ -136,8 +159,8 @@ INK, MUTED, SURFACE = "#0b0b0b", "#52514e", "#fcfcfb"
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"]
 
 # Pipeline: raw sources to results, with what each phase produces.
-fig, ax = plt.subplots(figsize=(14, 3.6), facecolor=SURFACE)
-ax.set_xlim(0, 14)
+fig, ax = plt.subplots(figsize=(16, 3.6), facecolor=SURFACE)
+ax.set_xlim(0, 15.85)
 ax.set_ylim(0, 3.6)
 ax.axis("off")
 boxes = [("Raw data", "Understat\nFootball-Data\nTransfermarkt\n27,197 files", SERIES[0]),
@@ -146,7 +169,8 @@ boxes = [("Raw data", "Understat\nFootball-Data\nTransfermarkt\n27,197 files", S
          ("3 Transform", "4 attacking + 4\ndefensive style\ndimensions", SERIES[2]),
          ("4 Cluster", "K-means k = 4\nper phase; Ward, GMM,\nHDBSCAN checks", SERIES[1]),
          ("5 Evaluate", "injuries by style:\nrate ratios, adjustments,\nsame club, trends", SERIES[3]),
-         ("6 Report", "summary checked\nagainst the data;\ndashboard", SERIES[3])]
+         ("6 Injury mix", "type × location ×\nseverity per style;\nsecond clustering", SERIES[1]),
+         ("7 Report", "summary checked\nagainst the data;\ndashboard", SERIES[3])]
 w, gap = 1.75, 0.22
 for i, (title, body, color) in enumerate(boxes):
     x = 0.15 + i * (w + gap)
@@ -158,7 +182,7 @@ for i, (title, body, color) in enumerate(boxes):
         ax.annotate("", xy=(x + w + gap - 0.02, 1.75), xytext=(x + w + 0.02, 1.75), arrowprops={"arrowstyle": "->", "color": MUTED, "linewidth": 1.5})
 ax.text(0.15, 0.15, "KDD steps: selection and integration → preprocessing → transformation → data mining (clustering) → evaluation",
         fontsize=8.5, color=MUTED)
-fig.savefig(FIGURES_DIR / "06_pipeline.png", dpi=160, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "07_pipeline.png", dpi=160, bbox_inches="tight")
 plt.close(fig)
 
 # Funnel: injury records through each cleaning step (Phase 2 counts).
@@ -183,7 +207,7 @@ for side in ("top", "right"):
 ax.set_xlabel("injury records")
 ax.set_title("From 82,075 Transfermarkt records to 24,581 injuries lasting more than 7 days", loc="left", fontsize=11)
 fig.tight_layout()
-fig.savefig(FIGURES_DIR / "06_injury_funnel.png", dpi=160, bbox_inches="tight")
+fig.savefig(FIGURES_DIR / "07_injury_funnel.png", dpi=160, bbox_inches="tight")
 plt.close(fig)
 
 
@@ -199,14 +223,14 @@ print(f"{len(cited)} figures cited, all present:", ", ".join(cited))
 # The interactive dashboard (an Artifact) shows only numbers from these files, built here from the phase outputs:
 # style profiles and the cluster map (PCA of each phase's dimensions, for drawing only), style shares and dimension
 # means per season, injury rate ratios, the attack × defence grid, body areas, the season trend, the decomposition and
-# the league stories. Written to `data/06_report/dashboard/` as JSON row lists.
+# the league stories. Written to `data/07_report/dashboard/` as JSON row lists.
 
 # %%
 import json
 from sklearn.decomposition import PCA
 from analysis.config import phase_dir
 
-OUT = phase_dir("06_report") / "dashboard"
+OUT = phase_dir("07_report") / "dashboard"
 OUT.mkdir(exist_ok=True)
 T = DATA_DIR / "05_injury_analysis" / "tables"
 style_dims = pd.read_parquet(DATA_DIR / "03_features" / "style_dimensions.parquet")
@@ -359,6 +383,27 @@ files["clustering"] = [
        "ari": r(q["K-means agreement (ARI, non-noise)"])} for _, q in hdb.iterrows()],
     *[{"kind": "centroid", "phase": q.phase, "style": q["style"], "dimension": d, "value": r(q[d])}
       for _, q in cen.iterrows() for d in cen.columns[2:] if pd.notna(q[d])],
+]
+
+# Injury mix (Phase 6): profile ratios per style and category, omnibus tests, the injury-profile clustering.
+om = pd.read_csv(P6 / "omnibus.csv")
+pr = pd.read_csv(P6 / "profile_ratios.csv")
+cen_p = pd.read_csv(P6 / "profile_centres.csv", index_col=0)
+files["injury_mix"] = [
+    *[{"kind": "ratio", "phase": q.phase, "style": q["style"], "family": q.family, "category": q.category, "observed": int(q.observed),
+       "expected": r(q.expected, 1), "ratio": r(q.ratio), "low": r(q.low), "high": r(q.high), "q": r(q["q (BH)"], 4),
+       "ratio_adjusted": r(q["ratio + position + strength"]), "adjusted_low": r(q["adjusted low"]), "adjusted_high": r(q["adjusted high"]),
+       "finding": bool(q.finding), "robust": bool(q.robust)} for _, q in pr.iterrows()],
+    *[{"kind": "omnibus", "phase": q.phase, "family": q.family, "p": r(q.p, 4), "v": r(q.V)} for _, q in om.iterrows()],
+    *[{"kind": "k", "k": int(k), "silhouette": r(q.silhouette), "null_silhouette": r(q["null silhouette (95th pct)"]),
+       "stability_ari": r(q["stability (mean ARI)"]), "min_jaccard": r(q["min cluster Jaccard"]), "usable": bool(q.usable)}
+      for k, q in k_prof.iterrows()],
+    *[{"kind": "centre", "group": g, "feature": f, "value": r(v, 2)} for g, row in cen_p.iterrows() for f, v in row.items()],
+    *[{"kind": "association", "with": w, "v": r(q["Cramér's V"]), "p": r(q.get("permutation p"), 4),
+       "p_within_strength": r(q.get("permutation p (within strength)"), 4)} for w, q in assoc.iterrows()],
+    *[{"kind": "share", "phase": ph, "group": g, "style": st, "share": r(v)}
+      for ph in ["attack", "defence"] for g, row in pd.read_csv(P6 / f"profile_by_{ph}_style.csv", index_col=0).iterrows()
+      for st, v in row.items()],
 ]
 
 for name, rows in files.items():

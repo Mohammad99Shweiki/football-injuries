@@ -40,7 +40,8 @@ PIPELINE: tuple[Phase, ...] = (
     Phase("03", "03_features", "Team-season features", "03_features"),
     Phase("04", "04_clusters", "Clustering", "04_clustering"),
     Phase("05", "05_injury_analysis", "Injury analysis", "05_injury_analysis"),
-    Phase("06", "06_report", "Report", "06_report"),
+    Phase("06", "06_injury_profiles", "Injury profiles", "06_injury_profiles"),
+    Phase("07", "07_report", "Report", "07_report"),
 )
 
 # One output folder per phase: data/<phase>/. A phase writes only to its own folder and reads earlier ones.

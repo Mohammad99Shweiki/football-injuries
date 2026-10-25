@@ -71,6 +71,7 @@ then re-standardised (mean 0, SD 1), so every dimension weighs the same in Eucli
 | `days_merged` | Days not already covered by an earlier-starting injury of the same player (used for days lost) | days | none |
 | `severity` | moderate 8–28 days, severe > 28 days (mild 4–7 days kept in `injuries_mild.parquet`) | band | none |
 | `body_area` | From the reviewed label map (`mappings/injury_label_map.csv`), 12 areas + unknown | category | 10–16% unknown per season |
+| `injury_type` | Tissue, from the label map: muscle, ligament/joint, impact, fracture/bone, tendon, other; *unspecified* when the label names only a place | category | 30% unspecified |
 | `surgery` | Label describes an operation | yes/no | none |
 | `multi_club_season` | The player was at two clubs that season | flag | none |
 
@@ -84,3 +85,10 @@ then re-standardised (mean 0, SD 1), so every dimension weighs the same in Eucli
 | `strength` | Thirds of the team's league points per match over all team-seasons | none |
 | `injuries`, `days_lost`, `severe`, `area: …` | Injuries > 7 days that season for the club; days lost (`days_merged`); severe count; counts per body area | none (0 if no injury) |
 | `exp_inj`, `exp_inj_str`, `exp_inj_full`, `exp_inj_match`, `exp_inj_match_str` | Expected injuries under each reference (league × season; + strength; + age × position; per team match; per team match + strength) | `exp_inj_full` missing for the 21 without age |
+
+## 6. Injury profiles (Phase 6, `data/06_injury_profiles/`)
+
+| Variable | Definition |
+|---|---|
+| profile ratio | A style's injuries of a category ÷ expected from the category's share among injuries of the same league × season (`ratio`), + position, + position and strength (`ratio + position + strength`); categories: type (known types), location (known locations; *unspecified muscle* = unknown), type × location patterns with ≥ 300 injuries, severe |
+| `profile` (`team_season_profiles.parquet`) | Injury-profile group of a team-season with ≥ 10 injuries: K-means (k = 2) on standardised smoothed deviations from the league-season mix ((observed + 10 × league-season share) ÷ (denominator + 10) − league-season share) for 5 types, 6 locations and the severe share |

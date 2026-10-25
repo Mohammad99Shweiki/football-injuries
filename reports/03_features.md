@@ -1,6 +1,6 @@
 # Phase 3: Team-season features
 
-Generated 2026-10-22 by `notebooks/03_features.ipynb`, where each step is shown with its checks.
+Generated 2026-10-25 by `notebooks/03_features.ipynb`, where each step is shown with its checks.
 
 ## Key findings
 

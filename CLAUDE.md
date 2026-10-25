@@ -38,7 +38,7 @@ with `uv run --group analysis python scripts/notebooks/build_notebook.py` and ca
 - `analysis/`: `phases/` (one script per phase, steps as `# %%` cells: a markdown note `## Step N. Title`, the code, a check), `run.py` (runner, run records, staleness), `api.py` (`/api/analysis/*`), `steps.py`, and shared code: `config.py` (paths, leagues, seasons, `SEED`, `PIPELINE`, `phase_dir`), `load.py`, `report.py`, `audit.py`.
 - `notebooks/`: one notebook per phase, generated from `analysis/phases/`; do not edit them by hand. Each runs top to bottom from the tables and writes the phase report.
 - `mappings/`: hand-reviewed inputs (team map, injury label map), tracked in git.
-- `data/`: git-ignored, all generated, folders only (no loose files): `raw/`, `tables/`, `scraper_run/` (scraper manifest and run state), then `00_audit/` … `06_report/` (each with `_run.json`).
+- `data/`: git-ignored, all generated, folders only (no loose files): `raw/`, `tables/`, `scraper_run/` (scraper manifest and run state), then `00_audit/` … `07_report/` (each with `_run.json`).
 - `reports/`: `NN_*.md` per phase, `figures/NN_*.png`.
 - `docs/`: `ANALYSIS_PLAN.md`, `DECISIONS.md`, `PREPROCESSING_LOG.md`, `scraper/` (spec and dashboard handoff), `ui/` (analysis design brief).
 

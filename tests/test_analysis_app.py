@@ -10,16 +10,16 @@ from analysis import api
 
 
 class AnalysisAppTests(unittest.TestCase):
-    @unittest.skipUnless((api.RESULTS_DIR / "styles.json").exists(), "requires local Phase 6 outputs")
+    @unittest.skipUnless((api.RESULTS_DIR / "styles.json").exists(), "requires local Phase 7 outputs")
     def test_real_phase_and_results_contracts(self):
         status, _, body = api.handle('GET', '/api/analysis/phases', '', {})
         self.assertEqual(status, 200)
         phases = json.loads(body)
-        self.assertEqual([p['id'] for p in phases], ['00', '01', '02', '03', '04', '05', '06'])
+        self.assertEqual([p['id'] for p in phases], ['00', '01', '02', '03', '04', '05', '06', '07'])
         self.assertTrue(all(p['steps'] for p in phases))
         status, _, body = api.handle('GET', '/api/analysis/results-bundle', '', {})
         self.assertEqual(status, 200)
-        self.assertTrue({'styles', 'cluster_map', 'rr_ladder', 'season_trend', 'body_league'} <= json.loads(body).keys())
+        self.assertTrue({'styles', 'cluster_map', 'rr_ladder', 'season_trend', 'body_league', 'injury_mix'} <= json.loads(body).keys())
 
     def test_raw_and_traversal_downloads_rejected(self):
         for path in ('data/raw/example.csv', '../secret.csv', '/etc/passwd'):

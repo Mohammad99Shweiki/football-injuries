@@ -34,7 +34,7 @@ try {
         `${path} overflows at ${width}`,
       )
       if (path === '/analysis/results') {
-        for (const tab of ['Evolution', 'Injuries', 'Same club', 'Trends', 'Leagues']) {
+        for (const tab of ['Injury mix', 'Evolution', 'Injuries', 'Same club', 'Trends', 'Leagues']) {
           await page.getByRole('tab', { name: tab, exact: true }).click()
           if (width === 1440) await page.screenshot({ path: `/tmp/football-results-${tab.replace(' ', '-')}.png`, fullPage: true })
           await page.waitForTimeout(100)

@@ -67,7 +67,7 @@ export function AnalysisPage({ path }: { path: string }) {
                   progress: 'The study, at a glance',
                   studio: 'Analysis Studio',
                   clustering: 'How the styles were found',
-                  results: 'Style or schedule?',
+                  results: 'The kind of injury, not the number',
                   report: 'Report and release',
                   reviews: 'Review the evidence',
                   logs: 'The research notebook',
@@ -163,16 +163,17 @@ function Progress({
             Does the way a team plays relate to how its players get injured?
           </h2>
           <p>
-            Cluster clubs by how they attack and defend. Compare injury
-            frequency, severity and body areas across styles, seasons and
-            leagues.
+            Cluster clubs by how they attack and defend. Compare the number and the kind of
+            injuries (type, body area, severity) across styles, seasons and
+            leagues, and cluster team-seasons a second time by injury mix.
           </p>
           <p>
-            <strong>Finding so far: style or schedule? Mostly schedule.</strong>{' '}
-            Possession and pressing teams have more injuries, but most of it
-            goes with being a strong team that plays more matches; a small
-            possession excess remains, and switching style does not change a
-            club's injury rate.
+            <strong>Finding: style changes the kind of injury more than the number, but most of it travels with team strength.</strong>{' '}
+            Ball-dominant, pressing teams' injuries lean to muscle injuries and
+            are less often severe; reactive, deep and duel-seeking teams' lean to
+            contact and joint injuries. Possession and pressing teams also have
+            more injuries, mostly because they are strong teams that play more
+            matches.
           </p>
           <a className="text-link" href="/analysis/results">
             Explore the findings ↗

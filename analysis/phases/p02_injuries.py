@@ -256,8 +256,9 @@ scope_counts
 # ## Step 7. Label map: proposal and reviewed file
 #
 # Each raw label gets a **class** (injury or non-injury, with a reason), a **body area** and a **surgery** flag (the
-# label describes an operation, e.g. *Knee surgery*, *Arthroscopy*). Injury type (muscle, ligament, …) is not mapped:
-# the question is about frequency, severity and body area (see `DECISIONS.md`). The proposal comes from ordered keyword rules (first match wins), listed below so each choice can be traced. It is
+# label describes an operation, e.g. *Knee surgery*, *Arthroscopy*) and an **injury type** (tissue: muscle, ligament/joint,
+# tendon, fracture/bone, impact, other; *unspecified* when the label names only a place, e.g. *Knee injury*; added
+# 2026-10-25 for injury profiles per style, see `DECISIONS.md`). The proposal comes from ordered keyword rules (first match wins), listed below so each choice can be traced. It is
 # written to `data/02_injuries/injury_label_map_proposed.csv`; `mappings/injury_label_map.csv` is created from it on the
 # first run and is the **reviewed** file from then on (never overwritten). Labels are sorted by how many > 7-day
 # injuries they cover, with the cumulative share, so the review can focus on the top 95%.
@@ -290,6 +291,20 @@ BODY_AREA = [
     (r"back|lumb|spine|vertebra|disc|sciatica|coccyx", "back/spine"),
     (r"muscle|muscular|strain|contracture|stiffness|overstretching", "unspecified muscle"),
 ]
+# Injury type (tissue), first match wins. Groin conditions and bone before the rest ("Pubic bone irritation", "Bone sprain"),
+# impact before tendon ("Achilles tendon contusion"), tendon before muscle groups ("biceps tendon in the thigh"). A
+# label naming only a muscle group (Hamstring injury, Calf problems, Adductor pain) counts as muscle.
+INJURY_TYPE = [
+    (r"pubalg|pubic|hernia|inguinal|groin surgery", "other"),
+    (r"fractur|broken|crack|fissure|\bbone|stress reaction|splinter|screws", "fracture/bone"),
+    (r"bruise|contusion|knock|dead leg|wound|^cut$|lacerat|concussion|whiplash", "impact"),
+    (r"tendon|tendin|achilles|bursitis|plantar|heel spur", "tendon"),
+    (r"ligament|cruciate|menisc|sprain|syndesm|capsul|cartilage|disloc|contortion", "ligament/joint"),
+    (r"muscle|muscular|strain|fiber|contracture|stiffness|overstretching|hamstring|calf|thigh|adductor|groin|"
+     r"hip flexor|abdominal", "muscle"),
+    (r"lumbago|disc|sciatica|nerve|blockage|inflammation|cyst|edema|pneumothorax|lung|eardrum|obliquity|"
+     r"compartment|appendectomy|rupture", "other"),
+]
 # Labels that describe an operation rather than an injury; the body area is still taken from the label.
 SURGERY = r"surgery|arthroscopy|screws"
 
@@ -304,10 +319,13 @@ def first_match(label: str, rules: list[tuple[str, str]], default: str) -> tuple
 def propose(label: str) -> dict:
     reason, rule = first_match(label, NON_INJURY, "")
     if reason:
-        return {"class": "non_injury", "non_injury_reason": reason, "body_area": "", "surgery": "", "rule": rule}
+        return {"class": "non_injury", "non_injury_reason": reason, "body_area": "", "injury_type": "", "surgery": "",
+                "rule": rule}
     area, area_rule = first_match(label, BODY_AREA, "unknown")
     surgery = "yes" if re.search(SURGERY, label, flags=re.IGNORECASE) else "no"
-    return {"class": "injury", "non_injury_reason": "", "body_area": area, "surgery": surgery, "rule": area_rule}
+    injury_type, type_rule = first_match(label, INJURY_TYPE, "unspecified")
+    return {"class": "injury", "non_injury_reason": "", "body_area": area, "injury_type": injury_type,
+            "surgery": surgery, "rule": f"{area_rule} / {type_rule}"}
 
 
 counts = inj.groupby("label").agg(records=("label", "size"), over_7_days=("days", lambda d: int((d > MIN_DAYS).sum())))
@@ -317,13 +335,15 @@ counts["cum_share_over_7_days"] = counts.share_over_7_days.cumsum().round(4)
 proposal = pd.concat([counts.reset_index(), pd.DataFrame([propose(lbl) for lbl in counts.index])], axis=1)
 proposal["notes"] = ""
 proposal = proposal[["label", "records", "over_7_days", "share_over_7_days", "cum_share_over_7_days", "class",
-                     "non_injury_reason", "body_area", "surgery", "rule", "notes"]]
+                     "non_injury_reason", "body_area", "injury_type", "surgery", "rule", "notes"]]
 proposal.to_csv(OUT_DIR / "injury_label_map_proposed.csv", index=False)
 
 # %%
 # Check: the proposal by class and body area (records over 7 days), and the top labels.
 display(proposal.groupby(["class", "non_injury_reason"]).over_7_days.sum().rename("injuries > 7 days").to_frame())
 display(proposal[proposal["class"] == "injury"].groupby("body_area").over_7_days.sum().sort_values(ascending=False).to_frame())
+display(proposal[proposal["class"] == "injury"].pivot_table(index="body_area", columns="injury_type", values="over_7_days",
+                                                            aggfunc="sum", fill_value=0, margins=True))
 proposal.head(30)
 
 # %%
@@ -337,7 +357,7 @@ def load_reviewed_label_map(proposal: pd.DataFrame) -> tuple[pd.DataFrame, pd.Da
     if blank.any():
         raise ValueError(f"{LABEL_MAP.name}: {blank.sum()} rows have no label or class. "
                          "Restore it from git or delete it to recreate it from the proposal.")
-    cols = ["label", "class", "non_injury_reason", "body_area", "surgery"]
+    cols = ["label", "class", "non_injury_reason", "body_area", "injury_type", "surgery"]
     diff = proposal[cols].astype(str).merge(reviewed[cols], on="label", how="outer", suffixes=("_proposed", "_reviewed"))
     differs = np.logical_or.reduce([diff[f"{c}_proposed"].fillna("") != diff[f"{c}_reviewed"].fillna("") for c in cols[1:]])
     return reviewed, diff[differs], created
@@ -357,7 +377,7 @@ label_diff
 # %%
 missing = sorted(set(inj.label) - set(label_map.label))
 assert not missing, f"labels missing from {LABEL_MAP.name}: {missing}"
-inj = inj.merge(label_map[["label", "class", "non_injury_reason", "body_area", "surgery"]], on="label", how="left")
+inj = inj.merge(label_map[["label", "class", "non_injury_reason", "body_area", "injury_type", "surgery"]], on="label", how="left")
 inj["surgery"] = inj.surgery.eq("yes")
 non_injuries = inj[inj["class"] == "non_injury"].reset_index(drop=True)
 n = len(inj)
@@ -447,15 +467,16 @@ def shares(df: pd.DataFrame, by: str) -> pd.DataFrame:
 by_season = shares(inj, "season_key")
 by_league = shares(inj, "league")
 body_areas = inj.body_area.value_counts().rename("injuries").to_frame().assign(share=lambda d: (d.injuries / d.injuries.sum()).map("{:.1%}".format))
+types = pd.crosstab(inj.body_area, inj.injury_type, margins=True, margins_name="all")
 surgeries = inj[inj.surgery].groupby("body_area").size().sort_values(ascending=False).rename("injuries with surgery").to_frame()
-display(by_season, by_league, body_areas, surgeries)
+display(by_season, by_league, body_areas, types, surgeries)
 
 # %% [markdown]
 # ## Step 11. Save outputs and write the report
 
 # %%
 cols = ["playerId", "league", "season", "season_key", "club_id", "club", "start", "end", "days", "days_merged", "games_missed",
-        "severity", "label", "body_area", "surgery", "multi_club_season", "club_from", "tm_season"]
+        "severity", "label", "body_area", "injury_type", "surgery", "multi_club_season", "club_from", "tm_season"]
 inj[cols].to_parquet(OUT_DIR / "injuries_clean.parquet", index=False)
 mild.assign(days_merged=mild.days)[cols].to_parquet(OUT_DIR / "injuries_mild.parquet", index=False)
 non_injuries.to_parquet(OUT_DIR / "non_injuries.parquet", index=False)
@@ -502,6 +523,10 @@ out = [
     "## 3. Body areas (injuries > 7 days)",
     "",
     md_table(body_areas.rename_axis("body area")),
+    "",
+    "Injury type (tissue) by body area, injuries over 7 days (*unspecified*: the label names only a place):",
+    "",
+    md_table(types.rename_axis("body area")),
     "",
     f"Injuries whose label describes an operation (surgery flag): {int(inj.surgery.sum()):,}, by body area:",
     "",

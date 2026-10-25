@@ -1,6 +1,6 @@
 # Phase 2: Injury cleaning and body-area mapping
 
-Generated 2026-10-22 by `notebooks/02_injuries.ipynb`, where each step is shown with its checks.
+Generated 2026-10-25 by `notebooks/02_injuries.ipynb`, where each step is shown with its checks.
 
 ## Key findings
 
@@ -59,6 +59,24 @@ Records by where the injury happened (step 6, all durations):
 | foot/toe | 837 | 3.4% |
 | back/spine | 533 | 2.2% |
 | head/neck | 379 | 1.5% |
+
+Injury type (tissue) by body area, injuries over 7 days (*unspecified*: the label names only a place):
+
+| body area | fracture/bone | impact | ligament/joint | muscle | other | tendon | unspecified | all |
+|---|---|---|---|---|---|---|---|---|
+| ankle | 25 | 35 | 566 | 0 | 7 | 0 | 1522 | 2155 |
+| back/spine | 11 | 9 | 0 | 0 | 90 | 0 | 423 | 533 |
+| calf/achilles/lower leg | 129 | 34 | 0 | 1350 | 2 | 326 | 41 | 1882 |
+| foot/toe | 203 | 74 | 4 | 0 | 6 | 23 | 527 | 837 |
+| groin/adductor/hip | 0 | 21 | 0 | 1676 | 279 | 0 | 329 | 2305 |
+| hamstring | 0 | 0 | 0 | 3244 | 0 | 5 | 0 | 3249 |
+| head/neck | 102 | 100 | 0 | 0 | 2 | 0 | 175 | 379 |
+| knee | 10 | 99 | 1242 | 0 | 68 | 82 | 2123 | 3624 |
+| thigh | 4 | 342 | 0 | 723 | 0 | 0 | 0 | 1069 |
+| unknown | 112 | 1009 | 302 | 0 | 68 | 124 | 1553 | 3168 |
+| unspecified muscle | 2 | 15 | 0 | 4340 | 0 | 0 | 0 | 4357 |
+| upper body | 245 | 64 | 20 | 83 | 6 | 0 | 605 | 1023 |
+| all | 843 | 1802 | 2134 | 11416 | 528 | 560 | 7298 | 24581 |
 
 Injuries whose label describes an operation (surgery flag): 559, by body area:
 

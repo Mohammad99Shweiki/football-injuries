@@ -51,6 +51,7 @@ No data changed. Quality problems found here are handled in later phases (see `r
 | 2.10 | 2026-10-21 | reduction | injuries | Kept injuries lasting more than 7 days (main data). Injuries of 4–7 days (mild) kept in a separate file for the > 3-day sensitivity check; 2,327 of 0–3 days dropped. | 32,088 → 24,581 (7,507 out: 5,180 mild kept separately, 2,327 dropped) | injuries; `data/02_injuries/injuries_mild.parquet` | step 9 |
 | 2.11 | 2026-10-21 | transformation | injuries | Severity bands: moderate 8–28 days (13,588), severe > 28 days (10,993). League, `season_key`, `club` and multi-club flag added from Phase 1 and step 6. | 24,581 | `data/02_injuries/injuries_clean.parquet` | step 9 |
 | 2.12 | 2026-10-21 | cleaning | 24,581 injuries > 7 days | `days_merged`: days of each injury not covered by an earlier-starting injury of the same player (overlaps merged for days lost). | 184 overlapping injuries lose 7,850 of 1,113,471 days | `injuries_clean.parquet` (+ `days_merged`) | `02_injuries.ipynb` step 9 |
+| 2.13 | 2026-10-25 | transformation | 264 injury labels, 24,581 injuries > 7 days | Injury type from the label map (`injury_type`, keyword rules, first match wins). | muscle 11,416; unspecified 7,298; ligament/joint 2,134; impact 1,802; fracture/bone 843; tendon 560; other 528 | `injuries_clean.parquet` gains `injury_type` | `analysis/phases/p02_injuries.py` step 7–8 |
 
 
 ## Phase 3: Team-season features (transformation + reduction)

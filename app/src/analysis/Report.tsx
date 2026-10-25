@@ -29,7 +29,7 @@ function useText(path: string) {
   return state.path === path ? state : { path }
 }
 
-/** Phase 6: the checklist before freezing a version, the reports, and every figure. */
+/** Phase 7: the checklist before freezing a version, the reports, and every figure. */
 export function Report({ file }: { file: string }) {
   const name = REPORTS.some(([f]) => f === file) ? file : 'summary.md'
   const status = useResource<Finalise>('finalise', 5000)

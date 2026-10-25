@@ -1,6 +1,6 @@
 # Phase 0: Data audit
 
-Generated 2026-10-22 by `notebooks/00_audit.ipynb` (`analysis/audit.py`). Raw data is read only.
+Generated 2026-10-25 by `notebooks/00_audit.ipynb` (`analysis/audit.py`). Raw data is read only.
 
 ## Key findings
 

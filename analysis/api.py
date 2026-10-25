@@ -11,7 +11,7 @@ a time and never while a scrape is running.
     GET  /api/analysis/mappings                   hand-reviewed files with their approval record
     POST /api/analysis/mappings/{file}/approve    record an approval (date, file hash) and a decision-log row
     GET  /api/analysis/logs/{decisions|preprocessing}
-    GET  /api/analysis/results                    names of the results-dashboard files (Phase 6 export)
+    GET  /api/analysis/results                    names of the results-dashboard files (Phase 7 export)
     GET  /api/analysis/results/{name}             one of them
     GET  /api/analysis/figures/{file}             a figure from reports/figures
     GET  /api/analysis/reports/{file}             a phase report or summary.md (markdown)
@@ -38,7 +38,7 @@ from analysis.run import read_record, stale_reasons
 from analysis.steps import read_cells, to_steps
 
 DOCS = ROOT / "docs"
-RESULTS_DIR = DATA_DIR / "06_report" / "dashboard"
+RESULTS_DIR = DATA_DIR / "07_report" / "dashboard"
 APPROVALS = MAPPINGS_DIR / "approvals.json"
 
 Response = tuple[int, str, bytes]
@@ -242,7 +242,7 @@ def results(name: str | None) -> Response:
 def results_bundle() -> Response:
     files = sorted(RESULTS_DIR.glob("*.json"))
     if not files:
-        return _error("No results export yet. Run Phase 6 to produce it.", HTTPStatus.NOT_FOUND)
+        return _error("No results export yet. Run Phase 7 to produce it.", HTTPStatus.NOT_FOUND)
     return _json({f.stem: json.loads(f.read_text(encoding="utf-8")) for f in files})
 
 
@@ -266,8 +266,8 @@ def figures() -> Response:
 def finalise_status() -> dict:
     """Everything the report needs before a version can be frozen."""
     phases_ok = [{"phase": p.id, "title": p.title, "ok": not stale_reasons(p), "reasons": stale_reasons(p)} for p in PIPELINE]
-    rec6 = read_record(get_phase("06")) or {"steps": []}
-    checks = [c for s in rec6["steps"] for c in s.get("checks", [])]
+    rec7 = read_record(get_phase("07")) or {"steps": []}
+    checks = [c for s in rec7["steps"] for c in s.get("checks", [])]
     approvals = _approvals()
     maps = [{"file": f.name, "ok": bool(approvals.get(f.name)) and approvals[f.name]["hash"] == hashlib.sha256(f.read_bytes()).hexdigest()[:16]}
             for f in sorted(MAPPINGS_DIR.glob("*.csv"))]
@@ -276,7 +276,7 @@ def finalise_status() -> dict:
     items = [
         {"item": "Every phase passed and is up to date", "ok": all(p["ok"] for p in phases_ok),
          "detail": "; ".join(f"{p['phase']}: {', '.join(p['reasons'])}" for p in phases_ok if not p["ok"]) or "7 of 7"},
-        {"item": "Summary numbers match the data (Phase 6 checks)", "ok": bool(checks) and all(c["failed"] == 0 for c in checks),
+        {"item": "Summary numbers match the data (Phase 7 checks)", "ok": bool(checks) and all(c["failed"] == 0 for c in checks),
          "detail": f"{sum(c['failed'] == 0 for c in checks)} of {len(checks)} checks passed"},
         {"item": "Hand-reviewed mappings approved in their current version", "ok": all(m["ok"] for m in maps),
          "detail": ", ".join(f"{m['file']} {'approved' if m['ok'] else 'not approved'}" for m in maps)},

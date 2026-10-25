@@ -1210,7 +1210,7 @@ for name in ["attacking style", "defensive style"]:
 
 # %%
 ps.to_parquet(OUT_DIR / "player_seasons.parquet", index=False)
-# Result tables, for the Phase 6 dashboard.
+# Result tables, for the Phase 7 dashboard.
 TABLES = OUT_DIR / "tables"
 TABLES.mkdir(exist_ok=True)
 for name, t in results.items():
