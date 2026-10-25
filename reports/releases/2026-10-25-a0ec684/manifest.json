@@ -1,0 +1,186 @@
+{
+ "release": "2026-10-25-a0ec684",
+ "created": "2026-10-25T15:49:30+00:00",
+ "git": {
+  "sha": "a0ec684",
+  "dirty": false
+ },
+ "note": "First release after the injury-mix analysis and the mapping review.",
+ "checklist": [
+  {
+   "item": "Every phase passed and is up to date",
+   "ok": true,
+   "detail": "8 of 8"
+  },
+  {
+   "item": "Summary numbers match the data (Phase 7 checks)",
+   "ok": true,
+   "detail": "3 of 3 checks passed"
+  },
+  {
+   "item": "Hand-reviewed mappings approved in their current version",
+   "ok": true,
+   "detail": "injury_label_map.csv approved, team_map.csv approved"
+  },
+  {
+   "item": "Every figure cited by the summary exists",
+   "ok": true,
+   "detail": "21 cited"
+  }
+ ],
+ "phases": {
+  "00": {
+   "run_id": "75fc98b8c7f5",
+   "finished": "2026-10-25T15:41:56+00:00",
+   "seed": 42,
+   "inputs": {
+    "script": "e065e3969e74d313",
+    "shared code": "823f990aeb0dee39",
+    "mapping .gitkeep": "e3b0c44298fc1c14",
+    "mapping injury_label_map.csv": "ccfa935838efd87c",
+    "mapping team_map.csv": "8db9a61082508f6c",
+    "tables": "50b567ec6cf1f241",
+    "uv.lock": "d54b60e349581724"
+   }
+  },
+  "01": {
+   "run_id": "a424e0d59316",
+   "finished": "2026-10-25T15:41:58+00:00",
+   "seed": 42,
+   "inputs": {
+    "script": "262f221e56c35a1f",
+    "shared code": "823f990aeb0dee39",
+    "mapping .gitkeep": "e3b0c44298fc1c14",
+    "mapping injury_label_map.csv": "ccfa935838efd87c",
+    "mapping team_map.csv": "8db9a61082508f6c",
+    "tables": "50b567ec6cf1f241",
+    "phase 00": "75fc98b8c7f5",
+    "uv.lock": "d54b60e349581724"
+   }
+  },
+  "02": {
+   "run_id": "b8a9a5bc13be",
+   "finished": "2026-10-25T15:42:02+00:00",
+   "seed": 42,
+   "inputs": {
+    "script": "64f45f002277aa33",
+    "shared code": "823f990aeb0dee39",
+    "mapping .gitkeep": "e3b0c44298fc1c14",
+    "mapping injury_label_map.csv": "ccfa935838efd87c",
+    "mapping team_map.csv": "8db9a61082508f6c",
+    "tables": "50b567ec6cf1f241",
+    "phase 00": "75fc98b8c7f5",
+    "phase 01": "a424e0d59316",
+    "uv.lock": "d54b60e349581724"
+   }
+  },
+  "03": {
+   "run_id": "56c9e37df1d7",
+   "finished": "2026-10-25T15:42:03+00:00",
+   "seed": 42,
+   "inputs": {
+    "script": "7e5a40fa7329605b",
+    "shared code": "823f990aeb0dee39",
+    "mapping .gitkeep": "e3b0c44298fc1c14",
+    "mapping injury_label_map.csv": "ccfa935838efd87c",
+    "mapping team_map.csv": "8db9a61082508f6c",
+    "tables": "50b567ec6cf1f241",
+    "phase 00": "75fc98b8c7f5",
+    "phase 01": "a424e0d59316",
+    "phase 02": "b8a9a5bc13be",
+    "uv.lock": "d54b60e349581724"
+   }
+  },
+  "04": {
+   "run_id": "b3e28a746a22",
+   "finished": "2026-10-25T15:42:38+00:00",
+   "seed": 42,
+   "inputs": {
+    "script": "b014d847d4a79709",
+    "shared code": "823f990aeb0dee39",
+    "mapping .gitkeep": "e3b0c44298fc1c14",
+    "mapping injury_label_map.csv": "ccfa935838efd87c",
+    "mapping team_map.csv": "8db9a61082508f6c",
+    "tables": "50b567ec6cf1f241",
+    "phase 00": "75fc98b8c7f5",
+    "phase 01": "a424e0d59316",
+    "phase 02": "b8a9a5bc13be",
+    "phase 03": "56c9e37df1d7",
+    "uv.lock": "d54b60e349581724"
+   }
+  },
+  "05": {
+   "run_id": "26436d264e00",
+   "finished": "2026-10-25T15:42:57+00:00",
+   "seed": 42,
+   "inputs": {
+    "script": "822f5e53f67b83fe",
+    "shared code": "823f990aeb0dee39",
+    "mapping .gitkeep": "e3b0c44298fc1c14",
+    "mapping injury_label_map.csv": "ccfa935838efd87c",
+    "mapping team_map.csv": "8db9a61082508f6c",
+    "tables": "50b567ec6cf1f241",
+    "phase 00": "75fc98b8c7f5",
+    "phase 01": "a424e0d59316",
+    "phase 02": "b8a9a5bc13be",
+    "phase 03": "56c9e37df1d7",
+    "phase 04": "b3e28a746a22",
+    "uv.lock": "d54b60e349581724"
+   }
+  },
+  "06": {
+   "run_id": "fa3ac249678b",
+   "finished": "2026-10-25T15:43:23+00:00",
+   "seed": 42,
+   "inputs": {
+    "script": "8f58513b8d0e190c",
+    "shared code": "823f990aeb0dee39",
+    "mapping .gitkeep": "e3b0c44298fc1c14",
+    "mapping injury_label_map.csv": "ccfa935838efd87c",
+    "mapping team_map.csv": "8db9a61082508f6c",
+    "tables": "50b567ec6cf1f241",
+    "phase 00": "75fc98b8c7f5",
+    "phase 01": "a424e0d59316",
+    "phase 02": "b8a9a5bc13be",
+    "phase 03": "56c9e37df1d7",
+    "phase 04": "b3e28a746a22",
+    "phase 05": "26436d264e00",
+    "uv.lock": "d54b60e349581724"
+   }
+  },
+  "07": {
+   "run_id": "60dfe7230903",
+   "finished": "2026-10-25T15:44:51+00:00",
+   "seed": 42,
+   "inputs": {
+    "script": "9c7099003016ed78",
+    "shared code": "823f990aeb0dee39",
+    "mapping .gitkeep": "e3b0c44298fc1c14",
+    "mapping injury_label_map.csv": "ccfa935838efd87c",
+    "mapping team_map.csv": "8db9a61082508f6c",
+    "tables": "50b567ec6cf1f241",
+    "phase 00": "75fc98b8c7f5",
+    "phase 01": "a424e0d59316",
+    "phase 02": "b8a9a5bc13be",
+    "phase 03": "56c9e37df1d7",
+    "phase 04": "b3e28a746a22",
+    "phase 05": "26436d264e00",
+    "phase 06": "fa3ac249678b",
+    "uv.lock": "d54b60e349581724"
+   }
+  }
+ },
+ "mappings": {
+  "injury_label_map.csv": {
+   "date": "2026-10-25",
+   "hash": "ccfa935838efd87c",
+   "note": "Reviewed in the analysis app."
+  },
+  "team_map.csv": {
+   "date": "2026-10-25",
+   "hash": "8db9a61082508f6c",
+   "note": "Reviewed in the analysis app."
+  }
+ },
+ "summary_sha256": "dc85b0fd63b79146d6e228fa157dba59ea6138ce0c54aba4bedb5abab6b908a1"
+}
